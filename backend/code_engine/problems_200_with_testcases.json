@@ -1,0 +1,6491 @@
+[
+  {
+    "id": 1,
+    "title": "Print Hello World",
+    "description": "Print Hello World.",
+    "difficulty": 100,
+    "category": "basics",
+    "tags": [
+      "output"
+    ],
+    "type": "function",
+    "function_name": "print_hello_world",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "title": "Print Your Name",
+    "description": "Print your name.",
+    "difficulty": 100,
+    "category": "basics",
+    "tags": [
+      "output"
+    ],
+    "type": "function",
+    "function_name": "print_your_name",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Add Two Numbers",
+    "description": "Add two numbers.",
+    "difficulty": 120,
+    "category": "basics",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "add_two_numbers",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "title": "Subtract Two Numbers",
+    "description": "Subtract two numbers.",
+    "difficulty": 120,
+    "category": "basics",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "subtract_two_numbers",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "title": "Multiply Two Numbers",
+    "description": "Multiply two numbers.",
+    "difficulty": 120,
+    "category": "basics",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "multiply_two_numbers",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "title": "Divide Two Numbers",
+    "description": "Divide two numbers.",
+    "difficulty": 130,
+    "category": "basics",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "divide_two_numbers",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "title": "Find Remainder",
+    "description": "Find remainder of division.",
+    "difficulty": 130,
+    "category": "basics",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "find_remainder",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "title": "Swap Two Numbers (Using Temp)",
+    "description": "Swap two numbers using temp variable.",
+    "difficulty": 150,
+    "category": "basics",
+    "tags": [
+      "variables"
+    ],
+    "type": "function",
+    "function_name": "swap_two_numbers_(using_temp)",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "title": "Swap Two Numbers (Without Temp)",
+    "description": "Swap two numbers without temp variable.",
+    "difficulty": 200,
+    "category": "basics",
+    "tags": [
+      "variables"
+    ],
+    "type": "function",
+    "function_name": "swap_two_numbers_(without_temp)",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "title": "Check Even or Odd",
+    "description": "Check whether a number is even or odd.",
+    "difficulty": 150,
+    "category": "basics",
+    "tags": [
+      "conditions"
+    ],
+    "type": "function",
+    "function_name": "check_even_or_odd",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "title": "Check Positive or Negative",
+    "description": "Check whether number is positive or negative.",
+    "difficulty": 150,
+    "category": "basics",
+    "tags": [
+      "conditions"
+    ],
+    "type": "function",
+    "function_name": "check_positive_or_negative",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "title": "Largest of Two Numbers",
+    "description": "Find largest of two numbers.",
+    "difficulty": 160,
+    "category": "basics",
+    "tags": [
+      "conditions"
+    ],
+    "type": "function",
+    "function_name": "largest_of_two_numbers",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "title": "Smallest of Two Numbers",
+    "description": "Find smallest of two numbers.",
+    "difficulty": 160,
+    "category": "basics",
+    "tags": [
+      "conditions"
+    ],
+    "type": "function",
+    "function_name": "smallest_of_two_numbers",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "title": "Check Leap Year",
+    "description": "Check whether year is leap year.",
+    "difficulty": 180,
+    "category": "basics",
+    "tags": [
+      "conditions"
+    ],
+    "type": "function",
+    "function_name": "check_leap_year",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "title": "Celsius to Fahrenheit",
+    "description": "Convert Celsius to Fahrenheit.",
+    "difficulty": 150,
+    "category": "basics",
+    "tags": [
+      "conversion"
+    ],
+    "type": "function",
+    "function_name": "celsius_to_fahrenheit",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "title": "Fahrenheit to Celsius",
+    "description": "Convert Fahrenheit to Celsius.",
+    "difficulty": 150,
+    "category": "basics",
+    "tags": [
+      "conversion"
+    ],
+    "type": "function",
+    "function_name": "fahrenheit_to_celsius",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "title": "Square of Number",
+    "description": "Find square of a number.",
+    "difficulty": 120,
+    "category": "basics",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "square_of_number",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "title": "Cube of Number",
+    "description": "Find cube of a number.",
+    "difficulty": 120,
+    "category": "basics",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "cube_of_number",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "title": "Voting Eligibility",
+    "description": "Check if a person is eligible to vote.",
+    "difficulty": 160,
+    "category": "basics",
+    "tags": [
+      "conditions"
+    ],
+    "type": "function",
+    "function_name": "voting_eligibility",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "title": "Vowel or Consonant",
+    "description": "Check whether character is vowel or consonant.",
+    "difficulty": 170,
+    "category": "basics",
+    "tags": [
+      "strings"
+    ],
+    "type": "function",
+    "function_name": "vowel_or_consonant",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "title": "Alphabet Digit or Special Character",
+    "description": "Identify character type.",
+    "difficulty": 180,
+    "category": "basics",
+    "tags": [
+      "conditions"
+    ],
+    "type": "function",
+    "function_name": "alphabet_digit_or_special_character",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 22,
+    "title": "ASCII Value",
+    "description": "Find ASCII value of a character.",
+    "difficulty": 170,
+    "category": "basics",
+    "tags": [
+      "strings"
+    ],
+    "type": "function",
+    "function_name": "ascii_value",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "title": "Print Numbers 1 to 10",
+    "description": "Print numbers from 1 to 10.",
+    "difficulty": 150,
+    "category": "loops",
+    "tags": [
+      "loop"
+    ],
+    "type": "function",
+    "function_name": "print_numbers_1_to_10",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "title": "Print Numbers 10 to 1",
+    "description": "Print numbers from 10 to 1.",
+    "difficulty": 150,
+    "category": "loops",
+    "tags": [
+      "loop"
+    ],
+    "type": "function",
+    "function_name": "print_numbers_10_to_1",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "title": "Even Numbers up to N",
+    "description": "Print even numbers up to N.",
+    "difficulty": 170,
+    "category": "loops",
+    "tags": [
+      "loop"
+    ],
+    "type": "function",
+    "function_name": "even_numbers_up_to_n",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "title": "Odd Numbers up to N",
+    "description": "Print odd numbers up to N.",
+    "difficulty": 170,
+    "category": "loops",
+    "tags": [
+      "loop"
+    ],
+    "type": "function",
+    "function_name": "odd_numbers_up_to_n",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "title": "Sum of First N Numbers",
+    "description": "Calculate sum of first N numbers.",
+    "difficulty": 180,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "sum_of_first_n_numbers",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 28,
+    "title": "Sum of Even Numbers",
+    "description": "Calculate sum of even numbers up to N.",
+    "difficulty": 180,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "sum_of_even_numbers",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "title": "Sum of Odd Numbers",
+    "description": "Calculate sum of odd numbers up to N.",
+    "difficulty": 180,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "sum_of_odd_numbers",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 30,
+    "title": "Count Digits",
+    "description": "Count digits in a number.",
+    "difficulty": 200,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "count_digits",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 31,
+    "title": "Reverse a Number",
+    "description": "Reverse digits of a number.",
+    "difficulty": 220,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "reverse_a_number",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 32,
+    "title": "Palindrome Number",
+    "description": "Check if number is palindrome.",
+    "difficulty": 240,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "palindrome_number",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 33,
+    "title": "Factorial",
+    "description": "Find factorial of a number.",
+    "difficulty": 240,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "factorial",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 34,
+    "title": "Multiplication Table",
+    "description": "Print multiplication table.",
+    "difficulty": 200,
+    "category": "loops",
+    "tags": [
+      "loop"
+    ],
+    "type": "function",
+    "function_name": "multiplication_table",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 35,
+    "title": "Power of Number",
+    "description": "Find power of a number.",
+    "difficulty": 220,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "power_of_number",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 36,
+    "title": "Divisible by 5",
+    "description": "Check if number divisible by 5.",
+    "difficulty": 150,
+    "category": "basics",
+    "tags": [
+      "conditions"
+    ],
+    "type": "function",
+    "function_name": "divisible_by_5",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 37,
+    "title": "Divisible by 11",
+    "description": "Check if number divisible by 11.",
+    "difficulty": 150,
+    "category": "basics",
+    "tags": [
+      "conditions"
+    ],
+    "type": "function",
+    "function_name": "divisible_by_11",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 38,
+    "title": "Area of Circle",
+    "description": "Find area of a circle.",
+    "difficulty": 170,
+    "category": "basics",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "area_of_circle",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 39,
+    "title": "Perimeter of Rectangle",
+    "description": "Find perimeter of rectangle.",
+    "difficulty": 170,
+    "category": "basics",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "perimeter_of_rectangle",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 40,
+    "title": "Area of Triangle",
+    "description": "Find area of triangle.",
+    "difficulty": 170,
+    "category": "basics",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "area_of_triangle",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 41,
+    "title": "Simple Interest",
+    "description": "Calculate simple interest.",
+    "difficulty": 180,
+    "category": "basics",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "simple_interest",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 42,
+    "title": "Compound Interest",
+    "description": "Calculate compound interest.",
+    "difficulty": 220,
+    "category": "basics",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "compound_interest",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 43,
+    "title": "Average of Three Numbers",
+    "description": "Find average of three numbers.",
+    "difficulty": 160,
+    "category": "basics",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "average_of_three_numbers",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 44,
+    "title": "Maximum of Three Numbers",
+    "description": "Find maximum of three numbers.",
+    "difficulty": 180,
+    "category": "basics",
+    "tags": [
+      "conditions"
+    ],
+    "type": "function",
+    "function_name": "maximum_of_three_numbers",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 45,
+    "title": "Minimum of Three Numbers",
+    "description": "Find minimum of three numbers.",
+    "difficulty": 180,
+    "category": "basics",
+    "tags": [
+      "conditions"
+    ],
+    "type": "function",
+    "function_name": "minimum_of_three_numbers",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 46,
+    "title": "Print Natural Numbers",
+    "description": "Print first N natural numbers.",
+    "difficulty": 160,
+    "category": "loops",
+    "tags": [
+      "loop"
+    ],
+    "type": "function",
+    "function_name": "print_natural_numbers",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 47,
+    "title": "Sum of Digits",
+    "description": "Calculate sum of digits of a number.",
+    "difficulty": 220,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "sum_of_digits",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 48,
+    "title": "Product of Digits",
+    "description": "Calculate product of digits of a number.",
+    "difficulty": 240,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "product_of_digits",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 49,
+    "title": "Armstrong Number",
+    "description": "Check whether a number is Armstrong.",
+    "difficulty": 280,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "armstrong_number",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 50,
+    "title": "Strong Number",
+    "description": "Check whether number is Strong number.",
+    "difficulty": 300,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "strong_number",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 51,
+    "title": "Perfect Number",
+    "description": "Check whether number is Perfect.",
+    "difficulty": 260,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "perfect_number",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 52,
+    "title": "Prime Number Check",
+    "description": "Check whether number is prime.",
+    "difficulty": 250,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "prime_number_check",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 53,
+    "title": "Prime Numbers up to N",
+    "description": "Print prime numbers up to N.",
+    "difficulty": 300,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "prime_numbers_up_to_n",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 54,
+    "title": "Count Prime Numbers",
+    "description": "Count primes up to N.",
+    "difficulty": 320,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "count_prime_numbers",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 55,
+    "title": "GCD of Two Numbers",
+    "description": "Find GCD of two numbers.",
+    "difficulty": 280,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "gcd_of_two_numbers",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 56,
+    "title": "LCM of Two Numbers",
+    "description": "Find LCM of two numbers.",
+    "difficulty": 300,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "lcm_of_two_numbers",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 57,
+    "title": "Binary to Decimal",
+    "description": "Convert binary number to decimal.",
+    "difficulty": 280,
+    "category": "conversion",
+    "tags": [
+      "number-system"
+    ],
+    "type": "function",
+    "function_name": "binary_to_decimal",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 58,
+    "title": "Decimal to Binary",
+    "description": "Convert decimal number to binary.",
+    "difficulty": 280,
+    "category": "conversion",
+    "tags": [
+      "number-system"
+    ],
+    "type": "function",
+    "function_name": "decimal_to_binary",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 59,
+    "title": "Octal to Decimal",
+    "description": "Convert octal number to decimal.",
+    "difficulty": 300,
+    "category": "conversion",
+    "tags": [
+      "number-system"
+    ],
+    "type": "function",
+    "function_name": "octal_to_decimal",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 60,
+    "title": "Decimal to Octal",
+    "description": "Convert decimal number to octal.",
+    "difficulty": 300,
+    "category": "conversion",
+    "tags": [
+      "number-system"
+    ],
+    "type": "function",
+    "function_name": "decimal_to_octal",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 61,
+    "title": "Print Star Pattern 1",
+    "description": "Print right triangle star pattern.",
+    "difficulty": 200,
+    "category": "patterns",
+    "tags": [
+      "pattern"
+    ],
+    "type": "function",
+    "function_name": "print_star_pattern_1",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 62,
+    "title": "Print Star Pattern 2",
+    "description": "Print inverted triangle star pattern.",
+    "difficulty": 220,
+    "category": "patterns",
+    "tags": [
+      "pattern"
+    ],
+    "type": "function",
+    "function_name": "print_star_pattern_2",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 63,
+    "title": "Print Pyramid Pattern",
+    "description": "Print pyramid star pattern.",
+    "difficulty": 240,
+    "category": "patterns",
+    "tags": [
+      "pattern"
+    ],
+    "type": "function",
+    "function_name": "print_pyramid_pattern",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 64,
+    "title": "Number Pattern 1",
+    "description": "Print increasing number pattern.",
+    "difficulty": 220,
+    "category": "patterns",
+    "tags": [
+      "pattern"
+    ],
+    "type": "function",
+    "function_name": "number_pattern_1",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 65,
+    "title": "Number Pattern 2",
+    "description": "Print decreasing number pattern.",
+    "difficulty": 240,
+    "category": "patterns",
+    "tags": [
+      "pattern"
+    ],
+    "type": "function",
+    "function_name": "number_pattern_2",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 66,
+    "title": "Floyd's Triangle",
+    "description": "Print Floyd's triangle.",
+    "difficulty": 260,
+    "category": "patterns",
+    "tags": [
+      "pattern"
+    ],
+    "type": "function",
+    "function_name": "floyds_triangle",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 67,
+    "title": "Pascal Triangle",
+    "description": "Print Pascal's triangle.",
+    "difficulty": 320,
+    "category": "patterns",
+    "tags": [
+      "pattern"
+    ],
+    "type": "function",
+    "function_name": "pascal_triangle",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 68,
+    "title": "Mirror Star Pattern",
+    "description": "Print mirror star pattern.",
+    "difficulty": 240,
+    "category": "patterns",
+    "tags": [
+      "pattern"
+    ],
+    "type": "function",
+    "function_name": "mirror_star_pattern",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 69,
+    "title": "Diamond Pattern",
+    "description": "Print diamond star pattern.",
+    "difficulty": 350,
+    "category": "patterns",
+    "tags": [
+      "pattern"
+    ],
+    "type": "function",
+    "function_name": "diamond_pattern",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 70,
+    "title": "Hollow Square Pattern",
+    "description": "Print hollow square pattern.",
+    "difficulty": 300,
+    "category": "patterns",
+    "tags": [
+      "pattern"
+    ],
+    "type": "function",
+    "function_name": "hollow_square_pattern",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 71,
+    "title": "Count Even Digits",
+    "description": "Count even digits in a number.",
+    "difficulty": 220,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "count_even_digits",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 72,
+    "title": "Count Odd Digits",
+    "description": "Count odd digits in a number.",
+    "difficulty": 220,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "count_odd_digits",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 73,
+    "title": "Reverse Fibonacci",
+    "description": "Print Fibonacci in reverse order.",
+    "difficulty": 300,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "reverse_fibonacci",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 74,
+    "title": "Nth Fibonacci Number",
+    "description": "Find nth Fibonacci number.",
+    "difficulty": 260,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "nth_fibonacci_number",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 75,
+    "title": "Check Harshad Number",
+    "description": "Check if number is Harshad.",
+    "difficulty": 280,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "check_harshad_number",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 76,
+    "title": "Print Factors",
+    "description": "Print all factors of a number.",
+    "difficulty": 260,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "print_factors",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 77,
+    "title": "Count Factors",
+    "description": "Count factors of a number.",
+    "difficulty": 280,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "count_factors",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 78,
+    "title": "Sum of Factors",
+    "description": "Calculate sum of factors.",
+    "difficulty": 300,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "sum_of_factors",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 79,
+    "title": "Binary Palindrome",
+    "description": "Check if binary representation is palindrome.",
+    "difficulty": 350,
+    "category": "loops",
+    "tags": [
+      "number-system"
+    ],
+    "type": "function",
+    "function_name": "binary_palindrome",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 80,
+    "title": "Check Power of Two",
+    "description": "Check whether number is power of two.",
+    "difficulty": 300,
+    "category": "loops",
+    "tags": [
+      "bitwise"
+    ],
+    "type": "function",
+    "function_name": "check_power_of_two",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 81,
+    "title": "Sum of Digits Until Single Digit",
+    "description": "Reduce number to single digit sum.",
+    "difficulty": 320,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "sum_of_digits_until_single_digit",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 82,
+    "title": "Count Trailing Zeros",
+    "description": "Count trailing zeros in factorial.",
+    "difficulty": 380,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "count_trailing_zeros",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 83,
+    "title": "Check Automorphic Number",
+    "description": "Check whether number is automorphic.",
+    "difficulty": 340,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "check_automorphic_number",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 84,
+    "title": "Check Duck Number",
+    "description": "Check whether number is Duck number.",
+    "difficulty": 320,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "check_duck_number",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 85,
+    "title": "Check Neon Number",
+    "description": "Check whether number is Neon number.",
+    "difficulty": 320,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "check_neon_number",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 86,
+    "title": "Find Square Root",
+    "description": "Find square root of number.",
+    "difficulty": 260,
+    "category": "math",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "find_square_root",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 87,
+    "title": "Check Perfect Square",
+    "description": "Check if number is perfect square.",
+    "difficulty": 280,
+    "category": "math",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "check_perfect_square",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 88,
+    "title": "Print ASCII Table",
+    "description": "Print ASCII table.",
+    "difficulty": 300,
+    "category": "loops",
+    "tags": [
+      "strings"
+    ],
+    "type": "function",
+    "function_name": "print_ascii_table",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 89,
+    "title": "Print Alphabets",
+    "description": "Print alphabets A to Z.",
+    "difficulty": 180,
+    "category": "loops",
+    "tags": [
+      "strings"
+    ],
+    "type": "function",
+    "function_name": "print_alphabets",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 90,
+    "title": "Sum of Squares",
+    "description": "Calculate sum of squares of first N numbers.",
+    "difficulty": 300,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "sum_of_squares",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 91,
+    "title": "Sum of Cubes",
+    "description": "Calculate sum of cubes of first N numbers.",
+    "difficulty": 320,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "sum_of_cubes",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 92,
+    "title": "Check Co-Prime",
+    "description": "Check if two numbers are co-prime.",
+    "difficulty": 300,
+    "category": "math",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "check_co-prime",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 93,
+    "title": "Print Powers of Two",
+    "description": "Print powers of two up to N.",
+    "difficulty": 280,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "print_powers_of_two",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 94,
+    "title": "Print Multiples",
+    "description": "Print multiples of a number.",
+    "difficulty": 200,
+    "category": "loops",
+    "tags": [
+      "loop"
+    ],
+    "type": "function",
+    "function_name": "print_multiples",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 95,
+    "title": "Check Kaprekar Number",
+    "description": "Check if number is Kaprekar.",
+    "difficulty": 380,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "check_kaprekar_number",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 96,
+    "title": "Binary Count Ones",
+    "description": "Count ones in binary representation.",
+    "difficulty": 300,
+    "category": "bitwise",
+    "tags": [
+      "bitwise"
+    ],
+    "type": "function",
+    "function_name": "binary_count_ones",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 97,
+    "title": "Binary Count Zeros",
+    "description": "Count zeros in binary representation.",
+    "difficulty": 300,
+    "category": "bitwise",
+    "tags": [
+      "bitwise"
+    ],
+    "type": "function",
+    "function_name": "binary_count_zeros",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 98,
+    "title": "Check Evil Number",
+    "description": "Check if number is evil number.",
+    "difficulty": 320,
+    "category": "bitwise",
+    "tags": [
+      "bitwise"
+    ],
+    "type": "function",
+    "function_name": "check_evil_number",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 99,
+    "title": "Check Spy Number",
+    "description": "Check if number is spy number.",
+    "difficulty": 300,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "check_spy_number",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 100,
+    "title": "Print Unique Digits",
+    "description": "Print unique digits in number.",
+    "difficulty": 350,
+    "category": "loops",
+    "tags": [
+      "math"
+    ],
+    "type": "function",
+    "function_name": "print_unique_digits",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 101,
+    "title": "Read and Print Array",
+    "description": "Input an array of N elements and print them.",
+    "difficulty": 160,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "input",
+      "output"
+    ],
+    "type": "function",
+    "function_name": "read_and_print_array",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 102,
+    "title": "Sum of Array Elements",
+    "description": "Calculate the sum of elements in an array.",
+    "difficulty": 180,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "sum"
+    ],
+    "type": "function",
+    "function_name": "sum_of_array_elements",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 103,
+    "title": "Average of Array Elements",
+    "description": "Calculate the average of array elements.",
+    "difficulty": 180,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "average"
+    ],
+    "type": "function",
+    "function_name": "average_of_array_elements",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 104,
+    "title": "Find Largest Element",
+    "description": "Find the largest element in an array.",
+    "difficulty": 200,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "max"
+    ],
+    "type": "function",
+    "function_name": "find_largest_element",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 105,
+    "title": "Find Smallest Element",
+    "description": "Find the smallest element in an array.",
+    "difficulty": 200,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "min"
+    ],
+    "type": "function",
+    "function_name": "find_smallest_element",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 106,
+    "title": "Find Second Largest",
+    "description": "Find the second largest element in an array.",
+    "difficulty": 220,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "max"
+    ],
+    "type": "function",
+    "function_name": "find_second_largest",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 107,
+    "title": "Find Second Smallest",
+    "description": "Find the second smallest element in an array.",
+    "difficulty": 220,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "min"
+    ],
+    "type": "function",
+    "function_name": "find_second_smallest",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 108,
+    "title": "Count Even Elements",
+    "description": "Count the number of even elements in an array.",
+    "difficulty": 200,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "even"
+    ],
+    "type": "function",
+    "function_name": "count_even_elements",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 109,
+    "title": "Count Odd Elements",
+    "description": "Count the number of odd elements in an array.",
+    "difficulty": 200,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "odd"
+    ],
+    "type": "function",
+    "function_name": "count_odd_elements",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 110,
+    "title": "Reverse Array",
+    "description": "Reverse the given array.",
+    "difficulty": 220,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "reverse"
+    ],
+    "type": "function",
+    "function_name": "reverse_array",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 111,
+    "title": "Copy Array",
+    "description": "Create a copy of an array.",
+    "difficulty": 200,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "copy"
+    ],
+    "type": "function",
+    "function_name": "copy_array",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 112,
+    "title": "Merge Two Arrays",
+    "description": "Merge two arrays into a single array.",
+    "difficulty": 240,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "merge"
+    ],
+    "type": "function",
+    "function_name": "merge_two_arrays",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 113,
+    "title": "Sort Array Ascending",
+    "description": "Sort an array in ascending order.",
+    "difficulty": 260,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "sorting"
+    ],
+    "type": "function",
+    "function_name": "sort_array_ascending",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 114,
+    "title": "Sort Array Descending",
+    "description": "Sort an array in descending order.",
+    "difficulty": 260,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "sorting"
+    ],
+    "type": "function",
+    "function_name": "sort_array_descending",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 115,
+    "title": "Linear Search",
+    "description": "Search for an element in an array using linear search.",
+    "difficulty": 220,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "search"
+    ],
+    "type": "function",
+    "function_name": "linear_search",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 116,
+    "title": "Binary Search",
+    "description": "Search for an element in a sorted array using binary search.",
+    "difficulty": 300,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "search",
+      "binary-search"
+    ],
+    "type": "function",
+    "function_name": "binary_search",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 117,
+    "title": "Count Frequency of Elements",
+    "description": "Count how many times each element occurs in an array.",
+    "difficulty": 280,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "frequency"
+    ],
+    "type": "function",
+    "function_name": "count_frequency_of_elements",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 118,
+    "title": "Remove Duplicates",
+    "description": "Remove duplicate elements from an array.",
+    "difficulty": 300,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "duplicate"
+    ],
+    "type": "function",
+    "function_name": "remove_duplicates",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 119,
+    "title": "Print Unique Elements",
+    "description": "Print elements that appear only once in an array.",
+    "difficulty": 320,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "unique"
+    ],
+    "type": "function",
+    "function_name": "print_unique_elements",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 120,
+    "title": "Find Duplicate Elements",
+    "description": "Find and print duplicate elements in an array.",
+    "difficulty": 320,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "duplicate"
+    ],
+    "type": "function",
+    "function_name": "find_duplicate_elements",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 121,
+    "title": "Rotate Array Left",
+    "description": "Rotate an array left by K positions.",
+    "difficulty": 300,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "rotation"
+    ],
+    "type": "function",
+    "function_name": "rotate_array_left",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 122,
+    "title": "Rotate Array Right",
+    "description": "Rotate an array right by K positions.",
+    "difficulty": 300,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "rotation"
+    ],
+    "type": "function",
+    "function_name": "rotate_array_right",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 123,
+    "title": "Find Missing Number",
+    "description": "Find the missing number in an array containing 1 to N.",
+    "difficulty": 320,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "missing-number"
+    ],
+    "type": "function",
+    "function_name": "find_missing_number",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 124,
+    "title": "Find Common Elements",
+    "description": "Find common elements in two arrays.",
+    "difficulty": 320,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "intersection"
+    ],
+    "type": "function",
+    "function_name": "find_common_elements",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 125,
+    "title": "Union of Two Arrays",
+    "description": "Find the union of two arrays.",
+    "difficulty": 320,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "union"
+    ],
+    "type": "function",
+    "function_name": "union_of_two_arrays",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 126,
+    "title": "Intersection of Two Arrays",
+    "description": "Find the intersection of two arrays.",
+    "difficulty": 320,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "intersection"
+    ],
+    "type": "function",
+    "function_name": "intersection_of_two_arrays",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 127,
+    "title": "Check Array Palindrome",
+    "description": "Check if an array is a palindrome.",
+    "difficulty": 300,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "palindrome"
+    ],
+    "type": "function",
+    "function_name": "check_array_palindrome",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 128,
+    "title": "Split Array Even Odd",
+    "description": "Split array into even and odd numbers.",
+    "difficulty": 300,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "even",
+      "odd"
+    ],
+    "type": "function",
+    "function_name": "split_array_even_odd",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 129,
+    "title": "Replace Negatives with Zero",
+    "description": "Replace all negative numbers in an array with zero.",
+    "difficulty": 280,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "replace"
+    ],
+    "type": "function",
+    "function_name": "replace_negatives_with_zero",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 130,
+    "title": "Sum of Prime Elements",
+    "description": "Calculate sum of all prime elements in an array.",
+    "difficulty": 320,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "prime"
+    ],
+    "type": "function",
+    "function_name": "sum_of_prime_elements",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 131,
+    "title": "Maximum Difference",
+    "description": "Find max difference arr[j]-arr[i] where j>i.",
+    "difficulty": 320,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "max-difference"
+    ],
+    "type": "function",
+    "function_name": "maximum_difference",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 132,
+    "title": "Minimum Difference",
+    "description": "Find minimum difference between any two elements.",
+    "difficulty": 320,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "min-difference"
+    ],
+    "type": "function",
+    "function_name": "minimum_difference",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 133,
+    "title": "Insert Element at Position",
+    "description": "Insert an element at a given position in an array.",
+    "difficulty": 280,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "insert"
+    ],
+    "type": "function",
+    "function_name": "insert_element_at_position",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 134,
+    "title": "Delete Element from Array",
+    "description": "Delete an element from a given position in an array.",
+    "difficulty": 280,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "delete"
+    ],
+    "type": "function",
+    "function_name": "delete_element_from_array",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 135,
+    "title": "Count Positive and Negative Numbers",
+    "description": "Count the number of positive and negative numbers in an array.",
+    "difficulty": 280,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "count"
+    ],
+    "type": "function",
+    "function_name": "count_positive_and_negative_numbers",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 136,
+    "title": "Find Pair with Given Sum",
+    "description": "Find all pairs in array with a given sum.",
+    "difficulty": 340,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "pair-sum"
+    ],
+    "type": "function",
+    "function_name": "find_pair_with_given_sum",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 137,
+    "title": "Find Triplet with Given Sum",
+    "description": "Find all triplets in array with a given sum.",
+    "difficulty": 360,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "triplet-sum"
+    ],
+    "type": "function",
+    "function_name": "find_triplet_with_given_sum",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 138,
+    "title": "Move Zeros to End",
+    "description": "Move all zeros to the end of array while maintaining order.",
+    "difficulty": 300,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "zero"
+    ],
+    "type": "function",
+    "function_name": "move_zeros_to_end",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 139,
+    "title": "Move Negatives to One Side",
+    "description": "Move all negative numbers to one side of the array.",
+    "difficulty": 300,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "negative"
+    ],
+    "type": "function",
+    "function_name": "move_negatives_to_one_side",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 140,
+    "title": "Find Leaders in Array",
+    "description": "Find all leaders in array (element greater than all elements to right).",
+    "difficulty": 340,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "leaders"
+    ],
+    "type": "function",
+    "function_name": "find_leaders_in_array",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 141,
+    "title": "Find Equilibrium Index",
+    "description": "Find index where sum of elements on left = sum on right.",
+    "difficulty": 360,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "equilibrium"
+    ],
+    "type": "function",
+    "function_name": "find_equilibrium_index",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 142,
+    "title": "Find Majority Element",
+    "description": "Find element appearing more than n/2 times.",
+    "difficulty": 380,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "majority"
+    ],
+    "type": "function",
+    "function_name": "find_majority_element",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 143,
+    "title": "Find Peak Element",
+    "description": "Find element greater than neighbors.",
+    "difficulty": 360,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "peak"
+    ],
+    "type": "function",
+    "function_name": "find_peak_element",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 144,
+    "title": "Check if Array is Sorted",
+    "description": "Check whether array is sorted in ascending order.",
+    "difficulty": 260,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "sorted"
+    ],
+    "type": "function",
+    "function_name": "check_if_array_is_sorted",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 145,
+    "title": "Count Rotations in Sorted Rotated Array",
+    "description": "Count number of rotations in sorted and rotated array.",
+    "difficulty": 360,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "rotation"
+    ],
+    "type": "function",
+    "function_name": "count_rotations_in_sorted_rotated_array",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 146,
+    "title": "Find Smallest in Rotated Array",
+    "description": "Find the smallest element in rotated sorted array.",
+    "difficulty": 360,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "min"
+    ],
+    "type": "function",
+    "function_name": "find_smallest_in_rotated_array",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 147,
+    "title": "Find Largest in Rotated Array",
+    "description": "Find the largest element in rotated sorted array.",
+    "difficulty": 360,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "max"
+    ],
+    "type": "function",
+    "function_name": "find_largest_in_rotated_array",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 148,
+    "title": "Kth Smallest Element",
+    "description": "Find the Kth smallest element in an array.",
+    "difficulty": 340,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "kth"
+    ],
+    "type": "function",
+    "function_name": "kth_smallest_element",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 149,
+    "title": "Kth Largest Element",
+    "description": "Find the Kth largest element in an array.",
+    "difficulty": 340,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "kth"
+    ],
+    "type": "function",
+    "function_name": "kth_largest_element",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 150,
+    "title": "Maximum Subarray Sum",
+    "description": "Find maximum subarray sum using Kadane's Algorithm.",
+    "difficulty": 380,
+    "category": "arrays",
+    "tags": [
+      "array",
+      "kadane"
+    ],
+    "type": "function",
+    "function_name": "maximum_subarray_sum",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 151,
+    "title": "Read and Print String",
+    "description": "Input a string and print it.",
+    "difficulty": 160,
+    "category": "strings",
+    "tags": [
+      "input",
+      "output"
+    ],
+    "type": "function",
+    "function_name": "read_and_print_string",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 152,
+    "title": "Length of String",
+    "description": "Find the length of a given string.",
+    "difficulty": 180,
+    "category": "strings",
+    "tags": [
+      "length"
+    ],
+    "type": "function",
+    "function_name": "length_of_string",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 153,
+    "title": "Reverse String",
+    "description": "Reverse the given string.",
+    "difficulty": 200,
+    "category": "strings",
+    "tags": [
+      "reverse"
+    ],
+    "type": "function",
+    "function_name": "reverse_string",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 154,
+    "title": "Check Palindrome String",
+    "description": "Check whether a string is a palindrome.",
+    "difficulty": 220,
+    "category": "strings",
+    "tags": [
+      "palindrome"
+    ],
+    "type": "function",
+    "function_name": "check_palindrome_string",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 155,
+    "title": "Count Vowels",
+    "description": "Count number of vowels in a string.",
+    "difficulty": 200,
+    "category": "strings",
+    "tags": [
+      "count",
+      "vowels"
+    ],
+    "type": "function",
+    "function_name": "count_vowels",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 156,
+    "title": "Count Consonants",
+    "description": "Count number of consonants in a string.",
+    "difficulty": 200,
+    "category": "strings",
+    "tags": [
+      "count",
+      "consonants"
+    ],
+    "type": "function",
+    "function_name": "count_consonants",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 157,
+    "title": "Count Digits",
+    "description": "Count number of digits in a string.",
+    "difficulty": 200,
+    "category": "strings",
+    "tags": [
+      "count",
+      "digits"
+    ],
+    "type": "function",
+    "function_name": "count_digits",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 158,
+    "title": "Count Spaces",
+    "description": "Count number of spaces in a string.",
+    "difficulty": 180,
+    "category": "strings",
+    "tags": [
+      "count",
+      "spaces"
+    ],
+    "type": "function",
+    "function_name": "count_spaces",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 159,
+    "title": "Convert to Uppercase",
+    "description": "Convert all characters of a string to uppercase.",
+    "difficulty": 180,
+    "category": "strings",
+    "tags": [
+      "uppercase"
+    ],
+    "type": "function",
+    "function_name": "convert_to_uppercase",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 160,
+    "title": "Convert to Lowercase",
+    "description": "Convert all characters of a string to lowercase.",
+    "difficulty": 180,
+    "category": "strings",
+    "tags": [
+      "lowercase"
+    ],
+    "type": "function",
+    "function_name": "convert_to_lowercase",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 161,
+    "title": "Toggle Case",
+    "description": "Toggle the case of each character in a string.",
+    "difficulty": 220,
+    "category": "strings",
+    "tags": [
+      "toggle",
+      "case"
+    ],
+    "type": "function",
+    "function_name": "toggle_case",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 162,
+    "title": "Count Words",
+    "description": "Count the number of words in a string.",
+    "difficulty": 220,
+    "category": "strings",
+    "tags": [
+      "words",
+      "count"
+    ],
+    "type": "function",
+    "function_name": "count_words",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 163,
+    "title": "Remove Spaces",
+    "description": "Remove all spaces from a string.",
+    "difficulty": 200,
+    "category": "strings",
+    "tags": [
+      "remove",
+      "spaces"
+    ],
+    "type": "function",
+    "function_name": "remove_spaces",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 164,
+    "title": "Remove Vowels",
+    "description": "Remove all vowels from a string.",
+    "difficulty": 220,
+    "category": "strings",
+    "tags": [
+      "remove",
+      "vowels"
+    ],
+    "type": "function",
+    "function_name": "remove_vowels",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 165,
+    "title": "Remove Consonants",
+    "description": "Remove all consonants from a string.",
+    "difficulty": 220,
+    "category": "strings",
+    "tags": [
+      "remove",
+      "consonants"
+    ],
+    "type": "function",
+    "function_name": "remove_consonants",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 166,
+    "title": "Frequency of Characters",
+    "description": "Count the frequency of each character in a string.",
+    "difficulty": 240,
+    "category": "strings",
+    "tags": [
+      "frequency",
+      "count"
+    ],
+    "type": "function",
+    "function_name": "frequency_of_characters",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 167,
+    "title": "Find Duplicate Characters",
+    "description": "Find all duplicate characters in a string.",
+    "difficulty": 240,
+    "category": "strings",
+    "tags": [
+      "duplicate",
+      "characters"
+    ],
+    "type": "function",
+    "function_name": "find_duplicate_characters",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 168,
+    "title": "Find Unique Characters",
+    "description": "Find all unique characters in a string.",
+    "difficulty": 240,
+    "category": "strings",
+    "tags": [
+      "unique",
+      "characters"
+    ],
+    "type": "function",
+    "function_name": "find_unique_characters",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 169,
+    "title": "Replace Character",
+    "description": "Replace a given character with another in a string.",
+    "difficulty": 220,
+    "category": "strings",
+    "tags": [
+      "replace",
+      "characters"
+    ],
+    "type": "function",
+    "function_name": "replace_character",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 170,
+    "title": "Compare Two Strings",
+    "description": "Compare two strings for equality.",
+    "difficulty": 200,
+    "category": "strings",
+    "tags": [
+      "compare"
+    ],
+    "type": "function",
+    "function_name": "compare_two_strings",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 171,
+    "title": "Concatenate Strings",
+    "description": "Concatenate two strings.",
+    "difficulty": 180,
+    "category": "strings",
+    "tags": [
+      "concatenate"
+    ],
+    "type": "function",
+    "function_name": "concatenate_strings",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 172,
+    "title": "Check Anagram",
+    "description": "Check if two strings are anagrams.",
+    "difficulty": 260,
+    "category": "strings",
+    "tags": [
+      "anagram"
+    ],
+    "type": "function",
+    "function_name": "check_anagram",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 173,
+    "title": "Find Longest Word",
+    "description": "Find the longest word in a string.",
+    "difficulty": 220,
+    "category": "strings",
+    "tags": [
+      "longest",
+      "word"
+    ],
+    "type": "function",
+    "function_name": "find_longest_word",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 174,
+    "title": "Find Shortest Word",
+    "description": "Find the shortest word in a string.",
+    "difficulty": 220,
+    "category": "strings",
+    "tags": [
+      "shortest",
+      "word"
+    ],
+    "type": "function",
+    "function_name": "find_shortest_word",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 175,
+    "title": "Reverse Words in Sentence",
+    "description": "Reverse each word in a sentence.",
+    "difficulty": 240,
+    "category": "strings",
+    "tags": [
+      "reverse",
+      "words"
+    ],
+    "type": "function",
+    "function_name": "reverse_words_in_sentence",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 176,
+    "title": "Sort Characters in String",
+    "description": "Sort characters of a string in ascending order.",
+    "difficulty": 260,
+    "category": "strings",
+    "tags": [
+      "sort",
+      "characters"
+    ],
+    "type": "function",
+    "function_name": "sort_characters_in_string",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 177,
+    "title": "Count Punctuation Marks",
+    "description": "Count punctuation marks in a string.",
+    "difficulty": 240,
+    "category": "strings",
+    "tags": [
+      "punctuation",
+      "count"
+    ],
+    "type": "function",
+    "function_name": "count_punctuation_marks",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 178,
+    "title": "Check Alphabet Only",
+    "description": "Check if string contains only alphabets.",
+    "difficulty": 220,
+    "category": "strings",
+    "tags": [
+      "check",
+      "alphabet"
+    ],
+    "type": "function",
+    "function_name": "check_alphabet_only",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 179,
+    "title": "Check Digit Only",
+    "description": "Check if string contains only digits.",
+    "difficulty": 220,
+    "category": "strings",
+    "tags": [
+      "check",
+      "digit"
+    ],
+    "type": "function",
+    "function_name": "check_digit_only",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 180,
+    "title": "Extract Digits",
+    "description": "Extract all digits from a string.",
+    "difficulty": 240,
+    "category": "strings",
+    "tags": [
+      "digits",
+      "extract"
+    ],
+    "type": "function",
+    "function_name": "extract_digits",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 181,
+    "title": "Extract Alphabets",
+    "description": "Extract all alphabets from a string.",
+    "difficulty": 240,
+    "category": "strings",
+    "tags": [
+      "alphabets",
+      "extract"
+    ],
+    "type": "function",
+    "function_name": "extract_alphabets",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 182,
+    "title": "Remove Special Characters",
+    "description": "Remove all special characters from a string.",
+    "difficulty": 260,
+    "category": "strings",
+    "tags": [
+      "remove",
+      "special-characters"
+    ],
+    "type": "function",
+    "function_name": "remove_special_characters",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 183,
+    "title": "Capitalize First Letter",
+    "description": "Capitalize the first letter of a string.",
+    "difficulty": 220,
+    "category": "strings",
+    "tags": [
+      "capitalize"
+    ],
+    "type": "function",
+    "function_name": "capitalize_first_letter",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 184,
+    "title": "Capitalize Each Word",
+    "description": "Capitalize the first letter of each word in a string.",
+    "difficulty": 240,
+    "category": "strings",
+    "tags": [
+      "capitalize",
+      "words"
+    ],
+    "type": "function",
+    "function_name": "capitalize_each_word",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 185,
+    "title": "Check Valid Identifier",
+    "description": "Check whether a string is a valid identifier.",
+    "difficulty": 260,
+    "category": "strings",
+    "tags": [
+      "identifier",
+      "check"
+    ],
+    "type": "function",
+    "function_name": "check_valid_identifier",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 186,
+    "title": "Check Password Strength",
+    "description": "Check the strength of a password string.",
+    "difficulty": 300,
+    "category": "strings",
+    "tags": [
+      "password",
+      "strength"
+    ],
+    "type": "function",
+    "function_name": "check_password_strength",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 187,
+    "title": "First Non-Repeating Character",
+    "description": "Find the first non-repeating character in a string.",
+    "difficulty": 280,
+    "category": "strings",
+    "tags": [
+      "unique",
+      "character"
+    ],
+    "type": "function",
+    "function_name": "first_non-repeating_character",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 188,
+    "title": "First Repeating Character",
+    "description": "Find the first repeating character in a string.",
+    "difficulty": 280,
+    "category": "strings",
+    "tags": [
+      "repeat",
+      "character"
+    ],
+    "type": "function",
+    "function_name": "first_repeating_character",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 189,
+    "title": "Count Substring Occurrences",
+    "description": "Count occurrences of a substring in a string.",
+    "difficulty": 300,
+    "category": "strings",
+    "tags": [
+      "substring",
+      "count"
+    ],
+    "type": "function",
+    "function_name": "count_substring_occurrences",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 190,
+    "title": "Check Substring Present",
+    "description": "Check whether a substring is present in a string.",
+    "difficulty": 260,
+    "category": "strings",
+    "tags": [
+      "substring",
+      "check"
+    ],
+    "type": "function",
+    "function_name": "check_substring_present",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 191,
+    "title": "Remove Substring",
+    "description": "Remove a substring from a string.",
+    "difficulty": 280,
+    "category": "strings",
+    "tags": [
+      "substring",
+      "remove"
+    ],
+    "type": "function",
+    "function_name": "remove_substring",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 192,
+    "title": "Replace Substring",
+    "description": "Replace a substring with another in a string.",
+    "difficulty": 300,
+    "category": "strings",
+    "tags": [
+      "substring",
+      "replace"
+    ],
+    "type": "function",
+    "function_name": "replace_substring",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 193,
+    "title": "Longest Common Prefix",
+    "description": "Find the longest common prefix among strings.",
+    "difficulty": 320,
+    "category": "strings",
+    "tags": [
+      "prefix"
+    ],
+    "type": "function",
+    "function_name": "longest_common_prefix",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 194,
+    "title": "Longest Palindromic Substring",
+    "description": "Find the longest palindromic substring in a string.",
+    "difficulty": 340,
+    "category": "strings",
+    "tags": [
+      "palindrome",
+      "substring"
+    ],
+    "type": "function",
+    "function_name": "longest_palindromic_substring",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 195,
+    "title": "Check String Rotation",
+    "description": "Check if one string is a rotation of another.",
+    "difficulty": 320,
+    "category": "strings",
+    "tags": [
+      "rotation"
+    ],
+    "type": "function",
+    "function_name": "check_string_rotation",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 196,
+    "title": "Run-Length Encoding",
+    "description": "Perform run-length encoding on a string.",
+    "difficulty": 340,
+    "category": "strings",
+    "tags": [
+      "encoding"
+    ],
+    "type": "function",
+    "function_name": "run-length_encoding",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 197,
+    "title": "Decode Run-Length Encoding",
+    "description": "Decode a run-length encoded string.",
+    "difficulty": 340,
+    "category": "strings",
+    "tags": [
+      "decoding"
+    ],
+    "type": "function",
+    "function_name": "decode_run-length_encoding",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 198,
+    "title": "Count Vowels in Each Word",
+    "description": "Count number of vowels in each word of a string.",
+    "difficulty": 300,
+    "category": "strings",
+    "tags": [
+      "vowels",
+      "word"
+    ],
+    "type": "function",
+    "function_name": "count_vowels_in_each_word",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 199,
+    "title": "Print String Pattern",
+    "description": "Print a pattern using characters from a string.",
+    "difficulty": 320,
+    "category": "strings",
+    "tags": [
+      "pattern"
+    ],
+    "type": "function",
+    "function_name": "print_string_pattern",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  },
+  {
+    "id": 200,
+    "title": "Reverse String Using Recursion",
+    "description": "Reverse a string using recursion.",
+    "difficulty": 300,
+    "category": "strings",
+    "tags": [
+      "recursion",
+      "reverse"
+    ],
+    "type": "function",
+    "function_name": "reverse_string_using_recursion",
+    "input_format": "auto",
+    "output_format": "auto",
+    "test_cases": [
+      {
+        "input": [
+          1,
+          2
+        ],
+        "output": 3,
+        "visibility": "public"
+      },
+      {
+        "input": [
+          5,
+          7
+        ],
+        "output": 12,
+        "visibility": "hidden"
+      }
+    ]
+  }
+]

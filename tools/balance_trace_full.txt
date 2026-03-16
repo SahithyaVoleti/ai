@@ -1,0 +1,2944 @@
+   1 |   0 | "use client";
+   2 |   0 | /* eslint-disable @typescript-eslint/no-explicit-any */
+   3 |   0 | import React, { useState, useEffect, useRef, Suspense } from 'react';
+   4 |   0 | import styles from './home.module.css';
+   5 |   0 | import { useRouter, useSearchParams } from 'next/navigation';
+   6 |   0 | import Link from 'next/link';
+   7 |   0 | import { useAuth } from './auth-context';
+   8 |   0 | import { Sun, Moon, Shield, Camera, Mic, Monitor, User, CheckCircle, Check, AlertCircle, LogOut, Sparkles, FileText, BarChart, ArrowRight, Volume2, ChevronRight, Brain, LayoutDashboard, Play, Terminal, Video } from 'lucide-react';
+   9 |   0 | import { useTheme } from './theme-context';
+  10 |   0 | import Editor from "@monaco-editor/react";
+  11 |   0 | 
+  12 |   1 | function HomeContent() {
+  13 |   1 |   const { user, logout, loading: authLoading } = useAuth();
+  14 |   1 |   const { theme, toggleTheme } = useTheme();
+  15 |   1 | 
+  16 |   1 |   const [stage, setStage] = useState<'landing' | 'upload' | 'systemCheck' | 'verification' | 'calibration' | 'instructions' | 'interview' | 'code' | 'report' | 'results'>('landing');
+  17 |   1 |   const [reportData, setReportData] = useState<any>(null);
+  18 |   1 |   const [name, setName] = useState('');
+  19 |   1 |   const [email, setEmail] = useState('');
+  20 |   1 |   const [file, setFile] = useState<File | null>(null);
+  21 |   1 |   const [loading, setLoading] = useState(false);
+  22 |   1 |   const [proctorStatus, setProctorStatus] = useState({ face: false, warning: '' });
+  23 |   1 | 
+  24 |   2 |   useEffect(() => {
+  25 |   3 |     if (user && stage === 'landing') {
+  26 |   3 |       setName(user.name);
+  27 |   3 |       setEmail(user.email);
+  28 |   2 |     }
+  29 |   1 |   }, [user, stage]);
+  30 |   1 | 
+  31 |   1 |   const searchParams = useSearchParams();
+  32 |   2 |   useEffect(() => {
+  33 |   2 |     const startParam = searchParams.get('start');
+  34 |   2 |     const setupStages = ['upload', 'verification', 'calibration', 'instructions'];
+  35 |   2 | 
+  36 |   3 |     if (startParam === 'true' && user) {
+  37 |   3 |       if (stage === 'landing') setStage('upload');
+  38 |   3 |     } else if (!startParam) {
+  39 |   3 |       // If user navigates back to base URL without 'start', return to landing from any setup stage
+  40 |   4 |       if (setupStages.includes(stage)) {
+  41 |   4 |         setStage('landing');
+  42 |   3 |       }
+  43 |   2 |     }
+  44 |   1 |   }, [searchParams, user, stage]);
+  45 |   1 | 
+  46 |   2 |   const [checks, setChecks] = useState({
+  47 |   2 |     fullscreen: false,
+  48 |   2 |     camera: false,
+  49 |   2 |     screenShare: false
+  50 |   1 |   });
+  51 |   1 |   const [checkLoading, setCheckLoading] = useState(false);
+  52 |   1 | 
+  53 |   1 |   const [question, setQuestion] = useState('');
+  54 |   1 |   const [transcript, setTranscript] = useState('');
+  55 |   1 |   const [interimTranscript, setInterimTranscript] = useState('');
+  56 |   1 |   const [isListening, setIsListening] = useState(false);
+  57 |   1 |   const [isSpeaking, setIsSpeaking] = useState(false);
+  58 |   1 |   const [interviewId, setInterviewId] = useState<string | null>(null);
+  59 |   1 |   const [isFinishing, setIsFinishing] = useState(false);
+  60 |   1 |   const [feedback, setFeedback] = useState('');
+  61 |   1 |   const [questionCount, setQuestionCount] = useState(0);
+  62 |   1 |   const [phase, setPhase] = useState('warmup');
+  63 |   1 |   const [phaseCount, setPhaseCount] = useState(0);
+  64 |   1 | 
+  65 |   1 |   // Helper: Fisher-Yates shuffle
+  66 |   2 |   const shuffleArray = (arr: string[]) => {
+  67 |   2 |     const a = [...arr];
+  68 |   3 |     for (let i = a.length - 1; i > 0; i--) {
+  69 |   3 |       const j = Math.floor(Math.random() * (i + 1));
+  70 |   3 |       [a[i], a[j]] = [a[j], a[i]];
+  71 |   2 |     }
+  72 |   2 |     return a;
+  73 |   1 |   };
+  74 |   1 | 
+  75 |   1 |   const buildPhases = () => [
+  76 |   1 |     'greeting',    // Step 1
+  77 |   1 |     'warmup',      // Step 2 (2-3 questions)
+  78 |   1 |     'intro',       // Step 3 (Mandatory)
+  79 |   1 |     'resume',      // Step 4 (Skills, Projects, Tech)
+  80 |   1 |     'code',        // Step 5
+  81 |   1 |     'case_study',  // Step 6 (1-2 questions)
+  82 |   1 |     'behavioral',  // Step 7
+  83 |   1 |     'scenario_hr', // Step 8
+  84 |   1 |     'teamwork',    // Step 9
+  85 |   1 |     'conclusion'   // Final Politeness
+  86 |   1 |   ];
+  87 |   1 | 
+  88 |   1 |   const [PHASES, setPHASES] = useState<string[]>(buildPhases);
+  89 |   1 |   const [phaseIndex, setPhaseIndex] = useState(0);
+  90 |   1 | 
+  91 |   1 |   // Auto-clear feedback
+  92 |   2 |   useEffect(() => {
+  93 |   3 |     if (feedback) {
+  94 |   3 |       const t = setTimeout(() => setFeedback(''), 4000);
+  95 |   3 |       return () => clearTimeout(t);
+  96 |   2 |     }
+  97 |   1 |   }, [feedback]);
+  98 |   1 | 
+  99 |   1 |   const [audioLevel, setAudioLevel] = useState(0);
+ 100 |   1 |   const [audioBlocked, setAudioBlocked] = useState(false);
+ 101 |   1 |   const audioUnlockedRef = useRef(false);
+ 102 |   1 |   const audioContextRef = useRef<AudioContext | null>(null);
+ 103 |   1 |   const analyserRef = useRef<AnalyserNode | null>(null);
+ 104 |   1 |   const transcriptEndRef = useRef<HTMLDivElement>(null);
+ 105 |   1 | 
+ 106 |   1 |   const [codingProblems, setCodingProblems] = useState<any[]>([]);
+ 107 |   1 |   const [currentCodingIdx, setCurrentCodingIdx] = useState(0);
+ 108 |   1 |   const [codeAnswer, setCodeAnswer] = useState('');
+ 109 |   1 |   const [codingLanguage, setCodingLanguage] = useState<'python' | 'java' | 'c' | 'javascript'>('python');
+ 110 |   1 |   const [fetchingQuestion, setFetchingQuestion] = useState(false);
+ 111 |   1 |   const [codingOutput, setCodingOutput] = useState('');
+ 112 |   1 |   const [isRunningCode, setIsRunningCode] = useState(false);
+ 113 |   1 | 
+ 114 |   1 |   const [lastCodingStats, setLastCodingStats] = useState({ passed: 0, total: 0 });
+ 115 |   1 | 
+ 116 |   1 |   // INACTIVITY & SILENCE HANDLING
+ 117 |   1 |   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+ 118 |   1 |   const hasRepeatedRef = useRef(false);
+ 119 |   1 |   const lastActivityRef = useRef<number>(Date.now());
+ 120 |   1 | 
+ 121 |   2 |   const getPhaseThreshold = (pIndex: number) => {
+ 122 |   2 |     const p = PHASES[pIndex];
+ 123 |   2 |     if (p === 'greeting') return 1;
+ 124 |   2 |     if (p === 'warmup') return 1;
+ 125 |   2 |     if (p === 'intro') return 1;
+ 126 |   2 |     if (p === 'technical') return 2;
+ 127 |   2 |     if (p === 'scenario') return 1;
+ 128 |   2 |     if (p === 'project') return 1;
+ 129 |   2 |     if (p === 'behavioral') return 1;
+ 130 |   2 |     if (p === 'code') return 1;
+ 131 |   2 |     if (p === 'conclusion') return 1;
+ 132 |   2 |     return 1;
+ 133 |   1 |   };
+ 134 |   1 | 
+ 135 |   1 | 
+ 136 |   1 |   const tabSwitchCountRef = useRef(0);
+ 137 |   1 |   const lookingDownRef = useRef(0);
+ 138 |   1 |   const hasStartedRef = useRef(false);
+ 139 |   1 |   const isManualStopRef = useRef(false);
+ 140 |   1 | 
+ 141 |   1 |   const showNoFaceWarnRef = useRef(false);
+ 142 |   1 |   const [showFullscreenWarn, setShowFullscreenWarn] = useState(false);
+ 143 |   1 |   const showFullscreenWarnRef = useRef(false);
+ 144 |   1 |   const [showTabSwitchWarn, setShowTabSwitchWarn] = useState(false);
+ 145 |   1 |   const showTabSwitchWarnRef = useRef(false);
+ 146 |   1 |   const [showEndConfirm, setShowEndConfirm] = useState(false);
+ 147 |   1 |   const [showNoFaceWarn, setShowNoFaceWarn] = useState(false);
+ 148 |   1 |   const fullscreenWarnCountRef = useRef(0);
+ 149 |   1 |   const noFaceRef = useRef(0);
+ 150 |   1 | 
+ 151 |   1 |   const [backendStatus, setBackendStatus] = useState<'connected' | 'disconnected'>('connected');
+ 152 |   1 |   const recognitionActiveRef = useRef(false);
+ 153 |   1 |   const transcriptScrollRef = useRef<HTMLDivElement | null>(null);
+ 154 |   1 | 
+ 155 |   2 |   useEffect(() => {
+ 156 |   3 |     if (transcriptScrollRef.current) {
+ 157 |   3 |       transcriptScrollRef.current.scrollTop = transcriptScrollRef.current.scrollHeight;
+ 158 |   2 |     }
+ 159 |   1 |   }, [transcript, interimTranscript]);
+ 160 |   1 | 
+ 161 |   1 |   const interviewStartTimeRef = useRef<number | null>(null);
+ 162 |   1 |   const [elapsedTime, setElapsedTime] = useState(0);
+ 163 |   1 | 
+ 164 |   1 |   // Refs for State in Callbacks
+ 165 |   1 |   const questionRef = useRef('');
+ 166 |   1 |   const isSpeakingRef = useRef(false);
+ 167 |   1 |   const hasDownloadedRef = useRef(false);
+ 168 |   1 |   const [activeFaqIndex, setActiveFaqIndex] = useState<number | null>(null);
+ 169 |   1 |   const [activeInstructionStep, setActiveInstructionStep] = useState(0);
+ 170 |   1 | 
+ 171 |   2 |   useEffect(() => {
+ 172 |   3 |     if (stage === 'landing') {
+ 173 |   4 |       const interval = setInterval(() => {
+ 174 |   4 |         setActiveInstructionStep((prev) => (prev + 1) % 4);
+ 175 |   3 |       }, 3000);
+ 176 |   3 |       return () => clearInterval(interval);
+ 177 |   2 |     }
+ 178 |   1 |   }, [stage]);
+ 179 |   1 | 
+ 180 |   1 |   const faqs = [
+ 181 |   2 |     {
+ 182 |   2 |       q: "How does the AI generate interview questions?",
+ 183 |   2 |       a: "Our AI analyzes your uploaded resume using advanced LLMs to extract your specific skills, projects, and experiences. It then generates tailored questions that challenge your expertise and adapt to your previous answers."
+ 184 |   1 |     },
+ 185 |   2 |     {
+ 186 |   2 |       q: "Is the proctoring engine active during the entire session?",
+ 187 |   2 |       a: "Yes, the proctoring system monitors your video feed, tab switches, and full-screen status throughout the entire interview to ensure a fair and secure environment."
+ 188 |   1 |     },
+ 189 |   2 |     {
+ 190 |   2 |       q: "What happens if I exit fullscreen mode more than 3 times?",
+ 191 |   2 |       a: "The system allows for up to 3 warnings. Exceeding this limit will result in an automatic termination of the interview session to maintain strict evaluation standards."
+ 192 |   1 |     },
+ 193 |   2 |     {
+ 194 |   2 |       q: "Can I download my performance report immediately?",
+ 195 |   2 |       a: "Absolutely. Once the interview is complete, a comprehensive PDF report including your scores, visual evidence of violations, and detailed feedback is generated and made available on your dashboard."
+ 196 |   1 |     },
+ 197 |   2 |     {
+ 198 |   2 |       q: "What coding languages are supported in the coding round?",
+ 199 |   2 |       a: "Currently, we support Python, Java, C, and JavaScript. You can select your preferred language at the start of the coding evaluation stage."
+ 200 |   1 |     },
+ 201 |   2 |     {
+ 202 |   2 |       q: "Is my resume data used to train the AI model?",
+ 203 |   2 |       a: "No, your privacy is our priority. Your resume and interview data are used solely for your personal evaluation and reporting. We do not use candidate data for model training purposes."
+ 204 |   1 |     },
+ 205 |   2 |     {
+ 206 |   2 |       q: "Do I need to pay for every interview session?",
+ 207 |   2 |       a: "We offer a tier-based system. Basic users can access limited practice sessions, while our Premium tiers provide unlimited interviews, advanced proctoring, and deep technical analytics."
+ 208 |   1 |     },
+ 209 |   2 |     {
+ 210 |   2 |       q: "My camera isn't working, can I still take the interview?",
+ 211 |   2 |       a: "Since our platform relies on visual proctoring for security, a working camera is required for the system verification stage before the interview begins."
+ 212 |   1 |     }
+ 213 |   1 |   ];
+ 214 |   1 | 
+ 215 |   2 |   useEffect(() => {
+ 216 |   2 |     questionRef.current = question;
+ 217 |   2 |     hasDownloadedRef.current = false; // Reset when interview state changes (e.g. restart flow)
+ 218 |   1 |   }, [question, stage === 'landing']);
+ 219 |   1 | 
+ 220 |   2 |   useEffect(() => {
+ 221 |   2 |     let interval: NodeJS.Timeout;
+ 222 |   3 |     if (stage === 'interview') {
+ 223 |   3 |       if (!interviewStartTimeRef.current) interviewStartTimeRef.current = Date.now();
+ 224 |   4 |       interval = setInterval(() => {
+ 225 |   4 |         setElapsedTime(Math.floor((Date.now() - (interviewStartTimeRef.current || Date.now())) / 1000));
+ 226 |   3 |       }, 1000);
+ 227 |   2 |     }
+ 228 |   2 |     return () => clearInterval(interval);
+ 229 |   1 |   }, [stage]);
+ 230 |   1 | 
+ 231 |   2 |   const resetInactivityTimer = () => {
+ 232 |   2 |     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+ 233 |   2 |     if (stage !== 'interview' || isSpeakingRef.current) return;
+ 234 |   2 | 
+ 235 |   2 |     // User requested: 2m -> repeat -> 2m -> move to next
+ 236 |   3 |     inactivityTimerRef.current = setTimeout(() => {
+ 237 |   3 |       latestFnRef.current?.handleInactivity?.();
+ 238 |   2 |     }, 120000);
+ 239 |   2 |     lastActivityRef.current = Date.now();
+ 240 |   1 |   };
+ 241 |   1 | 
+ 242 |   1 |   const latestFnRef = useRef<any>({});
+ 243 |   1 | 
+ 244 |   2 |   useEffect(() => {
+ 245 |   3 |     latestFnRef.current = {
+ 246 |   3 |       resetInactivityTimer,
+ 247 |   3 |       resetSilenceTimer,
+ 248 |   3 |       handleInactivity,
+ 249 |   3 |       handleSubmitAnswer,
+ 250 |   3 |       handlePhaseProgress,
+ 251 |   3 |       transcript,
+ 252 |   3 |       interimTranscript,
+ 253 |   3 |       isSpeakingRef,
+ 254 |   3 |       stage
+ 255 |   2 |     };
+ 256 |   1 |   });
+ 257 |   1 | 
+ 258 |   1 |   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+ 259 |   2 |   const resetSilenceTimer = () => {
+ 260 |   2 |     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+ 261 |   2 |     if (stage !== 'interview' || isSpeakingRef.current) return;
+ 262 |   2 | 
+ 263 |   2 |     // Start 15s timer for auto-submit
+ 264 |   3 |     silenceTimerRef.current = setTimeout(() => {
+ 265 |   3 |       const { transcript, interimTranscript, isSpeakingRef, handleSubmitAnswer, stage: latestStage } = latestFnRef.current;
+ 266 |   3 |       const currentAns = (transcript.trim() + " " + interimTranscript.trim()).trim();
+ 267 |   3 |       // Lowered threshold to 3 characters for quiet/short affirmative answers
+ 268 |   4 |       if (currentAns.length >= 3 && !isSpeakingRef.current && latestStage === 'interview') {
+ 269 |   4 |         console.log("⏱️ Auto-submitting after silence...");
+ 270 |   4 |         handleSubmitAnswer();
+ 271 |   3 |       }
+ 272 |   2 |     }, 15000); // 15s is more natural than 30s
+ 273 |   1 |   };
+ 274 |   1 | 
+ 275 |   2 |   const handleInactivity = async () => {
+ 276 |   2 |     if (stage !== 'interview' || isSpeakingRef.current) return;
+ 277 |   2 | 
+ 278 |   3 |     if (!hasRepeatedRef.current) {
+ 279 |   3 |       console.log("🕒 Inactivity (1m): Repeating question");
+ 280 |   3 |       hasRepeatedRef.current = true;
+ 281 |   3 |       setTranscript('');
+ 282 |   3 |       setInterimTranscript('');
+ 283 |   4 |       speak("I noticed it's been a minute without a response. Let me repeat the question for you: " + (questionRef.current || "Could you please answer the previous question?"), () => {
+ 284 |   4 |         resetInactivityTimer();
+ 285 |   3 |       });
+ 286 |   3 |     } else {
+ 287 |   3 |       console.log("🕒 Extended inactivity (1m after repeat): Skipping question");
+ 288 |   3 |       hasRepeatedRef.current = false;
+ 289 |   3 | 
+ 290 |   4 |       try {
+ 291 |   4 |         setTranscript('');
+ 292 |   4 |         setInterimTranscript('');
+ 293 |   4 |         await fetch("http://127.0.0.1:5000/api/interview/answer", {
+ 294 |   4 |           method: "POST",
+ 295 |   4 |           headers: { 'Content-Type': 'application/json' },
+ 296 |   5 |           body: JSON.stringify({
+ 297 |   5 |             question: questionRef.current,
+ 298 |   5 |             answer: "No response (1 minute timeout after repeat)",
+ 299 |   5 |             inactivity: true
+ 300 |   4 |           })
+ 301 |   3 |         });
+ 302 |   2 |       } catch (e) { console.error("Silence submission error", e); }
+ 303 |   2 | 
+ 304 |   3 |       speak("Since I haven't received a response in the last minute, I will move on to the next part of our interview to ensure we stay on schedule.", () => {
+ 305 |   3 |         handlePhaseProgress();
+ 306 |   2 |       });
+ 307 |   1 |     }
+ 308 |   0 |   };
+ 309 |   0 | 
+ 310 |   1 |   useEffect(() => {
+ 311 |   2 |     if (stage === 'interview' && !isSpeaking) {
+ 312 |   2 |       resetInactivityTimer();
+ 313 |   2 |     } else {
+ 314 |   2 |       if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+ 315 |   1 |     }
+ 316 |   0 |   }, [stage, isSpeaking]);
+ 317 |   0 | 
+ 318 |   1 |   const formatTime = (seconds: number) => {
+ 319 |   1 |     const mins = Math.floor(seconds / 60);
+ 320 |   1 |     const secs = seconds % 60;
+ 321 |   1 |     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+ 322 |   0 |   };
+ 323 |   0 | 
+ 324 |   0 |   const router = useRouter();
+ 325 |   0 |   const recognitionRef = useRef<any>(null);
+ 326 |   0 |   const recognitionInstanceRef = useRef<any>(null);
+ 327 |   0 |   const isStartingRef = useRef(false);
+ 328 |   0 |   const videoRef = useRef<HTMLVideoElement>(null);
+ 329 |   0 | 
+ 330 |   0 |   // AUTO SCROLL TRANSCRIPT
+ 331 |   1 |   useEffect(() => {
+ 332 |   2 |     if (transcriptEndRef.current) {
+ 333 |   2 |       transcriptEndRef.current.scrollIntoView({ behavior: 'smooth' });
+ 334 |   1 |     }
+ 335 |   1 |     console.log("📝 Current Transcript State:", { transcript, interimTranscript });
+ 336 |   0 |   }, [transcript, interimTranscript]);
+ 337 |   0 | 
+ 338 |   0 |   const agentVideoRef = useRef<HTMLVideoElement>(null);
+ 339 |   0 |   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+ 340 |   0 |   const verificationVideoRef = useRef<HTMLVideoElement>(null);
+ 341 |   0 |   const isTerminatingRef = useRef(false);
+ 342 |   0 | 
+ 343 |   0 |   const [frequencyData, setFrequencyData] = useState<number[]>(new Array(16).fill(0));
+ 344 |   0 | 
+ 345 |   0 |   // ANIMATE AUDIO LEVEL & WAVEFORM
+ 346 |   1 |   useEffect(() => {
+ 347 |   2 |     if (!isListening) {
+ 348 |   2 |       setAudioLevel(0);
+ 349 |   2 |       setFrequencyData(new Array(16).fill(0));
+ 350 |   2 |       return;
+ 351 |   1 |     }
+ 352 |   1 | 
+ 353 |   1 |     let animationFrame: number;
+ 354 |   2 |     const updateLevel = () => {
+ 355 |   3 |       if (analyserRef.current) {
+ 356 |   3 |         const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+ 357 |   3 |         analyserRef.current.getByteFrequencyData(dataArray);
+ 358 |   3 | 
+ 359 |   3 |         const average = dataArray.reduce((p, c) => p + c, 0) / dataArray.length;
+ 360 |   3 |         setAudioLevel(average * 2.5); // Boosted sensitivity factor for visual confirmation
+ 361 |   3 | 
+ 362 |   3 |         const bars = 16;
+ 363 |   3 |         const step = Math.floor(dataArray.length / 2 / bars);
+ 364 |   3 |         const sampled = [];
+ 365 |   4 |         for (let i = 0; i < bars; i++) {
+ 366 |   4 |           sampled.push(dataArray[i * step]);
+ 367 |   3 |         }
+ 368 |   3 |         setFrequencyData(sampled);
+ 369 |   3 |         animationFrame = requestAnimationFrame(updateLevel);
+ 370 |   2 |       }
+ 371 |   1 |     };
+ 372 |   1 |     updateLevel();
+ 373 |   2 |     return () => {
+ 374 |   2 |       if (animationFrame) cancelAnimationFrame(animationFrame);
+ 375 |   1 |     };
+ 376 |   0 |   }, [isListening]);
+ 377 |   0 | 
+ 378 |   1 |   const safeStartRecognition = () => {
+ 379 |   2 |     if (!recognitionRef.current || recognitionActiveRef.current || isStartingRef.current) {
+ 380 |   2 |       console.log("🚫 Mic start skipped: state mismatch.", { active: recognitionActiveRef.current, starting: isStartingRef.current });
+ 381 |   2 |       return;
+ 382 |   1 |     }
+ 383 |   1 | 
+ 384 |   1 |     // STRICT: Do not start listening if we are in a warning state or not in fullscreen
+ 385 |   2 |     if (showFullscreenWarnRef.current || showTabSwitchWarnRef.current || (stage !== 'landing' && !document.fullscreenElement)) {
+ 386 |   2 |       console.log("🚫 Mic start blocked: Fullscreen/Visibility violation active.");
+ 387 |   2 |       return;
+ 388 |   1 |     }
+ 389 |   1 | 
+ 390 |   1 |     // CRITICAL: Ensure AI is NOT speaking before starting mic
+ 391 |   2 |     if (isSpeakingRef.current || isManualStopRef.current || stage !== 'interview') {
+ 392 |   2 |       console.log("🚫 Mic start blocked: AI speaking or manual stop active.");
+ 393 |   2 |       return;
+ 394 |   1 |     }
+ 395 |   1 | 
+ 396 |   2 |     try {
+ 397 |   2 |       isStartingRef.current = true;
+ 398 |   2 |       recognitionRef.current.start();
+ 399 |   2 |       console.log("🎤 Mic started successfully.");
+ 400 |   2 |     } catch (e: any) {
+ 401 |   3 |       if (e.name !== 'InvalidStateError') {
+ 402 |   3 |         console.error("Mic start failed:", e);
+ 403 |   2 |       }
+ 404 |   2 |     } finally {
+ 405 |   2 |       setTimeout(() => { isStartingRef.current = false; }, 500);
+ 406 |   1 |     }
+ 407 |   0 |   };
+ 408 |   0 | 
+ 409 |   0 |   const streamRef = useRef<MediaStream | null>(null);
+ 410 |   0 |   const [currentStream, setCurrentStream] = useState<MediaStream | null>(null);
+ 411 |   0 | 
+ 412 |   1 |   useEffect(() => {
+ 413 |   1 |     // Keep camera active from the moment they start the flow (upload stage) until the end
+ 414 |   1 |     const isCameraNeeded = ['upload', 'verification', 'calibration', 'instructions', 'interview', 'code'].includes(stage);
+ 415 |   1 | 
+ 416 |   2 |     const init = async () => {
+ 417 |   3 |       if (isCameraNeeded) {
+ 418 |   3 |         // Check if stream is active and tracks are live
+ 419 |   3 |         const isStreamActive = streamRef.current &&
+ 420 |   3 |           streamRef.current.getTracks().length > 0 &&
+ 421 |   3 |           streamRef.current.getVideoTracks()[0]?.readyState === 'live';
+ 422 |   3 | 
+ 423 |   4 |         if (isStreamActive) {
+ 424 |   4 |           console.log("♻️ Reusing existing camera stream");
+ 425 |   4 |           const stream = streamRef.current!;
+ 426 |   4 |           setCurrentStream(stream);
+ 427 |   5 |           const syncEl = (el: HTMLVideoElement | null) => {
+ 428 |   5 |             if (el && el.srcObject !== stream) { el.srcObject = stream; el.play().catch(() => { }); }
+ 429 |   4 |           };
+ 430 |   4 |           syncEl(videoRef.current);
+ 431 |   4 |           syncEl(verificationVideoRef.current);
+ 432 |   4 |           return;
+ 433 |   3 |         }
+ 434 |   3 | 
+ 435 |   4 |         try {
+ 436 |   4 |           console.log(`🎥 Initializing camera for stage: ${stage}`);
+ 437 |   4 |           // Try HD first, fallback to basic if device rejects constraints
+ 438 |   4 |           let stream: MediaStream;
+ 439 |   5 |           try {
+ 440 |   6 |             stream = await navigator.mediaDevices.getUserMedia({
+ 441 |   6 |               video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+ 442 |   7 |               audio: {
+ 443 |   7 |                 echoCancellation: true,
+ 444 |   7 |                 noiseSuppression: false,
+ 445 |   7 |                 autoGainControl: true
+ 446 |   6 |               }
+ 447 |   5 |             });
+ 448 |   5 |           } catch {
+ 449 |   5 |             console.warn("⚠️ HD camera failed — retrying with basic constraints");
+ 450 |   5 |             stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+ 451 |   4 |           }
+ 452 |   4 | 
+ 453 |   4 |           streamRef.current = stream;
+ 454 |   4 |           setCurrentStream(stream);
+ 455 |   4 |           // Global backup — survives React re-renders and stage transitions
+ 456 |   4 |           (window as any).__cameraStream = stream;
+ 457 |   4 | 
+ 458 |   5 |           const attachStream = (el: HTMLVideoElement | null) => {
+ 459 |   5 |             if (!el) return;
+ 460 |   5 |             el.srcObject = stream;
+ 461 |   5 |             el.play().catch(e => { if (e.name !== 'AbortError') console.warn("Video play:", e.name); });
+ 462 |   4 |           };
+ 463 |   4 |           attachStream(videoRef.current);
+ 464 |   4 |           attachStream(verificationVideoRef.current);
+ 465 |   4 |           // Re-sync after render settles
+ 466 |   4 |           setTimeout(() => { attachStream(videoRef.current); attachStream(verificationVideoRef.current); }, 700);
+ 467 |   4 | 
+ 468 |   4 |           // Audio Visualizer
+ 469 |   5 |           try {
+ 470 |   5 |             const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+ 471 |   5 |             const source = audioCtx.createMediaStreamSource(stream);
+ 472 |   5 |             const analyser = audioCtx.createAnalyser();
+ 473 |   5 |             analyser.fftSize = 256;
+ 474 |   5 |             source.connect(analyser);
+ 475 |   5 |             audioContextRef.current = audioCtx;
+ 476 |   5 |             analyserRef.current = analyser;
+ 477 |   4 |           } catch { /* non-critical */ }
+ 478 |   4 | 
+ 479 |   4 |           setFeedback('');
+ 480 |   4 |           console.log("✅ Camera stream active");
+ 481 |   4 | 
+ 482 |   4 |         } catch (e: any) {
+ 483 |   4 |           console.warn("📸 Media Error:", e.name, e.message);
+ 484 |   5 |           if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+ 485 |   5 |             setFeedback("⚠️ Camera blocked! Click the 🔒 lock icon in your browser address bar → Allow Camera & Microphone → then refresh.");
+ 486 |   5 |           } else if (e.name === 'NotReadableError' || e.name === 'TrackStartError') {
+ 487 |   5 |             setFeedback("⚠️ Camera in use by another app (Zoom, Teams). Close them and refresh.");
+ 488 |   5 |           } else if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
+ 489 |   5 |             setFeedback("⚠️ No camera found. Please connect a webcam and refresh.");
+ 490 |   5 |           } else {
+ 491 |   5 |             setFeedback(`⚠️ Camera error (${e.name}). Please refresh the page.`);
+ 492 |   4 |           }
+ 493 |   3 |         }
+ 494 |   3 |       } else {
+ 495 |   4 |         if (streamRef.current) {
+ 496 |   4 |           console.log("🛑 Stopping camera stream (not needed for this stage)");
+ 497 |   4 |           streamRef.current.getTracks().forEach(t => t.stop());
+ 498 |   4 |           streamRef.current = null;
+ 499 |   4 |           setCurrentStream(null);
+ 500 |   4 |           (window as any).__cameraStream = null;
+ 501 |   4 |           if (audioContextRef.current) { audioContextRef.current.close().catch(() => { }); audioContextRef.current = null; }
+ 502 |   3 |         }
+ 503 |   2 |       }
+ 504 |   1 |     };
+ 505 |   1 | 
+ 506 |   1 | 
+ 507 |   1 |     init();
+ 508 |   1 | 
+ 509 |   1 |     // CAMERA WATCHDOG: Ensures tracks stay live
+ 510 |   2 |     const cameraWatchdog = setInterval(() => {
+ 511 |   3 |       if (isCameraNeeded) {
+ 512 |   3 |         const s = streamRef.current || currentStream || (window as any).__cameraStream;
+ 513 |   4 |         if (!s || s.getTracks().some((t: MediaStreamTrack) => t.readyState === 'ended')) {
+ 514 |   4 |           console.warn("📸 Camera watchdog detected inactive stream. Restarting...");
+ 515 |   4 |           init();
+ 516 |   3 |         }
+ 517 |   2 |       }
+ 518 |   1 |     }, 8000);
+ 519 |   1 | 
+ 520 |   1 |     return () => clearInterval(cameraWatchdog);
+ 521 |   0 |   }, [stage]);
+ 522 |   0 | 
+ 523 |   0 |   // ROBUST CAMERA SYNC: Ensures the video element is always playing the latest stream
+ 524 |   1 |   useEffect(() => {
+ 525 |   1 |     const video = videoRef.current;
+ 526 |   2 |     if (video && currentStream) {
+ 527 |   3 |       if (video.srcObject !== currentStream) {
+ 528 |   3 |         console.log("🔗 Syncing video element with stream (dedicated effect)");
+ 529 |   3 |         video.srcObject = currentStream;
+ 530 |   2 |       }
+ 531 |   3 |       video.play().catch(e => {
+ 532 |   3 |         if (e.name !== 'AbortError') console.warn("Video Sync Play Error:", e.name);
+ 533 |   2 |       });
+ 534 |   1 |     }
+ 535 |   0 |   }, [currentStream, stage, stage === 'interview' || stage === 'code']);
+ 536 |   0 | 
+ 537 |   1 |   const restartCamera = async () => {
+ 538 |   1 |     console.log("🔄 Force-restarting camera hardware...");
+ 539 |   1 |     setFeedback("Restarting camera...");
+ 540 |   1 | 
+ 541 |   1 |     // 1. Stop all tracks of existing stream
+ 542 |   1 |     const existing = streamRef.current || currentStream || (window as any).__cameraStream;
+ 543 |   2 |     if (existing) {
+ 544 |   2 |       existing.getTracks().forEach((track: MediaStreamTrack) => track.stop());
+ 545 |   1 |     }
+ 546 |   1 | 
+ 547 |   1 |     // 2. Clear refs and state
+ 548 |   1 |     streamRef.current = null;
+ 549 |   1 |     setCurrentStream(null);
+ 550 |   1 |     (window as any).__cameraStream = null;
+ 551 |   1 | 
+ 552 |   1 |     // 3. Re-acquire fresh stream
+ 553 |   2 |     try {
+ 554 |   3 |       const stream = await navigator.mediaDevices.getUserMedia({
+ 555 |   3 |         video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+ 556 |   4 |         audio: {
+ 557 |   4 |           echoCancellation: true,
+ 558 |   4 |           noiseSuppression: false,
+ 559 |   4 |           autoGainControl: true
+ 560 |   3 |         }
+ 561 |   2 |       });
+ 562 |   2 | 
+ 563 |   2 |       streamRef.current = stream;
+ 564 |   2 |       setCurrentStream(stream);
+ 565 |   2 |       (window as any).__cameraStream = stream;
+ 566 |   2 | 
+ 567 |   2 |       // Auto-attach to visible refs
+ 568 |   2 |       if (videoRef.current) videoRef.current.srcObject = stream;
+ 569 |   2 |       if (verificationVideoRef.current) verificationVideoRef.current.srcObject = stream;
+ 570 |   2 | 
+ 571 |   2 |       setFeedback("Camera restarted. Is the video visible now?");
+ 572 |   2 |       console.log("✅ Camera restarted successfully");
+ 573 |   2 |     } catch (e: any) {
+ 574 |   2 |       console.error("Restart failed:", e);
+ 575 |   2 |       setFeedback(`Failed to restart camera: ${e.message}`);
+ 576 |   1 |     }
+ 577 |   0 |   };
+ 578 |   0 | 
+ 579 |   0 | 
+ 580 |   0 | 
+ 581 |   0 | 
+ 582 |   0 |   // INITIALIZE SPEECH RECOGNITION
+ 583 |   1 |   useEffect(() => {
+ 584 |   1 |     let recognition: any = null;
+ 585 |   2 |     if (typeof window !== 'undefined') {
+ 586 |   2 |       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+ 587 |   3 |       if (SpeechRecognition) {
+ 588 |   3 |         recognition = new SpeechRecognition();
+ 589 |   3 |         recognition.continuous = true;
+ 590 |   3 |         recognition.interimResults = true;
+ 591 |   3 | 
+ 592 |   3 |         const isIndia = Intl.DateTimeFormat().resolvedOptions().timeZone.includes("Calcutta") || Intl.DateTimeFormat().resolvedOptions().timeZone.includes("Kolkata");
+ 593 |   3 |         recognition.lang = isIndia ? 'en-IN' : 'en-US';
+ 594 |   3 | 
+ 595 |   4 |         recognition.onresult = (event: any) => {
+ 596 |   4 |           let finalTranscript = '';
+ 597 |   4 |           let fullInterim = '';
+ 598 |   5 |           for (let i = event.resultIndex; i < event.results.length; ++i) {
+ 599 |   5 |             if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
+ 600 |   4 |           }
+ 601 |   5 |           for (let i = 0; i < event.results.length; ++i) {
+ 602 |   5 |             if (!event.results[i].isFinal) fullInterim += event.results[i][0].transcript;
+ 603 |   4 |           }
+ 604 |   5 |           if (fullInterim) {
+ 605 |   5 |             setInterimTranscript(fullInterim);
+ 606 |   5 |             latestFnRef.current.resetInactivityTimer?.();
+ 607 |   5 |             latestFnRef.current.resetSilenceTimer?.();
+ 608 |   4 |           }
+ 609 |   4 | 
+ 610 |   5 |           if (finalTranscript) {
+ 611 |   5 |             const cleanFinal = finalTranscript.trim();
+ 612 |   5 |             if (!cleanFinal) return;
+ 613 |   5 | 
+ 614 |   5 |             console.log("🎤 Final Part:", cleanFinal);
+ 615 |   5 |             setInterimTranscript('');
+ 616 |   5 | 
+ 617 |   5 |             const lowerText = cleanFinal.toLowerCase();
+ 618 |   5 |             const repeatTriggers = ["repeat", "say again", "not clear", "didn't understand", "did not understand", "didn't get you", "did not get you", "clueless"];
+ 619 |   6 |             if (lowerText.length < 50 && repeatTriggers.some(t => lowerText.includes(t))) {
+ 620 |   6 |               setTranscript('');
+ 621 |   6 |               try { recognition.stop(); } catch (e) { }
+ 622 |   6 |               speak("No problem, I will repeat the question for you. " + questionRef.current);
+ 623 |   6 |               return;
+ 624 |   5 |             }
+ 625 |   5 | 
+ 626 |   5 |             // UPDATE TRANSCRIPT REGARDLESS OF FULLSCREEN FOR VISUAL FEEDBACK
+ 627 |   6 |             setTranscript(prev => {
+ 628 |   6 |               const prevTrim = prev.trim();
+ 629 |   6 |               return prevTrim ? `${prevTrim} ${cleanFinal}` : cleanFinal;
+ 630 |   5 |             });
+ 631 |   5 | 
+ 632 |   5 |             // BUT: still warn in console/logs for backend if we want
+ 633 |   6 |             if (showFullscreenWarnRef.current || showTabSwitchWarnRef.current || (stage !== 'landing' && !document.fullscreenElement)) {
+ 634 |   6 |               console.log("⚠️ Processing result outside of fullscreen/focus.");
+ 635 |   5 |             }
+ 636 |   5 | 
+ 637 |   5 |             latestFnRef.current.resetInactivityTimer?.();
+ 638 |   5 |             latestFnRef.current.resetSilenceTimer?.();
+ 639 |   4 |           }
+ 640 |   3 |         };
+ 641 |   3 | 
+ 642 |   4 |         recognition.onstart = () => {
+ 643 |   4 |           setIsListening(true);
+ 644 |   4 |           recognitionActiveRef.current = true;
+ 645 |   4 |           console.log("🎤 Mic is ACTIVE / Listening");
+ 646 |   3 |         };
+ 647 |   3 | 
+ 648 |   4 |         recognition.onerror = (event: any) => {
+ 649 |   4 |           const ignoredErrors = ['no-speech', 'aborted', 'audio-capture', 'network'];
+ 650 |   4 |           if (ignoredErrors.includes(event.error)) return;
+ 651 |   4 |           console.error("Recognition error:", event.error);
+ 652 |   4 |           setIsListening(false);
+ 653 |   4 |           recognitionActiveRef.current = false;
+ 654 |   3 |         };
+ 655 |   3 | 
+ 656 |   4 |         recognition.onend = () => {
+ 657 |   4 |           setIsListening(false);
+ 658 |   4 |           recognitionActiveRef.current = false;
+ 659 |   4 |           console.log("🎤 Mic connection ended.");
+ 660 |   5 |           if (recognition === recognitionInstanceRef.current && stage === 'interview' && !isSpeakingRef.current && !isManualStopRef.current && hasStartedRef.current) {
+ 661 |   6 |             setTimeout(() => {
+ 662 |   6 |               if (recognition === recognitionInstanceRef.current) safeStartRecognition();
+ 663 |   5 |             }, 300);
+ 664 |   4 |           }
+ 665 |   3 |         };
+ 666 |   3 | 
+ 667 |   3 |         recognitionRef.current = recognition;
+ 668 |   3 |         recognitionInstanceRef.current = recognition;
+ 669 |   2 |       }
+ 670 |   1 |     }
+ 671 |   1 | 
+ 672 |   2 |     const watchdog = setInterval(() => {
+ 673 |   2 |       if (hasStartedRef.current && stage === 'interview') safeStartRecognition();
+ 674 |   1 |     }, 5000);
+ 675 |   1 | 
+ 676 |   2 |     return () => {
+ 677 |   2 |       clearInterval(watchdog);
+ 678 |   3 |       if (recognition) {
+ 679 |   3 |         try { recognition.stop(); } catch (e) { }
+ 680 |   3 |         recognitionActiveRef.current = false;
+ 681 |   2 |       }
+ 682 |   1 |     };
+ 683 |   0 |   }, [stage]);
+ 684 |   0 | 
+ 685 |   1 |   const handleSubmitAnswer = async () => {
+ 686 |   1 |     if (showFullscreenWarnRef.current || showTabSwitchWarnRef.current) return;
+ 687 |   1 |     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+ 688 |   1 | 
+ 689 |   2 |     if (typeof window !== 'undefined') {
+ 690 |   2 |       window.speechSynthesis.cancel();
+ 691 |   3 |       if (recognitionRef.current) {
+ 692 |   3 |         try { recognitionRef.current.stop(); } catch (e) { }
+ 693 |   2 |       }
+ 694 |   1 |     }
+ 695 |   1 |     recognitionActiveRef.current = false;
+ 696 |   1 |     setIsListening(false);
+ 697 |   1 | 
+ 698 |   1 |     const finalUserAns = (transcript.trim() + " " + interimTranscript.trim()).trim();
+ 699 |   2 |     if (!finalUserAns) {
+ 700 |   2 |       setFeedback("⚠️ Please speak your answer first!");
+ 701 |   2 |       return;
+ 702 |   1 |     }
+ 703 |   1 | 
+ 704 |   1 |     // Determine NEXT category immediately to pre-fetch without lag
+ 705 |   1 |     let nextCount = phaseCount + 1;
+ 706 |   1 |     let nextIdx = phaseIndex;
+ 707 |   1 |     const currentThreshold = getPhaseThreshold(phaseIndex);
+ 708 |   2 |     if (nextCount >= currentThreshold) {
+ 709 |   2 |       nextIdx = phaseIndex + 1;
+ 710 |   2 |       nextCount = 0;
+ 711 |   1 |     }
+ 712 |   1 |     const nextCat = nextIdx < PHASES.length ? PHASES[nextIdx] : null;
+ 713 |   1 | 
+ 714 |   1 |     setFetchingQuestion(true);
+ 715 |   1 |     setTranscript('');
+ 716 |   1 |     setInterimTranscript('');
+ 717 |   1 |     setFeedback("");
+ 718 |   1 | 
+ 719 |   1 |     const isIcebreaker = ['warmup', 'general', 'intro'].includes(phase);
+ 720 |   1 | 
+ 721 |   2 |     try {
+ 722 |   2 |       const res = await fetch("http://127.0.0.1:5000/api/interview/answer", {
+ 723 |   2 |         method: "POST",
+ 724 |   2 |         headers: { 'Content-Type': 'application/json' },
+ 725 |   3 |         body: JSON.stringify({
+ 726 |   3 |           question: question,
+ 727 |   3 |           answer: finalUserAns,
+ 728 |   3 |           next_category: (nextCat && nextCat !== 'code') ? nextCat : null // Pre-fetch next technical question
+ 729 |   2 |         })
+ 730 |   1 |       });
+ 731 |   1 |       const data = await res.json();
+ 732 |   1 | 
+ 733 |   1 |       // If we got the next question in the same response, use it immediately!
+ 734 |   2 |       if (data.next_question) {
+ 735 |   2 |         setQuestion(data.next_question);
+ 736 |   2 |         questionRef.current = data.next_question;
+ 737 |   2 | 
+ 738 |   2 |         setPhaseCount(nextCount);
+ 739 |   2 |         setPhaseIndex(nextIdx);
+ 740 |   2 |         setPhase(nextCat || phase);
+ 741 |   2 |         hasRepeatedRef.current = false;
+ 742 |   2 | 
+ 743 |   2 |         // Explicitly silent on feedback during interview as requested
+ 744 |   2 |         speak(`${data.next_question}`);
+ 745 |   2 |         setFetchingQuestion(false);
+ 746 |   2 |       } else {
+ 747 |   2 |         // Fallback or move to code/termination
+ 748 |   2 |         handlePhaseProgress();
+ 749 |   1 |       }
+ 750 |   1 |     } catch (e) {
+ 751 |   1 |       console.error("Answer submission failed", e);
+ 752 |   1 |       handlePhaseProgress();
+ 753 |   0 |     }
+ 754 |   0 | 
+ 755 |   0 |     setFeedback("");
+ 756 |  -1 |   };
+!!! ERROR: Negative balance at line 756
+ 757 |   0 | 
+ 758 |   1 |   const handlePhaseProgress = (acknowledgment?: string) => {
+ 759 |   1 |     let nextCount = phaseCount + 1;
+ 760 |   1 |     let nextIndex = phaseIndex;
+ 761 |   1 | 
+ 762 |   1 |     // Questions per phase matching user's request
+ 763 |   1 |     const threshold = getPhaseThreshold(phaseIndex);
+ 764 |   1 | 
+ 765 |   2 |     if (nextCount >= threshold) {
+ 766 |   2 |       nextIndex = phaseIndex + 1;
+ 767 |   2 |       nextCount = 0;
+ 768 |   1 |     }
+ 769 |   1 | 
+ 770 |   1 |     setPhaseCount(nextCount);
+ 771 |   1 |     setPhaseIndex(nextIndex);
+ 772 |   1 | 
+ 773 |   2 |     if (nextIndex >= PHASES.length) {
+ 774 |   2 |       handleTermination("Interview completed successfully.");
+ 775 |   2 |       return;
+ 776 |   1 |     }
+ 777 |   1 | 
+ 778 |   1 |     const nextPhase = PHASES[nextIndex];
+ 779 |   1 |     setPhase(nextPhase);
+ 780 |   1 |     hasRepeatedRef.current = false;
+ 781 |   1 |     isManualStopRef.current = false; // Reset manual stop for new interaction
+ 782 |   1 | 
+ 783 |   2 |     if (nextPhase === 'code') {
+ 784 |   2 |       startCodingRound();
+ 785 |   2 |     } else {
+ 786 |   2 |       fetchNextQuestion(nextPhase);
+ 787 |   1 |     }
+ 788 |   0 |   };
+ 789 |   0 | 
+ 790 |   1 |   const fetchNextQuestion = async (cat: string) => {
+ 791 |   1 |     setFetchingQuestion(true);
+ 792 |   2 |     try {
+ 793 |   2 |       const apiUrl = `http://127.0.0.1:5000/api/interview/question?category=${cat}`;
+ 794 |   2 |       const res = await fetch(apiUrl);
+ 795 |   2 |       const data = await res.json();
+ 796 |   2 |       const q = data.question;
+ 797 |   2 | 
+ 798 |   2 |       setQuestion(q);
+ 799 |   2 |       questionRef.current = q;
+ 800 |   2 |       // Removed acknowledgement to follow "no feedback during interview" rule
+ 801 |   2 |       speak(q);
+ 802 |   2 |       setFetchingQuestion(false);
+ 803 |   2 |     } catch (e) {
+ 804 |   2 |       console.error(e);
+ 805 |   2 |     } finally {
+ 806 |   2 |       setFetchingQuestion(false);
+ 807 |   1 |     }
+ 808 |   0 |   };
+ 809 |   0 | 
+ 810 |   1 |   const startCodingRound = async () => {
+ 811 |   1 |     setLoading(true);
+ 812 |   2 |     try {
+ 813 |   2 |       const res = await fetch("http://127.0.0.1:5000/api/get_problems");
+ 814 |   2 |       const data = await res.json();
+ 815 |   3 |       if (data.status === 'success' && data.problems.length > 0) {
+ 816 |   3 |         // Select 2 random coding questions dynamically
+ 817 |   3 |         const shuffled = data.problems.sort(() => 0.5 - Math.random());
+ 818 |   3 |         setCodingProblems(shuffled.slice(0, 2));
+ 819 |   3 |         setCurrentCodingIdx(0);
+ 820 |   3 |         setCodeAnswer('');
+ 821 |   3 |         setStage('code');
+ 822 |   3 |         const codingPrompt = "Now, let's move to a coding challenge. I will give you two problems. Please solve the current problem on the screen using any language you are comfortable with.";
+ 823 |   3 |         speak(codingPrompt);
+ 824 |   3 |         questionRef.current = codingPrompt;
+ 825 |   3 |       } else {
+ 826 |   3 |         // Skip if no problems
+ 827 |   3 |         handlePhaseProgress();
+ 828 |   2 |       }
+ 829 |   2 |     } catch (e) {
+ 830 |   2 |       handlePhaseProgress();
+ 831 |   2 |     } finally {
+ 832 |   2 |       setLoading(false);
+ 833 |   1 |     }
+ 834 |   0 |   };
+ 835 |   0 | 
+ 836 |   1 |   const handleRunCode = async () => {
+ 837 |   1 |     const currentProblem = codingProblems[currentCodingIdx];
+ 838 |   2 |     if (!currentProblem || !codeAnswer.trim()) {
+ 839 |   2 |       setFeedback("⚠️ Please write some code first.");
+ 840 |   2 |       return;
+ 841 |   1 |     }
+ 842 |   1 | 
+ 843 |   1 |     setIsRunningCode(true);
+ 844 |   1 |     setCodingOutput("⏳ Running test cases...\n");
+ 845 |   1 | 
+ 846 |   1 |     let passed = 0;
+ 847 |   1 |     const testCases = currentProblem.test_cases || currentProblem.testCases || [];
+ 848 |   1 |     let logs: string[] = [];
+ 849 |   1 | 
+ 850 |   2 |     for (let i = 0; i < testCases.length; i++) {
+ 851 |   2 |       const tc = testCases[i];
+ 852 |   3 |       try {
+ 853 |   3 |         const res = await fetch("https://hackintern.onrender.com/api/compiler/run", {
+ 854 |   3 |           method: "POST",
+ 855 |   3 |           headers: { "Content-Type": "application/json" },
+ 856 |   4 |           body: JSON.stringify({
+ 857 |   4 |             language: codingLanguage,
+ 858 |   4 |             code: codeAnswer,
+ 859 |   4 |             input: tc.input || "",
+ 860 |   3 |           }),
+ 861 |   2 |         });
+ 862 |   2 | 
+ 863 |   2 |         const data = await res.json();
+ 864 |   2 |         const actual = (data.output || "").trim();
+ 865 |   2 |         const expected = (tc.output || tc.expected || "").trim();
+ 866 |   2 | 
+ 867 |   3 |         if (actual === expected) {
+ 868 |   3 |           passed++;
+ 869 |   3 |           logs.push(`✅ Test Case ${i + 1} Passed`);
+ 870 |   3 |         } else {
+ 871 |   3 |           logs.push(`❌ Test Case ${i + 1} Failed (Expected: ${expected}, Got: ${actual})`);
+ 872 |   2 |         }
+ 873 |   2 |       } catch (error) {
+ 874 |   2 |         logs.push(`❌ Test Case ${i + 1} Error: Connection failed`);
+ 875 |   1 |       }
+ 876 |   0 |     }
+ 877 |   0 | 
+ 878 |   0 |     logs.push(`\n--------------------\nOverall Score: ${passed} / ${testCases.length}`);
+ 879 |   0 |     setCodingOutput(logs.join("\n"));
+ 880 |   0 |     setLastCodingStats({ passed, total: testCases.length });
+ 881 |   0 |     setIsRunningCode(false);
+ 882 |  -1 |   };
+!!! ERROR: Negative balance at line 882
+ 883 |   0 | 
+ 884 |   1 |   const handleSubmitCode = async () => {
+ 885 |   1 |     if (showFullscreenWarnRef.current || showTabSwitchWarnRef.current) return;
+ 886 |   2 |     if (!codeAnswer.trim()) {
+ 887 |   2 |       setFeedback("⚠️ Please write your solution before submitting.");
+ 888 |   2 |       return;
+ 889 |   1 |     }
+ 890 |   1 | 
+ 891 |   1 |     const problem = codingProblems[currentCodingIdx];
+ 892 |   1 |     setLoading(true);
+ 893 |   1 | 
+ 894 |   2 |     try {
+ 895 |   2 |       const res = await fetch("http://127.0.0.1:5000/api/submit_code", {
+ 896 |   2 |         method: "POST",
+ 897 |   2 |         headers: { 'Content-Type': 'application/json' },
+ 898 |   3 |         body: JSON.stringify({
+ 899 |   3 |           problem_id: problem.id,
+ 900 |   3 |           title: problem.title,
+ 901 |   3 |           code: codeAnswer,
+ 902 |   3 |           language: codingLanguage,
+ 903 |   3 |           test_cases_passed: lastCodingStats.passed,
+ 904 |   3 |           total_test_cases: lastCodingStats.total
+ 905 |   2 |         })
+ 906 |   1 |       });
+ 907 |   1 | 
+ 908 |   2 |       if (currentCodingIdx < codingProblems.length - 1) {
+ 909 |   2 |         setCurrentCodingIdx(prev => prev + 1);
+ 910 |   2 |         setCodeAnswer('');
+ 911 |   2 |         speak("Solution received. Here is your next problem.");
+ 912 |   2 |       } else {
+ 913 |   3 |         speak("Coding round complete. Moving to final behavioral questions.", () => {
+ 914 |   3 |           setStage('interview');
+ 915 |   3 |           handlePhaseProgress();
+ 916 |   2 |         });
+ 917 |   1 |       }
+ 918 |   1 |     } catch (e) {
+ 919 |   1 |       setFeedback("⚠️ Submission failed. Continuing...");
+ 920 |   1 |       handlePhaseProgress();
+ 921 |   1 |     } finally {
+ 922 |   1 |       setLoading(false);
+ 923 |   0 |     }
+ 924 |  -1 |   };
+!!! ERROR: Negative balance at line 924
+ 925 |   0 |   // --- UTILITIES MOVED TO TOP FOR VISIBILITY ---
+ 926 |   1 |   const handleDownloadReport = (isManual = false) => {
+ 927 |   1 |     if (!isManual && hasDownloadedRef.current) return;
+ 928 |   1 |     if (!isManual) hasDownloadedRef.current = true;
+ 929 |   1 | 
+ 930 |   1 |     console.log(isManual ? "📥 Manual report request..." : "📥 Auto-downloading report...");
+ 931 |   1 | 
+ 932 |   1 |     let url = "http://127.0.0.1:5000/api/download_report";
+ 933 |   2 |     if (interviewId) {
+ 934 |   2 |       url += `?id=${interviewId}`;
+ 935 |   1 |     }
+ 936 |   1 | 
+ 937 |   1 |     // Use hidden anchor for more reliable download behavior
+ 938 |   1 |     const link = document.createElement("a");
+ 939 |   1 |     link.href = url;
+ 940 |   1 |     link.download = interviewId ? `Report_${interviewId}.pdf` : "Report.pdf";
+ 941 |   1 |     document.body.appendChild(link);
+ 942 |   1 |     link.click();
+ 943 |   1 |     document.body.removeChild(link);
+ 944 |   0 |   };
+ 945 |   0 | 
+ 946 |   1 |   const enterFullScreen = () => {
+ 947 |   2 |     if (typeof document !== 'undefined') {
+ 948 |   2 |       document.documentElement.requestFullscreen().catch(() => { });
+ 949 |   1 |     }
+ 950 |   0 |   };
+ 951 |   0 | 
+ 952 |   0 |   // Helper to terminate and generate report
+ 953 |   1 |   const handleTermination = (reason: string) => {
+ 954 |   1 |     if (isTerminatingRef.current) return;
+ 955 |   1 |     isTerminatingRef.current = true;
+ 956 |   1 | 
+ 957 |   1 |     const isSuccess = reason.toLowerCase().includes("successfully");
+ 958 |   1 | 
+ 959 |   2 |     speak(reason, async () => {
+ 960 |   2 |       // Generate report in backend before showing termination screen
+ 961 |   3 |       try {
+ 962 |   3 |         const res = await fetch("http://127.0.0.1:5000/api/interview/finish", {
+ 963 |   3 |           method: "POST",
+ 964 |   3 |           headers: { 'Content-Type': 'application/json' },
+ 965 |   3 |           body: JSON.stringify({ user_id: user?.id })
+ 966 |   2 |         });
+ 967 |   2 |         const data = await res.json();
+ 968 |   3 |         if (data.status === "success") {
+ 969 |   3 |           console.log("✅ Final result received:", data);
+ 970 |   3 |           setReportData(data);
+ 971 |   4 |           if (data.interview_id) {
+ 972 |   4 |             setInterviewId(data.interview_id);
+ 973 |   3 |           }
+ 974 |   3 |           setStage("results");
+ 975 |   2 |         }
+ 976 |   1 |       } catch (e) { console.error("Error finishing interview:", e); }
+ 977 |   1 | 
+ 978 |   2 |       if (isSuccess) {
+ 979 |   2 |         setStage('results');
+ 980 |   2 |       } else {
+ 981 |   2 |         setStage('report');
+ 982 |   1 |       }
+ 983 |   1 |       handleDownloadReport();
+ 984 |   0 |     });
+ 985 |   0 | 
+ 986 |   0 |     // Fallback if audio fails
+ 987 |   1 |     setTimeout(() => {
+ 988 |   1 |       if (isSuccess) setStage('results');
+ 989 |   1 |       else setStage('report');
+ 990 |   1 |       handleDownloadReport(); // Still check ref here, handleDownloadReport now has its own lock
+ 991 |   0 |     }, 5000);
+ 992 |  -1 |   };
+!!! ERROR: Negative balance at line 992
+ 993 |   0 | 
+ 994 |   0 |   // FORCE FULLSCREEN ON STAGE CHANGE
+ 995 |   1 |   useEffect(() => {
+ 996 |   1 |     // Only force fullscreen during active proctoring stages.
+ 997 |   1 |     // We skip 'upload' and 'systemCheck' to allow user interaction with OS file pickers/dialogs.
+ 998 |   1 |     const activeProctoringStages = ['verification', 'calibration', 'instructions', 'interview', 'code'];
+ 999 |   2 |     if (activeProctoringStages.includes(stage)) {
+1000 |   2 |       enterFullScreen();
+1001 |   1 |     }
+1002 |   0 |   }, [stage]);
+1003 |   0 | 
+1004 |   0 |   // STABLE VIOLATION LOGIC
+1005 |   1 |   useEffect(() => {
+1006 |   1 |     const monitoringStages = ['verification', 'calibration', 'instructions', 'interview', 'code'];
+1007 |   1 |     if (!monitoringStages.includes(stage)) return;
+1008 |   1 | 
+1009 |   2 |     const check = () => {
+1010 |   2 |       if (!monitoringStages.includes(stage)) return;
+1011 |   2 |       const isExited = !document.fullscreenElement;
+1012 |   2 |       const isHidden = document.visibilityState === 'hidden';
+1013 |   2 | 
+1014 |   3 |       if (isExited) {
+1015 |   3 |         // If we are already showing warning, do nothing
+1016 |   3 |         if (showFullscreenWarnRef.current) return;
+1017 |   3 | 
+1018 |   3 |         fullscreenWarnCountRef.current += 1;
+1019 |   3 | 
+1020 |   3 |         fetch("http://127.0.0.1:5000/proctor/event", {
+1021 |   3 |           method: "POST", headers: { 'Content-Type': 'application/json' },
+1022 |   3 |           body: JSON.stringify({ type: "FULLSCREEN_EXIT", message: `User exited full screen mode (Attempt ${fullscreenWarnCountRef.current})`, severity: "MEDIUM" })
+1023 |   2 |         });
+1024 |   2 | 
+1025 |   3 |         if (fullscreenWarnCountRef.current >= 3) {
+1026 |   3 |           handleTermination("Multiple (3+) fullscreen violations detected. Terminating interview for security.");
+1027 |   3 |         } else {
+1028 |   3 |           setShowFullscreenWarn(true);
+1029 |   3 |           showFullscreenWarnRef.current = true;
+1030 |   3 |           // Stop agent background voice completely when full screen is exited
+1031 |   4 |           try {
+1032 |   4 |             window.speechSynthesis.cancel();
+1033 |   4 |             setIsSpeaking(false);
+1034 |   4 |             isSpeakingRef.current = false;
+1035 |   4 |             // Stop recognition too
+1036 |   5 |             if (recognitionRef.current) {
+1037 |   5 |               recognitionRef.current.stop();
+1038 |   5 |               recognitionActiveRef.current = false;
+1039 |   5 |               setIsListening(false);
+1040 |   4 |             }
+1041 |   4 |             // Also pause any fallback audio playing
+1042 |   5 |             if ((window as any).audioRef?.current) {
+1043 |   5 |               (window as any).audioRef.current.pause();
+1044 |   5 |               (window as any).audioRef.current = null;
+1045 |   4 |             }
+1046 |   3 |           } catch (e) { }
+1047 |   3 |           speak("Full screen exited.");
+1048 |   2 |         }
+1049 |   1 |       }
+1050 |   1 | 
+1051 |   2 |       if (isHidden) {
+1052 |   2 |         if (showTabSwitchWarnRef.current) return;
+1053 |   2 |         tabSwitchCountRef.current += 1;
+1054 |   2 |         fetch("http://127.0.0.1:5000/proctor/event", {
+1055 |   2 |           method: "POST", headers: { 'Content-Type': 'application/json' },
+1056 |   2 |           body: JSON.stringify({ type: "TAB_SWITCH", message: `Tab switch detected (Attempt ${tabSwitchCountRef.current})`, severity: tabSwitchCountRef.current >= 5 ? "CRITICAL" : "MEDIUM" })
+1057 |   1 |         });
+1058 |   2 |         if (tabSwitchCountRef.current >= 3) {
+1059 |   2 |           handleTermination("Security violation: Maximum tab switches exceeded. Terminating interview.");
+1060 |   2 |         } else {
+1061 |   2 |           setShowTabSwitchWarn(true);
+1062 |   2 |           showTabSwitchWarnRef.current = true;
+1063 |   2 |           // Stop agent background voice completely for tab switch too
+1064 |   3 |           try {
+1065 |   3 |             window.speechSynthesis.cancel();
+1066 |   3 |             setIsSpeaking(false);
+1067 |   3 |             isSpeakingRef.current = false;
+1068 |   3 |             // Stop recognition
+1069 |   4 |             if (recognitionRef.current) {
+1070 |   4 |               recognitionRef.current.stop();
+1071 |   4 |               recognitionActiveRef.current = false;
+1072 |   4 |               setIsListening(false);
+1073 |   3 |             }
+1074 |   4 |             if (audioRef.current) {
+1075 |   4 |               audioRef.current.pause();
+1076 |   4 |               audioRef.current = null;
+1077 |   3 |             }
+1078 |   2 |           } catch (e) { }
+1079 |   1 |         }
+1080 |   1 |       } else {
+1081 |   1 |         // Returned from hidden state
+1082 |   2 |         if (showTabSwitchWarnRef.current) {
+1083 |   2 |           setShowTabSwitchWarn(false);
+1084 |   2 |           showTabSwitchWarnRef.current = false;
+1085 |   2 |           // Auto-resume if in interview or code stage
+1086 |   3 |           if (!showFullscreenWarnRef.current) {
+1087 |   4 |             if (stage === 'interview') {
+1088 |   5 |               setTimeout(() => {
+1089 |   5 |                 if (questionRef.current) speak("Returning to the interview. " + questionRef.current);
+1090 |   4 |               }, 500);
+1091 |   4 |             } else if (stage === 'code') {
+1092 |   5 |               setTimeout(() => {
+1093 |   5 |                 speak("Returning to the coding challenge.");
+1094 |   4 |               }, 500);
+1095 |   3 |             }
+1096 |   2 |           }
+1097 |   1 |         }
+1098 |   0 |       }
+1099 |  -1 |     };
+!!! ERROR: Negative balance at line 1099
+1100 |   0 | 
+1101 |   1 |     const handleFsChange = () => {
+1102 |   2 |       if (!document.fullscreenElement) {
+1103 |   2 |         check();
+1104 |   2 |       } else {
+1105 |   2 |         setShowFullscreenWarn(false);
+1106 |   2 |         showFullscreenWarnRef.current = false;
+1107 |   2 |         // Safety: ensure any stuck audio or speech state is cleared on return
+1108 |   3 |         try {
+1109 |   3 |           window.speechSynthesis.cancel();
+1110 |   3 |           setIsSpeaking(false);
+1111 |   3 |           isSpeakingRef.current = false;
+1112 |   3 |           isManualStopRef.current = false; // Allow auto-resume
+1113 |   2 |         } catch (e) { }
+1114 |   2 | 
+1115 |   2 |         // Explicitly resume interview flow - verbal nudge as requested ("it should ask right")
+1116 |   3 |         setTimeout(() => {
+1117 |   4 |           if (stage === 'interview') {
+1118 |   5 |             if (questionRef.current) {
+1119 |   5 |               speak("Resuming.");
+1120 |   5 |             } else {
+1121 |   5 |               safeStartRecognition();
+1122 |   4 |             }
+1123 |   4 |           } else if (stage === 'code') {
+1124 |   4 |             speak("Returning to the coding challenge.");
+1125 |   3 |           }
+1126 |   2 |         }, 500);
+1127 |   1 |       }
+1128 |   0 |     };
+1129 |   0 | 
+1130 |   0 |     document.addEventListener('fullscreenchange', handleFsChange);
+1131 |   0 |     document.addEventListener('visibilitychange', check);
+1132 |   0 | 
+1133 |   1 |     return () => {
+1134 |   1 |       document.removeEventListener('fullscreenchange', handleFsChange);
+1135 |   1 |       document.removeEventListener('visibilitychange', check);
+1136 |   0 |     };
+1137 |  -1 |   }, [stage, showFullscreenWarn, question]); // Added question to ensure re-prompt has latest if needed
+!!! ERROR: Negative balance at line 1137
+1138 |   0 | 
+1139 |   0 |   // PROCTORING POLL & FRAME LOGIC
+1140 |   1 |   useEffect(() => {
+1141 |   1 |     // Continuous monitoring from verification onwards
+1142 |   1 |     if (!['verification', 'calibration', 'instructions', 'interview', 'code'].includes(stage)) return;
+1143 |   2 |     const detectExtensions = () => {
+1144 |   2 |       // Check for common extension attributes or injected elements
+1145 |   2 |       const indicators = [
+1146 |   2 |         'data-gr-ext-installed', // Grammarly
+1147 |   2 |         'data-grammarly-part',
+1148 |   2 |         'data-extension-id', // Generic extension ID attribute
+1149 |   2 |       ];
+1150 |   2 | 
+1151 |   2 |       const hasIndicators = indicators.some(attr =>
+1152 |   2 |         document.documentElement.hasAttribute(attr) ||
+1153 |   2 |         document.body.hasAttribute(attr) ||
+1154 |   2 |         document.querySelector(`[${attr}]`)
+1155 |   2 |       );
+1156 |   2 | 
+1157 |   2 |       // Check for unexpected scripts or iframes (common in extensions)
+1158 |   2 |       const scripts = document.getElementsByTagName('script');
+1159 |   2 |       const hasSuspiciousScript = Array.from(scripts).some(s =>
+1160 |   2 |         s.src.includes('chrome-extension://') || s.src.includes('grammarly')
+1161 |   2 |       );
+1162 |   2 | 
+1163 |   2 |       return hasIndicators || hasSuspiciousScript;
+1164 |   1 |     };
+1165 |   1 | 
+1166 |   2 |     const poll = async () => {
+1167 |   2 |       // SKIP termination checks during verification stage
+1168 |   2 |       // Verification failures should stay on verification page, not trigger termination
+1169 |   2 |       if (stage === 'verification') return;
+1170 |   2 | 
+1171 |   2 |       // EXTENSION CHECK
+1172 |   3 |       if (detectExtensions() && (stage === 'interview' || stage === 'code')) {
+1173 |   3 |         handleTermination("Security Violation: Browser extensions (like Grammarly or Translate) detected. Please disable all extensions to continue.");
+1174 |   3 |         return;
+1175 |   2 |       }
+1176 |   2 | 
+1177 |   2 |       // poll every 2s for backend-triggered termination (ID fraud)
+1178 |   3 |       try {
+1179 |   3 |         const res = await fetch("http://127.0.0.1:5000/proctor/status");
+1180 |   3 |         const data = await res.json();
+1181 |   3 |         const activeProctoringStages = ['calibration', 'instructions', 'interview', 'code'];
+1182 |   4 |         if (data.should_terminate && activeProctoringStages.includes(stage)) {
+1183 |   4 |           handleTermination(data.termination_reason || "Critical security violation detected. The interview is being terminated.");
+1184 |   3 |         }
+1185 |   2 |       } catch (e) { }
+1186 |   1 |     };
+1187 |   2 |     const sendFrame = async () => {
+1188 |   2 |       const activeVideo = videoRef.current || verificationVideoRef.current;
+1189 |   2 |       if (!activeVideo) return;
+1190 |   2 |       const canvas = document.createElement('canvas');
+1191 |   2 |       canvas.width = 640; canvas.height = 480;
+1192 |   2 |       canvas.getContext('2d')?.drawImage(activeVideo, 0, 0, 640, 480);
+1193 |   2 |       const img = canvas.toDataURL('image/jpeg', 0.8);
+1194 |   3 |       try {
+1195 |   3 |         const res = await fetch("http://127.0.0.1:5000/proctor/process_frame", {
+1196 |   3 |           method: "POST", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: img })
+1197 |   2 |         });
+1198 |   2 |         const data = await res.json();
+1199 |   2 |         const warning = data.warning || data.current_warning || '';
+1200 |   2 | 
+1201 |   2 |         // Optimize: Only update state if something changed
+1202 |   3 |         setProctorStatus(prev => {
+1203 |   3 |           if (prev.face === data.face_detected && prev.warning === warning) return prev;
+1204 |   3 |           return { face: data.face_detected, warning: warning };
+1205 |   2 |         });
+1206 |   2 | 
+1207 |   2 |         // Only terminate in active stages. 
+1208 |   2 |         // Verification stage handles its own failures in captureAndVerify.
+1209 |   2 |         const activeProctoringStages = ['calibration', 'instructions', 'interview', 'code'];
+1210 |   3 |         if (activeProctoringStages.includes(stage) && data.should_terminate) {
+1211 |   3 |           // Use the reason from backend if available, otherwise generic
+1212 |   3 |           const reason = data.termination_reason || "Security Violation Detected. Interview Terminated.";
+1213 |   3 |           handleTermination(reason);
+1214 |   3 |           return;
+1215 |   2 |         }
+1216 |   3 |         if (warning.toLowerCase().includes("movement") || warning.toLowerCase().includes("down")) {
+1217 |   3 |           lookingDownRef.current += 1;
+1218 |   4 |           if (lookingDownRef.current > 4) {
+1219 |   4 |             setFeedback("⚠️ Please maintain focus on the screen.");
+1220 |   4 |             lookingDownRef.current = 0;
+1221 |   3 |           }
+1222 |   3 |         } else {
+1223 |   3 |           lookingDownRef.current = 0;
+1224 |   2 |         }
+1225 |   2 |         if (!data.face_detected) noFaceRef.current += 1; else noFaceRef.current = 0;
+1226 |   2 |         setShowNoFaceWarn(noFaceRef.current > 10);
+1227 |   1 |       } catch (e) { }
+1228 |   0 |     };
+1229 |   0 |     const t = setInterval(poll, 2000);
+1230 |   0 |     const f = setInterval(sendFrame, 500); // Increased frequency (2 FPS) for faster detection
+1231 |   0 |     return () => { clearInterval(t); clearInterval(f); };
+1232 |  -1 |   }, [stage]);
+!!! ERROR: Negative balance at line 1232
+1233 |   0 | 
+1234 |   0 |   // 1. Lip Sync & Mic Control Effect
+1235 |   1 |   useEffect(() => {
+1236 |   1 |     if (stage !== 'interview') return;
+1237 |   1 | 
+1238 |   1 |     const v = agentVideoRef.current;
+1239 |   1 |     if (!v) return;
+1240 |   1 | 
+1241 |   2 |     if (isSpeaking) {
+1242 |   3 |       v.play().catch((e: any) => {
+1243 |   3 |         if (e.name === 'AbortError' || e.message?.includes('pause') || e.name === 'NotAllowedError') return;
+1244 |   3 |         console.error("Agent play failed:", e);
+1245 |   2 |       });
+1246 |   3 |       if (recognitionRef.current && recognitionActiveRef.current) {
+1247 |   3 |         try { recognitionRef.current.stop(); } catch (e) { }
+1248 |   2 |       }
+1249 |   2 |     } else {
+1250 |   2 |       // Small delay to ensure we don't pause a literally just started play()
+1251 |   2 |       // or at least handle it silently via the catch above.
+1252 |   2 |       try { v.pause(); } catch (e) { }
+1253 |   2 |       if (stage === 'interview') safeStartRecognition();
+1254 |   1 |     }
+1255 |   0 |   }, [isSpeaking, stage]);
+1256 |   0 | 
+1257 |   0 |   const [verifyStatus, setVerifyStatus] = useState('');
+1258 |   0 | 
+1259 |   0 |   /* FAILSAFE TTS AUDIO REF */
+1260 |   0 |   const audioRef = useRef<HTMLAudioElement | null>(null);
+1261 |   0 | 
+1262 |   1 |   const speak = (text: string, onComplete?: () => void) => {
+1263 |   1 |     if (typeof window === 'undefined') return;
+1264 |   1 |     const synth = window.speechSynthesis;
+1265 |   1 | 
+1266 |   1 |     // PREVENT RAPID-FIRE / REDUNDANT DEFERRALS
+1267 |   1 |     const activeProctoringStages = ['verification', 'calibration', 'instructions', 'interview', 'code'];
+1268 |   2 |     if (showFullscreenWarnRef.current || showTabSwitchWarnRef.current || (activeProctoringStages.includes(stage) && !document.fullscreenElement)) {
+1269 |   2 |       if ((window as any)._lastDeferredText === text) return;
+1270 |   2 |       (window as any)._lastDeferredText = text;
+1271 |   2 |       console.log("⏳ Speak deferred (Visibility Violation)");
+1272 |   3 |       setTimeout(() => {
+1273 |   3 |         (window as any)._lastDeferredText = null;
+1274 |   3 |         speak(text, onComplete);
+1275 |   2 |       }, 1500);
+1276 |   2 |       return;
+1277 |   1 |     }
+1278 |   1 | 
+1279 |   1 |     // ── FIX: Give every speak() call its own "cancelled" token.
+1280 |   1 |     const cancelledRef = { current: false };
+1281 |   1 | 
+1282 |   1 |     // Cancel any currently playing fallback audio FIRST
+1283 |   2 |     if (audioRef.current) {
+1284 |   2 |       audioRef.current.onplay = null;
+1285 |   2 |       audioRef.current.onended = null;
+1286 |   2 |       audioRef.current.onerror = null;
+1287 |   2 |       audioRef.current.pause();
+1288 |   2 |       audioRef.current = null;
+1289 |   1 |     }
+1290 |   1 | 
+1291 |   2 |     if (utteranceRef.current) {
+1292 |   2 |       utteranceRef.current.onstart = null;
+1293 |   2 |       utteranceRef.current.onend = null;
+1294 |   2 |       utteranceRef.current.onerror = null;
+1295 |   2 |       utteranceRef.current = null;
+1296 |   1 |     }
+1297 |   1 | 
+1298 |   1 |     try { synth.cancel(); } catch (e) { }
+1299 |   1 | 
+1300 |   1 |     let fallbackTimer: any = null;
+1301 |   1 | 
+1302 |   2 |     const playFallback = () => {
+1303 |   2 |       if (cancelledRef.current) return;
+1304 |   2 |       if (showFullscreenWarnRef.current || showTabSwitchWarnRef.current) return;
+1305 |   2 | 
+1306 |   2 |       const url = `http://127.0.0.1:5000/api/tts?text=${encodeURIComponent(text)}`;
+1307 |   2 |       const audio = new Audio(url);
+1308 |   2 |       audioRef.current = audio;
+1309 |   2 | 
+1310 |   3 |       audio.onplay = () => {
+1311 |   3 |         if (cancelledRef.current) { audio.pause(); return; }
+1312 |   3 |         setIsSpeaking(true);
+1313 |   3 |         isSpeakingRef.current = true;
+1314 |   2 |       };
+1315 |   2 | 
+1316 |   3 |       audio.onended = () => {
+1317 |   3 |         if (cancelledRef.current) return;
+1318 |   3 |         setIsSpeaking(false);
+1319 |   3 |         isSpeakingRef.current = false;
+1320 |   3 |         if (onComplete) onComplete();
+1321 |   4 |         if (stage === 'interview') {
+1322 |   4 |           safeStartRecognition();
+1323 |   4 |           latestFnRef.current?.resetInactivityTimer?.();
+1324 |   3 |         }
+1325 |   2 |       };
+1326 |   2 | 
+1327 |   3 |       audio.onerror = () => {
+1328 |   3 |         if (cancelledRef.current) return;
+1329 |   3 |         setIsSpeaking(false);
+1330 |   3 |         if (onComplete) onComplete();
+1331 |   2 |       };
+1332 |   2 |       audio.play().catch(() => { });
+1333 |   1 |     };
+1334 |   1 | 
+1335 |   2 |     if (!synth) {
+1336 |   2 |       playFallback();
+1337 |   2 |       return;
+1338 |   1 |     }
+1339 |   1 | 
+1340 |   2 |     const utter = () => {
+1341 |   2 |       if (cancelledRef.current) return;
+1342 |   2 |       if (fallbackTimer) clearTimeout(fallbackTimer);
+1343 |   2 |       const utt = new SpeechSynthesisUtterance(text);
+1344 |   2 |       utteranceRef.current = utt;
+1345 |   2 |       const voices = synth.getVoices();
+1346 |   3 |       if (voices.length > 0) {
+1347 |   3 |         const preferred = voices.find(v => v.name.includes("David")) || voices.find(v => v.lang.startsWith('en') && !v.name.includes("Zira"));
+1348 |   3 |         if (preferred) utt.voice = preferred;
+1349 |   2 |       }
+1350 |   3 |       utt.onstart = () => {
+1351 |   3 |         if (cancelledRef.current) { synth.cancel(); return; }
+1352 |   3 |         setIsSpeaking(true);
+1353 |   3 |         isSpeakingRef.current = true;
+1354 |   2 |       };
+1355 |   3 |       utt.onend = () => {
+1356 |   3 |         if (cancelledRef.current) return;
+1357 |   3 |         setIsSpeaking(false);
+1358 |   3 |         isSpeakingRef.current = false;
+1359 |   3 |         if (onComplete) onComplete();
+1360 |   4 |         if (stage === 'interview') {
+1361 |   4 |           safeStartRecognition();
+1362 |   4 |           latestFnRef.current?.resetInactivityTimer?.();
+1363 |   3 |         }
+1364 |   2 |       };
+1365 |   3 |       utt.onerror = () => {
+1366 |   3 |         if (cancelledRef.current) return;
+1367 |   3 |         playFallback();
+1368 |   2 |       };
+1369 |   2 |       if (synth.paused) synth.resume();
+1370 |   2 |       synth.speak(utt);
+1371 |   1 |     };
+1372 |   1 | 
+1373 |   2 |     fallbackTimer = setTimeout(() => {
+1374 |   2 |       if (!isSpeakingRef.current && !cancelledRef.current) playFallback();
+1375 |   1 |     }, 2000);
+1376 |   1 | 
+1377 |   2 |     if (synth.getVoices().length === 0) {
+1378 |   2 |       synth.addEventListener('voiceschanged', () => utter(), { once: true });
+1379 |   2 |     } else {
+1380 |   2 |       utter();
+1381 |   1 |     }
+1382 |   1 |     return () => { cancelledRef.current = true; };
+1383 |   0 |   };
+1384 |   0 | 
+1385 |   1 |   const unlockAudio = () => {
+1386 |   1 |     if (typeof window === 'undefined') return;
+1387 |   1 |     const synth = window.speechSynthesis;
+1388 |   1 |     // Essential for Chrome/Edge autoplay policy
+1389 |   1 |     synth.cancel();
+1390 |   1 |     synth.resume();
+1391 |   1 | 
+1392 |   1 |     // Heartbeat - force audio state activation
+1393 |   1 |     const dummy = new SpeechSynthesisUtterance("");
+1394 |   1 |     synth.speak(dummy);
+1395 |   1 | 
+1396 |   1 |     audioUnlockedRef.current = true;
+1397 |   2 |     if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+1398 |   2 |       audioContextRef.current.resume();
+1399 |   1 |     }
+1400 |   1 |     setAudioBlocked(false);
+1401 |   0 |   };
+1402 |   0 | 
+1403 |   1 |   const handleBeginInterview = async () => {
+1404 |   2 |     if (!file || !name) {
+1405 |   2 |       alert("Please enter your name and upload a resume.");
+1406 |   2 |       return;
+1407 |   1 |     }
+1408 |   1 | 
+1409 |   1 |     // 1. Immediate Audio Unlock & Feedback
+1410 |   1 |     speak("Analyzing your resume. Please wait a moment.");
+1411 |   1 | 
+1412 |   1 |     isTerminatingRef.current = false;
+1413 |   1 | 
+1414 |   1 |     setLoading(true);
+1415 |   1 |     const formData = new FormData();
+1416 |   1 |     formData.append('resume', file);
+1417 |   1 |     formData.append('name', name);
+1418 |   1 |     formData.append('email', email);
+1419 |   1 |     if (user) formData.append('user_id', String(user.id));
+1420 |   1 | 
+1421 |   2 |     try {
+1422 |   2 |       const res = await fetch('http://127.0.0.1:5000/api/upload_resume', {
+1423 |   2 |         method: 'POST',
+1424 |   2 |         body: formData
+1425 |   1 |       });
+1426 |   1 |       const data = await res.json();
+1427 |   2 |       if (data.status === 'success') {
+1428 |   2 |         // Start proctoring
+1429 |   2 |         await fetch('http://127.0.0.1:5000/proctor/start', { method: 'POST' });
+1430 |   2 | 
+1431 |   2 |         speak(data.message || "Resume verified. Now, please verify your identity.");
+1432 |   3 |         setTimeout(() => {
+1433 |   3 |           setStage('verification');
+1434 |   2 |         }, 1500);
+1435 |   2 | 
+1436 |   2 |       } else {
+1437 |   2 |         const errorMsg = data.message || "Resume verification failed.";
+1438 |   2 |         setFeedback("⚠️ " + errorMsg);
+1439 |   2 |         setFile(null); // Clear file to force re-upload as per user request
+1440 |   2 |         speak(errorMsg);
+1441 |   1 |       }
+1442 |   1 |     } catch (e) {
+1443 |   1 |       setFeedback("❌ Connection error. Please ensure backend is running.");
+1444 |   1 |       console.error(e);
+1445 |   1 |     } finally {
+1446 |   1 |       setLoading(false);
+1447 |   0 |     }
+1448 |  -1 |   };
+!!! ERROR: Negative balance at line 1448
+1449 |   0 | 
+1450 |   0 |   // --- IDENTITY VERIFICATION ---
+1451 |   0 |   const [verifyImage, setVerifyImage] = useState<string | null>(null);
+1452 |   0 |   const [verifying, setVerifying] = useState(false);
+1453 |   0 |   const [verifyFailCount, setVerifyFailCount] = useState(0);
+1454 |   0 | 
+1455 |   1 |   useEffect(() => {
+1456 |   1 |     if (stage !== 'verification') return;
+1457 |   1 | 
+1458 |   1 |     // Poll every 150ms until the video element is mounted AND stream is attached
+1459 |   2 |     const interval = setInterval(() => {
+1460 |   2 |       // Try ref first, then query DOM by id as a fallback
+1461 |   2 |       const el = verificationVideoRef.current ||
+1462 |   2 |         (document.getElementById('verification-video') as HTMLVideoElement | null);
+1463 |   2 | 
+1464 |   2 |       if (!el) return; // element not mounted yet, keep polling
+1465 |   2 | 
+1466 |   2 |       // Update ref if found via DOM
+1467 |   3 |       if (!verificationVideoRef.current && el) {
+1468 |   3 |         (verificationVideoRef as any).current = el;
+1469 |   2 |       }
+1470 |   2 | 
+1471 |   2 |       // Check all possible sources for the stream
+1472 |   2 |       const s = streamRef.current || currentStream || (window as any).__cameraStream;
+1473 |   2 |       if (!s) return;
+1474 |   2 | 
+1475 |   2 |       // Sync state if we found a stream in refs/window but not state
+1476 |   2 |       if (!currentStream && s) setCurrentStream(s);
+1477 |   2 | 
+1478 |   2 |       // Ensure stream tracks are enabled
+1479 |   2 |       s.getTracks().forEach((t: MediaStreamTrack) => { if (!t.enabled) t.enabled = true; });
+1480 |   2 | 
+1481 |   3 |       if (el.srcObject !== s) {
+1482 |   3 |         el.srcObject = s;
+1483 |   3 |         console.log('✅ Stream attached to verification video (poll)');
+1484 |   2 |       }
+1485 |   2 |       el.play().catch(() => { });
+1486 |   2 | 
+1487 |   2 |       // Stop polling once video is playing
+1488 |   3 |       if (el.readyState >= 2) {
+1489 |   3 |         clearInterval(interval);
+1490 |   2 |       }
+1491 |   1 |     }, 150);
+1492 |   1 | 
+1493 |   1 |     return () => clearInterval(interval);
+1494 |   0 |   }, [stage, currentStream]);
+1495 |   0 | 
+1496 |   0 | 
+1497 |   1 |   const captureAndVerify = async () => {
+1498 |   1 |     if (!verificationVideoRef.current) return;
+1499 |   1 |     setVerifying(true);
+1500 |   1 |     setVerifyStatus("Capturing biometric data...");
+1501 |   1 | 
+1502 |   1 |     // Capture
+1503 |   1 |     const canvas = document.createElement('canvas');
+1504 |   1 |     const video = verificationVideoRef.current;
+1505 |   1 |     canvas.width = 400; canvas.height = 400;
+1506 |   1 |     const ctx = canvas.getContext('2d');
+1507 |   1 | 
+1508 |   2 |     if (ctx && video) {
+1509 |   2 |       const size = Math.min(video.videoWidth, video.videoHeight);
+1510 |   2 |       const x = (video.videoWidth - size) / 2;
+1511 |   2 |       const y = (video.videoHeight - size) / 2;
+1512 |   2 |       ctx.drawImage(video, x, y, size, size, 0, 0, 400, 400);
+1513 |   1 |     }
+1514 |   1 |     const img = canvas.toDataURL('image/jpeg', 0.8);
+1515 |   1 | 
+1516 |   2 |     try {
+1517 |   2 |       setVerifyStatus("Comparing with database records...");
+1518 |   2 |       const res = await fetch("http://127.0.0.1:5000/api/auth/verify_face", {
+1519 |   2 |         method: "POST", headers: { 'Content-Type': 'application/json' },
+1520 |   2 |         body: JSON.stringify({ user_id: user?.id, image: img })
+1521 |   1 |       });
+1522 |   1 |       const data = await res.json();
+1523 |   1 | 
+1524 |   2 |       if (data.status === 'success') {
+1525 |   2 |         setVerifyStatus(data.message || "✅ Identity & Eyes Verified Successfully!");
+1526 |   2 |         setProctorStatus({ face: true, warning: '' });
+1527 |   2 |         setVerifying(false);
+1528 |   2 |         speak(data.message || "Identity verified. Now, let's calibrate your environment.", () => { });
+1529 |   2 | 
+1530 |   2 |         // Signal proctoring reset to clear any previous noise
+1531 |   2 |         fetch("http://127.0.0.1:5000/proctor/reset", { method: "POST" }).catch(() => { });
+1532 |   2 | 
+1533 |   3 |         setTimeout(() => {
+1534 |   3 |           setStage('calibration');
+1535 |   2 |         }, 2000);
+1536 |   2 |       } else {
+1537 |   2 |         setVerifyFailCount(prev => prev + 1);
+1538 |   2 |         setVerifyStatus("❌ " + (data.message || "Verification failed."));
+1539 |   2 |         speak(data.message || "Identity verification failed. Please try again.");
+1540 |   2 |         setVerifying(false);
+1541 |   1 |       }
+1542 |   1 |     } catch (e) {
+1543 |   1 |       setVerifyStatus("❌ Connection error. Identity verification is required to proceed.");
+1544 |   1 |       setVerifying(false);
+1545 |   0 |     }
+1546 |  -1 |   };
+!!! ERROR: Negative balance at line 1546
+1547 |   0 | 
+1548 |   0 | 
+1549 |   1 |   const handleEndInterview = async () => {
+1550 |   1 |     setShowEndConfirm(true);
+1551 |   0 |   };
+1552 |   0 | 
+1553 |   1 |   const confirmEndInterview = async () => {
+1554 |   1 |     if (isTerminatingRef.current) return;
+1555 |   1 |     isTerminatingRef.current = true;
+1556 |   1 | 
+1557 |   1 |     setShowEndConfirm(false);
+1558 |   1 |     setLoading(true);
+1559 |   1 | 
+1560 |   2 |     if (typeof window !== 'undefined') {
+1561 |   2 |       window.speechSynthesis.cancel();
+1562 |   3 |       if (recognitionRef.current) {
+1563 |   3 |         try { recognitionRef.current.stop(); } catch (e) { }
+1564 |   2 |       }
+1565 |   1 |     }
+1566 |   1 |     recognitionActiveRef.current = false;
+1567 |   1 |     setIsListening(false);
+1568 |   1 | 
+1569 |   2 |     try {
+1570 |   2 |       // 1. Submit any current "last words" if they exist
+1571 |   2 |       const finalUserAns = (transcript.trim() + " " + interimTranscript.trim()).trim();
+1572 |   3 |       if (finalUserAns && finalUserAns.length > 5 && (stage === 'interview' || stage === 'code')) {
+1573 |   3 |         console.log("📝 Submitting final partial answer before ending...");
+1574 |   3 |         await fetch("http://127.0.0.1:5000/api/interview/answer", {
+1575 |   3 |           method: "POST",
+1576 |   3 |           headers: { 'Content-Type': 'application/json' },
+1577 |   3 |           body: JSON.stringify({ question: question, answer: finalUserAns })
+1578 |   2 |         });
+1579 |   1 |       }
+1580 |   1 | 
+1581 |   1 |       // 2. Conclude the interview session
+1582 |   1 |       const res = await fetch("http://127.0.0.1:5000/api/interview/finish", {
+1583 |   1 |         method: "POST",
+1584 |   1 |         headers: { 'Content-Type': 'application/json' },
+1585 |   1 |         body: JSON.stringify({ user_id: user?.id })
+1586 |   0 |       });
+1587 |   0 |       const data = await res.json();
+1588 |   0 | 
+1589 |   1 |       if (data.status === 'success') {
+1590 |   1 |         setReportData(data);
+1591 |   1 | 
+1592 |   1 |         // 3. Professional Closing
+1593 |   2 |         speak("Thank you for your time. The interview session is now concluded. Your performance report is being finalized.", () => {
+1594 |   2 |           setStage('results');
+1595 |   3 |           if (document.fullscreenElement) {
+1596 |   3 |             document.exitFullscreen().catch(() => { });
+1597 |   2 |           }
+1598 |   2 |           handleDownloadReport();
+1599 |   1 |         });
+1600 |   1 | 
+1601 |   1 |         // Fallback for stage change
+1602 |   2 |         setTimeout(() => {
+1603 |   2 |           setStage('results');
+1604 |   3 |           if (document.fullscreenElement) {
+1605 |   3 |             document.exitFullscreen().catch(() => { });
+1606 |   2 |           }
+1607 |   2 |           handleDownloadReport();
+1608 |   1 |         }, 4000);
+1609 |   0 |       }
+1610 |   0 |     } catch (e) {
+1611 |   0 |       console.error("Error ending interview:", e);
+1612 |   0 |       setStage('results'); // Fallback
+1613 |   0 |     } finally {
+1614 |   0 |       setLoading(false);
+1615 |  -1 |     }
+!!! ERROR: Negative balance at line 1615
+1616 |  -1 |   };
+!!! ERROR: Negative balance at line 1616
+1617 |   0 | 
+1618 |   0 | 
+1619 |   0 |   // --- GLOBAL KEYBOARD SHORTCUTS ---
+1620 |   1 |   useEffect(() => {
+1621 |   2 |     const handleKeyDown = (e: KeyboardEvent) => {
+1622 |   2 |       // Don't trigger if we're typing in a textarea (like in code round)
+1623 |   2 |       const isInput = (e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA';
+1624 |   2 | 
+1625 |   3 |       if (e.key === 'Enter') {
+1626 |   4 |         if (stage === 'verification' && !verifying) {
+1627 |   4 |           e.preventDefault();
+1628 |   4 |           captureAndVerify();
+1629 |   4 |         } else if (stage === 'interview' && !isSpeaking) {
+1630 |   4 |           // If we're not in an input, allow Enter to submit
+1631 |   5 |           if (!isInput) {
+1632 |   5 |             e.preventDefault();
+1633 |   5 |             handleSubmitAnswer();
+1634 |   4 |           }
+1635 |   4 |         } else if (stage === 'code' && (e.ctrlKey || e.metaKey)) {
+1636 |   4 |           // Support Ctrl+Enter for code submission
+1637 |   4 |           e.preventDefault();
+1638 |   4 |           handleSubmitCode();
+1639 |   3 |         }
+1640 |   2 |       }
+1641 |   1 |     };
+1642 |   1 | 
+1643 |   1 |     window.addEventListener('keydown', handleKeyDown);
+1644 |   1 |     return () => window.removeEventListener('keydown', handleKeyDown);
+1645 |   0 |   }, [stage, verifying, isSpeaking, transcript]);
+1646 |   0 | 
+1647 |   0 |   return (
+1648 |   0 |     <div className={`min-h-screen transition-colors duration-500 bg-[var(--background)] text-[var(--foreground)]`}>
+1649 |   0 | 
+1650 |   1 |       {(stage === 'landing' || stage === 'results' || stage === 'report') && (
+1651 |   1 |         <nav className={`h-20 w-full flex items-center justify-center border-b ${theme === 'dark' ? 'border-slate-800 bg-slate-950/80' : 'border-slate-100 bg-white/80'} backdrop-blur-xl sticky top-0 z-[100] transition-all duration-300`}>
+1652 |   1 |           <div className="w-full max-w-[1400px] flex items-center justify-between px-8 md:px-12">
+1653 |   1 |             <div className="flex items-center gap-5 group cursor-pointer" onClick={() => router.push('/')}>
+1654 |   1 |               <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center font-black text-white shadow-2xl shadow-indigo-600/30 group-hover:scale-110 transition-transform">AI</div>
+1655 |   1 |               <div className="flex flex-col">
+1656 |   1 |                 <span className={`font-black text-2xl tracking-tighter leading-none ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Interview.AI</span>
+1657 |   1 |                 <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mt-1">Intelligence 2.0</span>
+1658 |   1 |               </div>
+1659 |   1 |             </div>
+1660 |   1 | 
+1661 |   1 |             <div className="flex items-center gap-6 lg:gap-10">
+1662 |   1 |               <div className="hidden lg:flex gap-10">
+1663 |   1 |                 <Link href="#features" className={`text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} hover:text-indigo-600 uppercase tracking-[0.2em] transition-colors`}>Features</Link>
+1664 |   1 |                 <Link href="#instructions" className={`text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} hover:text-indigo-600 uppercase tracking-[0.2em] transition-colors`}>Guidelines</Link>
+1665 |   1 |                 <Link href="#faq" className={`text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} hover:text-indigo-600 uppercase tracking-[0.2em] transition-colors`}>FAQs</Link>
+1666 |   1 |               </div>
+1667 |   1 | 
+1668 |   1 |               <div className={`h-8 w-px ${theme === 'dark' ? 'bg-white/10' : 'bg-slate-200'} mx-2`}></div>
+1669 |   1 | 
+1670 |   1 |               <div className="flex items-center gap-4">
+1671 |   1 |                 {/* Premium Theme Toggle */}
+1672 |   1 |                 <button
+1673 |   1 |                   onClick={toggleTheme}
+1674 |   1 |                   className={`p-3 rounded-2xl border ${theme === 'dark' ? 'bg-white/5 border-white/10 text-yellow-400 hover:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-white hover:border-indigo-200'} border transition-all shadow-sm active:scale-90`}
+1675 |   1 |                   title={theme === 'dark' ? "Activate Daylight Mode" : "Activate Midnight Mode"}
+1676 |   1 |                 >
+1677 |   1 |                   {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+1678 |   1 |                 </button>
+1679 |   1 | 
+1680 |   2 |                 {user ? (
+1681 |   2 |                   <div className="flex items-center gap-3">
+1682 |   2 |                     <button
+1683 |   2 |                       onClick={() => router.push('/dashboard')}
+1684 |   2 |                       className="px-6 py-3 bg-indigo-600 text-white rounded-[18px] text-[11px] font-black shadow-xl shadow-indigo-500/30 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all flex items-center gap-2 uppercase tracking-widest"
+1685 |   2 |                     >
+1686 |   2 |                       <LayoutDashboard size={14} /> My Deck
+1687 |   2 |                     </button>
+1688 |   2 |                   </div>
+1689 |   2 |                 ) : (
+1690 |   2 |                   <div className="flex items-center gap-4">
+1691 |   2 |                     <button onClick={() => router.push('/login')} className={`text-[11px] font-black ${theme === 'dark' ? 'text-slate-300' : 'text-slate-900'} hover:text-indigo-600 uppercase tracking-widest px-2`}>Login</button>
+1692 |   2 |                     <button onClick={() => router.push('/signup')} className="px-7 py-3.5 bg-indigo-600 text-white rounded-[18px] text-[11px] font-black shadow-2xl shadow-indigo-600/30 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all active:scale-95 uppercase tracking-widest">Enroll Now</button>
+1693 |   2 |                   </div>
+1694 |   1 |                 )}
+1695 |   1 |               </div>
+1696 |   1 |             </div>
+1697 |   1 |           </div>
+1698 |   1 |         </nav>
+1699 |   0 |       )}
+1700 |   0 | 
+1701 |   0 | 
+1702 |   0 |       {/* STAGE: LANDING */}
+1703 |   1 |       {
+1704 |   1 |         stage === 'landing' && (
+1705 |   1 |           <>
+1706 |   1 |             <main className={styles.heroSection}>
+1707 |   1 |               <div className={styles.heroContent}>
+1708 |   1 | 
+1709 |   1 | 
+1710 |   1 |                 <h1 className={styles.heroTitle}>
+1711 |   1 |                   Experience <span className={styles.gradientText}>Reel Interviews</span>.<br />
+1712 |   1 |                   Before the Real One.
+1713 |   1 |                 </h1>
+1714 |   1 | 
+1715 |   1 |                 {/* STAGE: CODE EDITOR (New Step 4 End) */}
+1716 |   1 |                 {/* (Moved Code Block out) */}
+1717 |   1 | 
+1718 |   1 |                 {/* STAGE: UPLOAD */}
+1719 |   1 | 
+1720 |   1 |                 <p className={styles.heroSubtitle}>
+1721 |   1 |                   Join thousands of students forcing their way into top tech jobs.
+1722 |   1 |                   Real-time voice interaction, emotion analysis, and resume-tailored questions.
+1723 |   1 |                 </p>
+1724 |   1 | 
+1725 |   1 |                 <div className={`${styles.ctaGroup} relative z-10`}>
+1726 |   1 |                   <button
+1727 |   3 |                     onClick={() => {
+1728 |   4 |                       if (user) {
+1729 |   4 |                         enterFullScreen();
+1730 |   4 |                         setStage('upload');
+1731 |   4 |                       } else {
+1732 |   4 |                         router.push('/login');
+1733 |   3 |                       }
+1734 |   1 |                     }}
+1735 |   1 |                     className={`${styles.btnPrimary} cursor-pointer`}
+1736 |   1 |                   >
+1737 |   1 |                     Start Mock Interview
+1738 |   1 |                   </button>
+1739 |   1 |                   <button
+1740 |   1 |                     className={`${styles.btnSecondary} cursor-pointer`}
+1741 |   3 |                     onClick={() => {
+1742 |   3 |                       const el = document.getElementById('features');
+1743 |   3 |                       if (el) el.scrollIntoView({ behavior: 'smooth' });
+1744 |   3 |                       else router.push('/signup'); // Fallback
+1745 |   1 |                     }}
+1746 |   1 |                   >
+1747 |   1 |                     Why Use This?
+1748 |   1 |                   </button>
+1749 |   1 |                 </div>
+1750 |   1 |               </div>
+1751 |   1 | 
+1752 |   1 |               <div className={styles.heroImageContainer}>
+1753 |   1 |                 <div className="relative">
+1754 |   1 |                   <div className="absolute -inset-4 bg-indigo-500/10 blur-3xl rounded-full"></div>
+1755 |   1 |                   <img
+1756 |   1 |                     src="/robot_hero_final.png"
+1757 |   1 |                     alt="AI Interviewer"
+1758 |   1 |                     className={styles.heroImage}
+1759 |   1 |                   />
+1760 |   1 |                   {/* Premium Halo Effect */}
+1761 |   1 |                   <div className="absolute inset-0 bg-white/40 rounded-full blur-[100px] -z-10 animate-pulse" />
+1762 |   1 |                 </div>
+1763 |   1 |               </div>
+1764 |   1 |             </main>
+1765 |   1 | 
+1766 |   1 |             {/* INSTRUCTIONS SECTION */}
+1767 |   1 |             <section id="instructions" className={styles.instructionsSection}>
+1768 |   1 |               <div className="max-w-7xl mx-auto px-6 md:px-8">
+1769 |   1 |                 <div className="text-center mb-16">
+1770 |   1 |                   <span className="text-indigo-600 font-bold tracking-wider uppercase text-sm">How It Works</span>
+1771 |   1 |                   <h2 className="text-3xl md:text-5xl font-black mt-3 mb-6">4 Steps to Your Dream Job.</h2>
+1772 |   1 |                   <p className="text-[var(--text-muted)] max-w-2xl mx-auto text-lg">Follow this roadmap to master your skills and dominate your next technical interview.</p>
+1773 |   1 |                 </div>
+1774 |   1 | 
+1775 |   1 |                 <div className={`${styles.instructionsContainer} ${styles['stepStage' + activeInstructionStep]}`}>
+1776 |   1 |                   {/* Step 1 */}
+1777 |   1 |                   <div
+1778 |   1 |                     className={`${styles.stepNode} ${activeInstructionStep === 0 ? styles.stepActive : ''} cursor-pointer`}
+1779 |   3 |                     onClick={() => {
+1780 |   4 |                       if (user) {
+1781 |   4 |                         enterFullScreen();
+1782 |   4 |                         setStage('upload');
+1783 |   4 |                       } else {
+1784 |   4 |                         router.push('/login');
+1785 |   3 |                       }
+1786 |   1 |                     }}
+1787 |   1 |                   >
+1788 |   1 |                     <div className={styles.stepCircle}>
+1789 |   1 |                       <FileText size={32} />
+1790 |   1 |                       <div className={styles.stepBadge}>1</div>
+1791 |   1 |                     </div>
+1792 |   1 |                     <div className={styles.stepContent}>
+1793 |   1 |                       <h3 className={styles.stepTitle}>Resume Upload</h3>
+1794 |   1 |                       <p className={styles.stepText}>Start by uploading your current resume. Our AI analyzes your experience, skills, and projects in seconds.</p>
+1795 |   1 |                     </div>
+1796 |   1 |                   </div>
+1797 |   1 | 
+1798 |   1 |                   {/* Step 2 */}
+1799 |   1 |                   <div
+1800 |   1 |                     className={`${styles.stepNode} ${activeInstructionStep === 1 ? styles.stepActive : ''} cursor-pointer`}
+1801 |   3 |                     onClick={() => {
+1802 |   4 |                       if (user) {
+1803 |   4 |                         enterFullScreen();
+1804 |   4 |                         setStage('upload');
+1805 |   4 |                       } else {
+1806 |   4 |                         router.push('/login');
+1807 |   3 |                       }
+1808 |   1 |                     }}
+1809 |   1 |                   >
+1810 |   1 |                     <div className={styles.stepCircle}>
+1811 |   1 |                       <Sparkles size={32} />
+1812 |   1 |                       <div className={styles.stepBadge}>2</div>
+1813 |   1 |                     </div>
+1814 |   1 |                     <div className={styles.stepContent}>
+1815 |   1 |                       <h3 className={styles.stepTitle}>AI Adaptation</h3>
+1816 |   1 |                       <p className={styles.stepText}>The platform generates a unique set of questions specifically tailored to your background and targeting role.</p>
+1817 |   1 |                     </div>
+1818 |   1 |                   </div>
+1819 |   1 | 
+1820 |   1 |                   {/* Step 3 */}
+1821 |   1 |                   <div
+1822 |   1 |                     className={`${styles.stepNode} ${activeInstructionStep === 2 ? styles.stepActive : ''} cursor-pointer`}
+1823 |   3 |                     onClick={() => {
+1824 |   4 |                       if (user) {
+1825 |   4 |                         enterFullScreen();
+1826 |   4 |                         setStage('upload');
+1827 |   4 |                       } else {
+1828 |   4 |                         router.push('/login');
+1829 |   3 |                       }
+1830 |   1 |                     }}
+1831 |   1 |                   >
+1832 |   1 |                     <div className={styles.stepCircle}>
+1833 |   1 |                       <Mic size={32} />
+1834 |   1 |                       <div className={styles.stepBadge}>3</div>
+1835 |   1 |                     </div>
+1836 |   1 |                     <div className={styles.stepContent}>
+1837 |   1 |                       <h3 className={styles.stepTitle}>Mock Session</h3>
+1838 |   1 |                       <p className={styles.stepText}>Enter the realistic interview room. Face voice-based questions, coding challenges, and proctoring.</p>
+1839 |   1 |                     </div>
+1840 |   1 |                   </div>
+1841 |   1 | 
+1842 |   1 |                   {/* Step 4 */}
+1843 |   1 |                   <div
+1844 |   1 |                     className={`${styles.stepNode} ${activeInstructionStep === 3 ? styles.stepActive : ''} cursor-pointer`}
+1845 |   3 |                     onClick={() => {
+1846 |   4 |                       if (user) {
+1847 |   4 |                         enterFullScreen();
+1848 |   4 |                         setStage('upload');
+1849 |   4 |                       } else {
+1850 |   4 |                         router.push('/login');
+1851 |   3 |                       }
+1852 |   1 |                     }}
+1853 |   1 |                   >
+1854 |   1 |                     <div className={styles.stepCircle}>
+1855 |   1 |                       <BarChart size={32} />
+1856 |   1 |                       <div className={styles.stepBadge}>4</div>
+1857 |   1 |                     </div>
+1858 |   1 |                     <div className={styles.stepContent}>
+1859 |   1 |                       <h3 className={styles.stepTitle}>Expert Feedback</h3>
+1860 |   1 |                       <p className={styles.stepText}>Complete the round to receive an instant report. Fix your weak points and try again until you're perfect.</p>
+1861 |   1 |                     </div>
+1862 |   1 |                   </div>
+1863 |   1 |                 </div>
+1864 |   1 |               </div>
+1865 |   1 |             </section>
+1866 |   1 | 
+1867 |   1 |             {/* FEATURES SECTION (Restored) */}
+1868 |   1 |             <section id="features" className="flex flex-col justify-center py-24 bg-[var(--card-bg)] border-t border-[var(--border)]">
+1869 |   1 |               <div className="max-w-7xl mx-auto px-6 md:px-8">
+1870 |   1 |                 <div className="text-center mb-16">
+1871 |   1 |                   <span className="text-indigo-600 font-bold tracking-wider uppercase text-sm">Why Choose Us</span>
+1872 |   1 |                   <h2 className="text-3xl md:text-5xl font-black mt-3 mb-6">Master Every Interview Stage.</h2>
+1873 |   1 |                   <p className="text-[var(--text-muted)] max-w-2xl mx-auto text-lg">From behavioral questions to live coding challenges, we simulate it all with AI precision.</p>
+1874 |   1 |                 </div>
+1875 |   1 | 
+1876 |   1 |                 <div className="grid md:grid-cols-3 gap-8">
+1877 |   1 |                   {/* Row 1 */}
+1878 |   1 |                   <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-indigo-500 transition-all group">
+1879 |   1 |                     <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform"><Sparkles size={24} /></div>
+1880 |   1 |                     <h3 className="text-lg font-bold mb-3">Builds Confidence</h3>
+1881 |   1 |                     <p className="text-sm text-[var(--text-muted)]">Practice in a stress-free environment. Overcome anxiety and gain the confidence to ace your real interview.</p>
+1882 |   1 |                   </div>
+1883 |   1 |                   <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-purple-500 transition-all group">
+1884 |   1 |                     <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 mb-6 group-hover:scale-110 transition-transform"><FileText size={24} /></div>
+1885 |   1 |                     <h3 className="text-lg font-bold mb-3">Resume Analysis</h3>
+1886 |   1 |                     <p className="text-sm text-[var(--text-muted)]">Our AI scans your resume to generate tailored questions, ensuring you practice what actually matters for your role.</p>
+1887 |   1 |                   </div>
+1888 |   1 |                   <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-green-500 transition-all group">
+1889 |   1 |                     <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center text-green-600 mb-6 group-hover:scale-110 transition-transform"><Monitor size={24} /></div>
+1890 |   1 |                     <h3 className="text-lg font-bold mb-3">Real Experience</h3>
+1891 |   1 |                     <p className="text-sm text-[var(--text-muted)]">Experience the pressure of a real interview with realistic voice interactions, strict proctoring, and live coding.</p>
+1892 |   1 |                   </div>
+1893 |   1 | 
+1894 |   1 |                   {/* Row 2 */}
+1895 |   1 |                   <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-indigo-500 transition-all group">
+1896 |   1 |                     <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 mb-6 group-hover:scale-110 transition-transform"><Mic size={24} /></div>
+1897 |   1 |                     <h3 className="text-lg font-bold mb-3">Voice-First AI</h3>
+1898 |   1 |                     <p className="text-sm text-[var(--text-muted)]">Speak naturally. Our AI listens, understands, and responds with human-like latency and voice.</p>
+1899 |   1 |                   </div>
+1900 |   1 |                   <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-red-500 transition-all group">
+1901 |   1 |                     <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600 mb-6 group-hover:scale-110 transition-transform"><Shield size={24} /></div>
+1902 |   1 |                     <h3 className="text-lg font-bold mb-3">Strict Proctoring</h3>
+1903 |   1 |                     <p className="text-sm text-[var(--text-muted)]">Simulate exam conditions with full-screen enforcement, tab monitoring, and gadget detection.</p>
+1904 |   1 |                   </div>
+1905 |   1 |                   <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-orange-500 transition-all group">
+1906 |   1 |                     <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 mb-6 group-hover:scale-110 transition-transform"><BarChart size={24} /></div>
+1907 |   1 |                     <h3 className="text-lg font-bold mb-3">Detailed Reporting</h3>
+1908 |   1 |                     <p className="text-sm text-[var(--text-muted)]">Get instant feedback, actionable insights, and a downloadable PDF report of your performance.</p>
+1909 |   1 |                   </div>
+1910 |   1 |                 </div>
+1911 |   1 |               </div>
+1912 |   1 |             </section>
+1913 |   1 | 
+1914 |   1 |             {/* FAQ SECTION */}
+1915 |   1 |             <section id="faq" className={styles.faqSection}>
+1916 |   1 |               <div className="max-w-7xl mx-auto px-6 md:px-8">
+1917 |   1 |                 <h2 className={styles.faqHeader}>FAQs</h2>
+1918 |   1 |                 <div className={styles.faqGrid}>
+1919 |   1 |                   {/* Column 1 */}
+1920 |   1 |                   <div className={styles.faqCol}>
+1921 |   2 |                     {faqs.slice(0, 4).map((faq, i) => (
+1922 |   2 |                       <div
+1923 |   2 |                         key={i}
+1924 |   2 |                         className={`${styles.faqItem} ${activeFaqIndex === i ? styles.faqItemActive : ''}`}
+1925 |   2 |                         onClick={() => setActiveFaqIndex(activeFaqIndex === i ? null : i)}
+1926 |   2 |                       >
+1927 |   2 |                         <div className="flex justify-between items-center w-full">
+1928 |   2 |                           <span className={styles.faqQuestion}>{faq.q}</span>
+1929 |   2 |                           <ChevronRight size={18} className={styles.faqIcon} />
+1930 |   2 |                         </div>
+1931 |   2 |                         <div className={`${styles.faqAnswer} ${activeFaqIndex === i ? styles.faqAnswerVisible : ''}`}>
+1932 |   2 |                           <p className={styles.faqDesc}>{faq.a}</p>
+1933 |   2 |                         </div>
+1934 |   2 |                       </div>
+1935 |   1 |                     ))}
+1936 |   1 |                   </div>
+1937 |   1 | 
+1938 |   1 |                   {/* Column 2 */}
+1939 |   1 |                   <div className={styles.faqCol}>
+1940 |   3 |                     {faqs.slice(4).map((faq, i) => {
+1941 |   3 |                       const idx = i + 4;
+1942 |   3 |                       return (
+1943 |   3 |                         <div
+1944 |   3 |                           key={idx}
+1945 |   3 |                           className={`${styles.faqItem} ${activeFaqIndex === idx ? styles.faqItemActive : ''}`}
+1946 |   3 |                           onClick={() => setActiveFaqIndex(activeFaqIndex === idx ? null : idx)}
+1947 |   3 |                         >
+1948 |   3 |                           <div className="flex justify-between items-center w-full">
+1949 |   3 |                             <span className={styles.faqQuestion}>{faq.q}</span>
+1950 |   3 |                             <ChevronRight size={18} className={styles.faqIcon} />
+1951 |   3 |                           </div>
+1952 |   3 |                           <div className={`${styles.faqAnswer} ${activeFaqIndex === idx ? styles.faqAnswerVisible : ''}`}>
+1953 |   3 |                             <p className={styles.faqDesc}>{faq.a}</p>
+1954 |   3 |                           </div>
+1955 |   3 |                         </div>
+1956 |   3 |                       );
+1957 |   1 |                     })}
+1958 |   1 |                   </div>
+1959 |   1 |                 </div>
+1960 |   1 |               </div>
+1961 |   1 |             </section>
+1962 |   1 |           </>
+1963 |   1 |         )
+1964 |   0 |       }
+1965 |   0 | 
+1966 |   0 |       {/* STAGE: CODE */}
+1967 |   1 |       {
+1968 |   1 |         stage === 'code' && (
+1969 |   1 |           <main className="h-screen flex flex-col lg:flex-row bg-[#0f172a] text-white">
+1970 |   1 |             <div className="w-full lg:w-96 bg-[#1e293b] border-b lg:border-r border-slate-700 p-4 lg:p-6 flex flex-col gap-4 justify-between overflow-y-auto max-h-[30vh] lg:max-h-full">
+1971 |   1 |               <div>
+1972 |   1 |                 <div className="flex items-center gap-4 mb-4">
+1973 |   1 |                   <div className="px-3 py-1 bg-indigo-600 rounded-lg text-xs font-black uppercase tracking-widest">Coding Round</div>
+1974 |   1 |                   <h2 className="text-xl font-bold text-slate-200">Problem {currentCodingIdx + 1} of {codingProblems.length}</h2>
+1975 |   1 |                 </div>
+1976 |   1 |                 <div className="flex items-center gap-4">
+1977 |   1 |                   <div className="text-xs font-mono text-slate-400">Time: {formatTime(elapsedTime)}</div>
+1978 |   1 |                   <div className="h-2 w-32 bg-slate-700 rounded-full overflow-hidden">
+1979 |   1 |                     <div className="h-full bg-indigo-500 transition-all duration-500" style={{ width: `${((currentCodingIdx + 1) / codingProblems.length) * 100}%` }}></div>
+1980 |   1 |                   </div>
+1981 |   1 |                 </div>
+1982 |   1 |               </div>
+1983 |   1 |             </div>
+1984 |   1 | 
+1985 |   1 |             <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+1986 |   1 |               <div className="w-full lg:w-1/3 p-6 md:p-8 border-b lg:border-r border-slate-800 bg-[#0f172a] overflow-y-auto max-h-[40%] lg:max-h-none">
+1987 |   1 |                 <h1 className="text-xl md:text-2xl font-black mb-4 text-white tracking-tight">{codingProblems[currentCodingIdx]?.title}</h1>
+1988 |   1 |                 <div className="inline-block px-2.5 py-1 bg-green-500/10 text-green-500 rounded-md text-[10px] font-black uppercase tracking-wider mb-6 border border-green-500/20">
+1989 |   1 |                   Difficulty: {codingProblems[currentCodingIdx]?.difficulty || 'Medium'}
+1990 |   1 |                 </div>
+1991 |   1 | 
+1992 |   1 |                 <div className="space-y-6 text-slate-300 leading-relaxed font-medium">
+1993 |   1 |                   <div>
+1994 |   1 |                     <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-2">Description</h3>
+1995 |   1 |                     <p>{codingProblems[currentCodingIdx]?.description}</p>
+1996 |   1 |                   </div>
+1997 |   1 | 
+1998 |   2 |                   {codingProblems[currentCodingIdx]?.test_cases && (
+1999 |   2 |                     <div>
+2000 |   2 |                       <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-3">Example Test Cases</h3>
+2001 |   2 |                       <div className="space-y-3">
+2002 |   3 |                         {codingProblems[currentCodingIdx].test_cases.slice(0, 2).map((tc: any, i: number) => (
+2003 |   3 |                           <div key={i} className="bg-black/40 border border-slate-800 p-3 rounded-xl font-mono text-xs">
+2004 |   3 |                             <div className="text-indigo-400 mb-1">Input: {tc.input}</div>
+2005 |   3 |                             <div className="text-green-400">Output: {tc.output}</div>
+2006 |   3 |                           </div>
+2007 |   2 |                         ))}
+2008 |   2 |                       </div>
+2009 |   2 |                     </div>
+2010 |   1 |                   )}
+2011 |   1 | 
+2012 |   1 |                   <div className="bg-indigo-500/5 p-4 rounded-2xl border border-indigo-500/10 text-xs">
+2013 |   1 |                     <div className="flex gap-2 items-center text-indigo-400 mb-2 font-black uppercase tracking-tighter">
+2014 |   1 |                       <Shield size={14} /> Security Active
+2015 |   1 |                     </div>
+2016 |   1 |                     Plagiarism detection and tab-switching monitoring are active during this stage.
+2017 |   1 |                   </div>
+2018 |   1 |                 </div>
+2019 |   1 |               </div>
+2020 |   1 | 
+2021 |   1 |               <div className="flex-1 flex flex-col bg-[#111827]">
+2022 |   1 |                 <div className="bg-[#1e293b]/50 px-4 py-2 border-b border-slate-800 flex items-center justify-between">
+2023 |   1 |                   <div className="flex gap-2">
+2024 |   1 |                     <div className="w-3 h-3 rounded-full bg-red-500/50"></div>
+2025 |   1 |                     <div className="w-3 h-3 rounded-full bg-yellow-500/50"></div>
+2026 |   1 |                     <div className="w-3 h-3 rounded-full bg-green-500/50"></div>
+2027 |   1 |                   </div>
+2028 |   1 |                   <div className="flex items-center gap-4">
+2029 |   1 |                     <div className="flex items-center gap-3">
+2030 |   1 |                       <label htmlFor="language_select" className="text-[10px] font-mono text-slate-500 uppercase tracking-widest hidden sm:block">Language</label>
+2031 |   1 |                       <select
+2032 |   1 |                         id="language_select"
+2033 |   1 |                         value={codingLanguage}
+2034 |   1 |                         onChange={(e) => setCodingLanguage(e.target.value as any)}
+2035 |   1 |                         className="bg-[#0f172a] text-slate-300 text-xs font-mono px-3 py-1.5 rounded-md border border-slate-700 outline-none focus:border-indigo-500/50 transition-colors"
+2036 |   1 |                       >
+2037 |   1 |                         <option value="python">Python</option>
+2038 |   1 |                         <option value="java">Java</option>
+2039 |   1 |                         <option value="c">C</option>
+2040 |   1 |                         <option value="javascript">JavaScript</option>
+2041 |   1 |                       </select>
+2042 |   1 |                     </div>
+2043 |   1 | 
+2044 |   1 |                     <button
+2045 |   1 |                       onClick={handleRunCode}
+2046 |   1 |                       disabled={isRunningCode}
+2047 |   1 |                       className="px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-md flex items-center gap-2 transition-all disabled:opacity-50"
+2048 |   1 |                     >
+2049 |   1 |                       {isRunningCode ? <span className="animate-spin text-lg">⏳</span> : <Play size={14} />}
+2050 |   1 |                       Run Code
+2051 |   1 |                     </button>
+2052 |   1 |                   </div>
+2053 |   1 |                 </div>
+2054 |   1 | 
+2055 |   1 |                 <div className="flex-1 relative flex flex-col">
+2056 |   1 |                   <div className="flex-1 overflow-hidden">
+2057 |   1 |                     <Editor
+2058 |   1 |                       height="100%"
+2059 |   1 |                       theme="vs-dark"
+2060 |   1 |                       language={codingLanguage}
+2061 |   1 |                       value={codeAnswer}
+2062 |   1 |                       onChange={(val) => setCodeAnswer(val || '')}
+2063 |   3 |                       options={{
+2064 |   3 |                         fontSize: 14,
+2065 |   3 |                         minimap: { enabled: false },
+2066 |   3 |                         scrollBeyondLastLine: false,
+2067 |   3 |                         automaticLayout: true,
+2068 |   3 |                         tabSize: 4,
+2069 |   3 |                         padding: { top: 20 },
+2070 |   3 |                         readOnly: loading
+2071 |   1 |                       }}
+2072 |   1 |                     />
+2073 |   1 |                   </div>
+2074 |   1 | 
+2075 |   1 |                   {/* Terminal / Output Pane */}
+2076 |   1 |                   <div className="h-1/3 min-h-[150px] border-t border-slate-800 bg-[#0f172a] flex flex-col">
+2077 |   1 |                     <div className="px-4 py-2 border-b border-slate-800 flex items-center justify-between">
+2078 |   1 |                       <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+2079 |   1 |                         <Terminal size={12} /> Execution Results
+2080 |   1 |                       </h3>
+2081 |   1 |                       <button
+2082 |   1 |                         onClick={() => setCodingOutput('')}
+2083 |   1 |                         className="text-[10px] text-slate-500 hover:text-white underline"
+2084 |   1 |                       >
+2085 |   1 |                         Clear
+2086 |   1 |                       </button>
+2087 |   1 |                     </div>
+2088 |   1 |                     <div className="flex-1 p-4 font-mono text-xs overflow-y-auto whitespace-pre-wrap text-slate-300">
+2089 |   1 |                       {codingOutput || "Run your code to see the output here..."}
+2090 |   1 |                     </div>
+2091 |   1 |                   </div>
+2092 |   1 | 
+2093 |   1 |                   {/* PiP Video Feed (Overlays Editor) */}
+2094 |   1 |                   <div className="absolute top-4 right-4 w-48 aspect-video bg-black/40 rounded-xl border border-white/20 shadow-2xl overflow-hidden z-30 pointer-events-none">
+2095 |   1 |                     <video
+2096 |   3 |                       ref={(el) => {
+2097 |   3 |                         (videoRef as any).current = el;
+2098 |   4 |                         if (el && streamRef.current && el.srcObject !== streamRef.current) {
+2099 |   4 |                           el.srcObject = streamRef.current;
+2100 |   5 |                           el.play().catch((e) => {
+2101 |   5 |                             if (e.name !== 'AbortError' && e.name !== 'NotAllowedError') console.error("Video play failed:", e);
+2102 |   4 |                           });
+2103 |   3 |                         }
+2104 |   1 |                       }}
+2105 |   1 |                       autoPlay muted playsInline className="w-full h-full object-cover transform scale-x-[-1]"
+2106 |   1 |                     />
+2107 |   1 |                     <div className="absolute top-1 left-1 bg-red-500 px-1 py-0.5 rounded-[4px] text-[6px] font-bold text-white flex items-center gap-1">
+2108 |   1 |                       <span className="w-1 h-1 rounded-full bg-white animate-pulse"></span> MONITORING
+2109 |   1 |                     </div>
+2110 |   1 |                   </div>
+2111 |   1 | 
+2112 |   1 |                   <div className="absolute bottom-4 right-4 flex gap-4 z-40">
+2113 |   1 |                     <button
+2114 |   1 |                       onClick={handleSubmitCode}
+2115 |   1 |                       disabled={loading}
+2116 |   1 |                       className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-black rounded-xl shadow-xl shadow-indigo-500/20 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+2117 |   1 |                     >
+2118 |   1 |                       {loading ? "Submitting..." : (currentCodingIdx === codingProblems.length - 1 ? "Submit Final" : "Next Problem")}
+2119 |   1 |                     </button>
+2120 |   1 |                   </div>
+2121 |   1 |                 </div>
+2122 |   1 |               </div>
+2123 |   1 |             </div>
+2124 |   1 |           </main>
+2125 |   1 |         )
+2126 |   0 |       }
+2127 |   0 | 
+2128 |   0 | 
+2129 |   0 |       {/* STAGE: VERIFICATION */}
+2130 |   1 |       {
+2131 |   1 |         stage === 'verification' && (
+2132 |   1 |           <main className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[var(--background)] overflow-hidden">
+2133 |   1 |             {/* Back Button */}
+2134 |   1 |             <div className="absolute top-24 left-8 z-50">
+2135 |   1 |               <button onClick={() => setStage('upload')} className={`flex items-center gap-2 ${theme === 'dark' ? 'text-white hover:text-indigo-400' : 'text-slate-600 hover:text-indigo-600'} transition-colors font-bold text-sm bg-transparent border-none cursor-pointer group`}>
+2136 |   1 |                 <ChevronRight size={18} className="rotate-180 group-hover:-translate-x-1 transition-transform" /> Back
+2137 |   1 |               </button>
+2138 |   1 |             </div>
+2139 |   1 |             {/* Ambient Background */}
+2140 |   1 |             <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none animate-pulse"></div>
+2141 |   1 |             <div className="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] bg-purple-500/10 rounded-full blur-[100px] pointer-events-none animate-pulse" style={{ animationDelay: '2s' }}></div>
+2142 |   1 | 
+2143 |   1 |             <div className="relative z-10 w-full max-w-5xl h-full flex flex-col md:flex-row items-center justify-center gap-12 p-6 md:p-12">
+2144 |   1 | 
+2145 |   1 |               {/* Left Column: Instructions & Context (Hidden on small mobile) */}
+2146 |   1 |               <div className="hidden md:flex flex-col items-start text-left space-y-6 flex-1 animate-fadeInLeft">
+2147 |   1 |                 <div className="w-16 h-16 bg-blue-600/10 text-blue-500 rounded-2xl flex items-center justify-center mb-2">
+2148 |   1 |                   <Shield size={36} />
+2149 |   1 |                 </div>
+2150 |   1 |                 <h1 className="text-5xl font-black tracking-tighter leading-tight">
+2151 |   1 |                   Identity <br />
+2152 |   1 |                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Verification</span>
+2153 |   1 |                 </h1>
+2154 |   1 |                 <p className="text-xl text-[var(--text-muted)] leading-relaxed max-w-md">
+2155 |   1 |                   We use advanced biometric analysis to ensure exam integrity. Please look directly at the camera.
+2156 |   1 |                 </p>
+2157 |   1 | 
+2158 |   1 |                 <div className="flex flex-col gap-4 mt-8 w-full">
+2159 |   1 |                   <div className={`flex items-center gap-4 p-4 bg-[var(--card-bg)] border border-[var(--border)] rounded-2xl shadow-sm transition-all ${(currentStream || streamRef.current) ? 'border-green-500/30 bg-green-500/5' : ''}`}>
+2160 |   1 |                     <div className={`p-2 rounded-lg ${(currentStream || streamRef.current) ? 'bg-green-500/10 text-green-500' : 'bg-slate-500/10 text-slate-400'}`}>
+2161 |   1 |                       {(currentStream || streamRef.current) ? <CheckCircle size={20} /> : <Camera size={20} />}
+2162 |   1 |                     </div>
+2163 |   1 |                     <div>
+2164 |   1 |                       <div className="text-sm font-bold">Camera Initialized</div>
+2165 |   1 |                       <div className="text-[10px] text-[var(--text-muted)]">{(currentStream || streamRef.current) ? 'Hardware connection active' : 'Waiting for hardware...'}</div>
+2166 |   1 |                     </div>
+2167 |   1 |                   </div>
+2168 |   1 | 
+2169 |   1 |                   <div className={`flex items-center gap-4 p-4 bg-[var(--card-bg)] border border-[var(--border)] rounded-2xl shadow-sm transition-all ${proctorStatus.face ? 'border-green-500/30 bg-green-500/5' : ''}`}>
+2170 |   1 |                     <div className={`p-2 rounded-lg ${proctorStatus.face ? 'bg-green-500/10 text-green-500' : 'bg-slate-500/10 text-slate-400'}`}>
+2171 |   1 |                       {proctorStatus.face ? <CheckCircle size={20} /> : <User size={20} />}
+2172 |   1 |                     </div>
+2173 |   1 |                     <div>
+2174 |   1 |                       <div className="text-sm font-bold">Face Visible</div>
+2175 |   1 |                       <div className="text-[10px] text-[var(--text-muted)]">{proctorStatus.face ? 'Biometric scan in progress' : 'Position your face in center'}</div>
+2176 |   1 |                     </div>
+2177 |   1 |                   </div>
+2178 |   1 |                 </div>
+2179 |   1 |               </div>
+2180 |   1 | 
+2181 |   1 |               {/* Right Column: Camera Feed */}
+2182 |   1 |               <div className="flex-1 flex flex-col items-center w-full max-w-lg">
+2183 |   1 |                 <div className="relative w-full aspect-square md:aspect-[4/5] max-h-[60vh] bg-black rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white/20 ring-4 ring-black/5 group">
+2184 |   1 |                   <video
+2185 |   1 |                     id="verification-video"
+2186 |   1 |                     ref={verificationVideoRef}
+2187 |   1 |                     autoPlay playsInline muted
+2188 |   1 |                     onCanPlay={(e) => (e.target as HTMLVideoElement).play().catch(() => { })}
+2189 |   1 |                     className="w-full h-full object-cover transform scale-x-[-1]"
+2190 |   1 |                   />
+2191 |   1 | 
+2192 |   1 |                   {/* Overlay UI */}
+2193 |   1 |                   <div className="absolute inset-0 border-[6px] border-dashed border-white/10 rounded-[3rem] pointer-events-none"></div>
+2194 |   1 | 
+2195 |   1 |                   {/* Status Tag */}
+2196 |   1 |                   <div className="absolute top-6 left-1/2 -translate-x-1/2 z-40">
+2197 |   1 |                     <div className={`px-6 py-2 rounded-full text-xs md:text-sm font-black text-white flex items-center gap-2 shadow-xl uppercase tracking-widest backdrop-blur-md border border-white/20 ${proctorStatus.face ? 'bg-green-500/90' : 'bg-red-500/90 animate-pulse'}`}>
+2198 |   1 |                       <span className={`w-2.5 h-2.5 rounded-full bg-white ${proctorStatus.face ? '' : 'animate-ping'}`}></span>
+2199 |   1 |                       {proctorStatus.face ? 'Face Locked' : 'Detecting Face...'}
+2200 |   1 |                     </div>
+2201 |   1 |                   </div>
+2202 |   1 | 
+2203 |   1 |                   {/* Scanning Animation */}
+2204 |   2 |                   {verifying && (
+2205 |   2 |                     <>
+2206 |   2 |                       <div className={styles.scanLine}></div>
+2207 |   2 |                       <div className="absolute inset-0 bg-blue-600/20 backdrop-blur-[2px] flex flex-col items-center justify-center z-50">
+2208 |   2 |                         <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>
+2209 |   2 |                         <div className="text-white font-black tracking-widest animate-pulse">VERIFYING...</div>
+2210 |   2 |                       </div>
+2211 |   2 |                     </>
+2212 |   1 |                   )}
+2213 |   1 |                 </div>
+2214 |   1 | 
+2215 |   1 |                 {/* Status Message */}
+2216 |   2 |                 {verifyStatus && (
+2217 |   2 |                   <div className={`mt-6 px-6 py-3 rounded-2xl font-bold text-sm transition-all animate-in fade-in slide-in-from-bottom-4 shadow-lg flex items-center gap-3 ${verifyStatus.includes('✅') ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+2218 |   2 |                     {verifyStatus.includes('✅') ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+2219 |   2 |                     {verifyStatus}
+2220 |   2 |                   </div>
+2221 |   1 |                 )}
+2222 |   1 | 
+2223 |   1 |                 {/* Main Action Button */}
+2224 |   1 |                 <button
+2225 |   1 |                   onClick={captureAndVerify}
+2226 |   1 |                   disabled={verifying}
+2227 |   1 |                   className="mt-8 w-full max-w-sm py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-xl hover:shadow-2xl hover:shadow-blue-500/40 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3 group relative overflow-hidden"
+2228 |   1 |                 >
+2229 |   1 |                   <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+2230 |   1 |                   <Camera className="group-hover:rotate-12 transition-transform" size={24} />
+2231 |   1 |                   <span>Authenticate</span>
+2232 |   1 |                 </button>
+2233 |   1 | 
+2234 |   1 |                 <div className="mt-6 flex flex-col items-center gap-2">
+2235 |   1 |                   <button
+2236 |   1 |                     onClick={restartCamera}
+2237 |   1 |                     className="text-xs font-bold text-indigo-500 hover:text-indigo-400 underline underline-offset-4 flex items-center gap-1.5 transition-colors"
+2238 |   1 |                   >
+2239 |   1 |                     <AlertCircle size={14} /> Video still black? Restart Camera hardware
+2240 |   1 |                   </button>
+2241 |   1 |                   <p className="text-[10px] text-[var(--text-muted)] max-w-[200px] text-center">
+2242 |   1 |                     Note: Ensure your physical camera shutter is open and no other app is using it.
+2243 |   1 |                   </p>
+2244 |   1 |                 </div>
+2245 |   1 | 
+2246 |   1 | 
+2247 |   1 |               </div>
+2248 |   1 | 
+2249 |   1 |             </div>
+2250 |   1 |           </main>
+2251 |   1 |         )
+2252 |   0 |       }
+2253 |   0 | 
+2254 |   0 |       {/* STAGE: CALIBRATION */}
+2255 |   1 |       {
+2256 |   1 |         stage === 'calibration' && (
+2257 |   1 |           <main className="h-screen flex items-center justify-center p-8 bg-[var(--background)] relative">
+2258 |   1 |             {/* Back Button */}
+2259 |   1 |             <div className="absolute top-24 left-8 z-50">
+2260 |   1 |               <button onClick={() => setStage('verification')} className={`flex items-center gap-2 ${theme === 'dark' ? 'text-white hover:text-indigo-400' : 'text-slate-600 hover:text-indigo-600'} transition-colors font-bold text-sm bg-transparent border-none cursor-pointer group`}>
+2261 |   1 |                 <ChevronRight size={18} className="rotate-180 group-hover:-translate-x-1 transition-transform" /> Back
+2262 |   1 |               </button>
+2263 |   1 |             </div>
+2264 |   1 |             <div className="w-full max-w-3xl bg-[var(--card-bg)] p-12 rounded-[3rem] border border-[var(--border)] shadow-2xl text-center">
+2265 |   1 |               <div className="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-8">
+2266 |   1 |                 <Monitor size={40} />
+2267 |   1 |               </div>
+2268 |   1 |               <h1 className="text-4xl font-black mb-6 tracking-tight">System Calibration</h1>
+2269 |   1 |               <p className="text-xl text-[var(--text-muted)] font-medium mb-10 leading-relaxed max-w-xl mx-auto">
+2270 |   1 |                 Please look directly at your camera and sit comfortably. Our AI is calibrating your position to ensure a smooth interview experience.
+2271 |   1 |               </p>
+2272 |   1 | 
+2273 |   1 |               <div className="relative w-full max-w-lg aspect-video mx-auto bg-black rounded-[2rem] overflow-hidden border-4 border-indigo-500 shadow-2xl mb-10 group">
+2274 |   1 |                 <video
+2275 |   3 |                   ref={(el) => {
+2276 |   3 |                     (videoRef as any).current = el;
+2277 |   4 |                     if (el && (currentStream || streamRef.current)) {
+2278 |   4 |                       const s = currentStream || streamRef.current;
+2279 |   4 |                       if (el.srcObject !== s) el.srcObject = s!;
+2280 |   3 |                     }
+2281 |   1 |                   }}
+2282 |   1 |                   autoPlay muted playsInline
+2283 |   1 |                   onCanPlay={(e) => (e.target as HTMLVideoElement).play().catch(() => { })}
+2284 |   1 |                   className="w-full h-full object-cover transform scale-x-[-1]"
+2285 |   1 |                 />
+2286 |   1 |                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+2287 |   1 |                   <div className="w-72 h-72 border-2 border-indigo-400/50 rounded-full border-dashed animate-pulse ring-8 ring-indigo-500/10"></div>
+2288 |   1 |                   <div className="absolute w-2 h-2 bg-indigo-500 rounded-full"></div>
+2289 |   1 |                 </div>
+2290 |   1 | 
+2291 |   1 |                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
+2292 |   1 |                   <div className={`px-6 py-2 rounded-full text-xs font-black text-white flex items-center gap-2 shadow-lg uppercase tracking-widest backdrop-blur-md ${proctorStatus.face ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`}>
+2293 |   1 |                     <span className={`w-2 h-2 rounded-full bg-white ${proctorStatus.face ? '' : 'animate-ping'}`}></span>
+2294 |   1 |                     {proctorStatus.face ? 'Optimal Position Locked' : 'Align Your Face'}
+2295 |   1 |                   </div>
+2296 |   1 |                 </div>
+2297 |   1 |               </div>
+2298 |   1 | 
+2299 |   1 |               <div className="flex flex-col gap-4 max-w-md mx-auto">
+2300 |   1 |                 <button
+2301 |   3 |                   onClick={() => {
+2302 |   3 |                     speak("Calibration complete. Please review the interview instructions carefully before we begin.");
+2303 |   3 |                     setStage('instructions');
+2304 |   1 |                   }}
+2305 |   1 |                   className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xl hover:bg-indigo-700 transition-all shadow-xl hover:shadow-indigo-500/30 flex items-center justify-center gap-3 active:scale-95"
+2306 |   1 |                 >
+2307 |   1 |                   <CheckCircle size={24} /> I&apos;m Ready to Start
+2308 |   1 |                 </button>
+2309 |   1 |               </div>
+2310 |   1 |             </div>
+2311 |   1 |           </main>
+2312 |   1 |         )
+2313 |   0 |       }
+2314 |   0 | 
+2315 |   0 |       {/* STAGE: INSTRUCTIONS */}
+2316 |   1 |       {
+2317 |   1 |         stage === 'instructions' && (
+2318 |   1 |           <main className="h-screen flex items-center justify-center p-4 md:p-8 bg-[var(--background)] relative">
+2319 |   1 |             {/* Back Button */}
+2320 |   1 |             <div className="absolute top-24 left-8 z-50">
+2321 |   1 |               <button onClick={() => setStage('calibration')} className={`flex items-center gap-2 ${theme === 'dark' ? 'text-white hover:text-indigo-400' : 'text-slate-600 hover:text-indigo-600'} transition-colors font-bold text-sm bg-transparent border-none cursor-pointer group`}>
+2322 |   1 |                 <ChevronRight size={18} className="rotate-180 group-hover:-translate-x-1 transition-transform" /> Back
+2323 |   1 |               </button>
+2324 |   1 |             </div>
+2325 |   1 |             <div className="w-full max-w-4xl bg-[var(--card-bg)] p-8 md:p-10 rounded-[2.5rem] border border-[var(--border)] shadow-2xl relative overflow-hidden flex flex-col">
+2326 |   1 |               <div className="text-center mb-8">
+2327 |   1 |                 <div className="w-14 h-14 bg-indigo-500/10 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+2328 |   1 |                   <Sparkles size={28} />
+2329 |   1 |                 </div>
+2330 |   1 |                 <h1 className="text-3xl md:text-4xl font-black mb-2 tracking-tight">Interview Guidelines</h1>
+2331 |   1 |                 <p className="text-[var(--text-muted)] text-base font-medium">Follow these instructions for a successful session.</p>
+2332 |   1 |               </div>
+2333 |   1 | 
+2334 |   1 |               <div className="grid md:grid-cols-2 gap-8 mb-12">
+2335 |   1 |                 <div className="space-y-6">
+2336 |   1 |                   <div className="flex gap-4">
+2337 |   1 |                     <div className="w-10 h-10 bg-blue-500/10 text-blue-600 rounded-xl flex items-center justify-center shrink-0"><Mic size={20} /></div>
+2338 |   1 |                     <div>
+2339 |   1 |                       <h3 className="font-bold text-lg mb-1">Voice Interaction</h3>
+2340 |   1 |                       <p className="text-sm text-[var(--text-muted)]">Speak clearly and naturally. Our AI will analyze your communication skills, confidence, and technical depth.</p>
+2341 |   1 |                     </div>
+2342 |   1 |                   </div>
+2343 |   1 |                   <div className="flex gap-4">
+2344 |   1 |                     <div className="w-10 h-10 bg-purple-500/10 text-purple-600 rounded-xl flex items-center justify-center shrink-0"><Monitor size={20} /></div>
+2345 |   1 |                     <div>
+2346 |   1 |                       <h3 className="font-bold text-lg mb-1">Environment</h3>
+2347 |   1 |                       <p className="text-sm text-[var(--text-muted)]">Ensure you are in a quiet, well-lit room. Background noise or other people talking may affect your score.</p>
+2348 |   1 |                     </div>
+2349 |   1 |                   </div>
+2350 |   1 |                   <div className="flex gap-4">
+2351 |   1 |                     <div className="w-10 h-10 bg-green-500/10 text-green-600 rounded-xl flex items-center justify-center shrink-0"><FileText size={20} /></div>
+2352 |   1 |                     <div>
+2353 |   1 |                       <h3 className="font-bold text-lg mb-1">Structure</h3>
+2354 |   1 |                       <p className="text-sm text-[var(--text-muted)]">The interview consists of Technical rounds, Resume-based questions, and a Live Coding challenge.</p>
+2355 |   1 |                     </div>
+2356 |   1 |                   </div>
+2357 |   1 |                 </div>
+2358 |   1 | 
+2359 |   1 |                 <div className="space-y-4 bg-red-50 dark:bg-red-950/20 p-6 rounded-3xl border border-red-100 dark:border-red-900/30 relative overflow-hidden group">
+2360 |   1 |                   <img src="/robot_friend.png" className="absolute -right-12 -bottom-12 w-48 opacity-10 group-hover:rotate-12 transition-transform duration-700 pointer-events-none" />
+2361 |   1 |                   <h3 className="font-black text-red-600 dark:text-red-400 uppercase tracking-widest text-[10px] mb-2 flex items-center gap-2">
+2362 |   1 |                     <Shield size={14} /> Proctoring Rules
+2363 |   1 |                   </h3>
+2364 |   1 |                   <ul className="space-y-3">
+2365 |   1 |                     <li className="flex items-start gap-3">
+2366 |   1 |                       <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5 shrink-0"></div>
+2367 |   1 |                       <p className="text-xs font-semibold text-slate-800 dark:text-slate-200"><span className="font-bold underline decoration-red-200">No Tab Switching:</span> Session will end after 3 warnings.</p>
+2368 |   1 |                     </li>
+2369 |   1 |                     <li className="flex items-start gap-3">
+2370 |   1 |                       <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5 shrink-0"></div>
+2371 |   1 |                       <p className="text-xs font-semibold text-slate-800 dark:text-slate-200"><span className="font-bold underline decoration-red-200">Fullscreen:</span> Maintain active fullscreen throughout.</p>
+2372 |   1 |                     </li>
+2373 |   1 |                     <li className="flex items-start gap-3">
+2374 |   1 |                       <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5 shrink-0"></div>
+2375 |   1 |                       <p className="text-xs font-semibold text-slate-800 dark:text-slate-200"><span className="font-bold underline decoration-red-200">No Gadgets:</span> Phone detection leads to immediate failure.</p>
+2376 |   1 |                     </li>
+2377 |   1 |                     <li className="flex items-start gap-3">
+2378 |   1 |                       <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5 shrink-0"></div>
+2379 |   1 |                       <p className="text-xs font-semibold text-slate-800 dark:text-slate-200"><span className="font-bold underline decoration-red-200">Visuals:</span> Full face must be visible in camera at all times.</p>
+2380 |   1 |                     </li>
+2381 |   1 |                   </ul>
+2382 |   1 |                 </div>
+2383 |   1 |               </div>
+2384 |   1 | 
+2385 |   1 |               <div className="flex flex-col md:flex-row gap-4">
+2386 |   1 |                 <button
+2387 |   3 |                   onClick={() => {
+2388 |   3 |                     unlockAudio();
+2389 |   3 |                     speak("Testing audio system. If you can hear this, you are ready for the interview session.");
+2390 |   1 |                   }}
+2391 |   1 |                   className="flex-1 py-4 bg-slate-100 hover:bg-green-100 text-slate-700 hover:text-green-700 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 border border-slate-200"
+2392 |   1 |                 >
+2393 |   1 |                   <div className="p-2 bg-white rounded-full shadow-sm"><Mic size={16} /></div> Test Audio
+2394 |   1 |                 </button>
+2395 |   1 | 
+2396 |   1 |                 <button
+2397 |   3 |                   onClick={() => {
+2398 |   3 |                     unlockAudio();
+2399 |   4 |                     speak("Starting the interview session now. Good luck!", () => {
+2400 |   4 |                       enterFullScreen();
+2401 |   4 |                       hasStartedRef.current = true;
+2402 |   4 |                       fetch("http://127.0.0.1:5000/proctor/reset", { method: "POST" }).catch(() => { });
+2403 |   4 |                       fetch("http://127.0.0.1:5000/api/interview/reset", { method: "POST" }).catch(() => { });
+2404 |   4 | 
+2405 |   4 |                       // Reshuffle phases fresh for every new interview session - Following STRICT 9 STEP FLOW
+2406 |   4 |                       const freshPhases = [
+2407 |   4 |                         'greeting',
+2408 |   4 |                         'warmup',
+2409 |   4 |                         'intro',
+2410 |   4 |                         'technical', // Step 4
+2411 |   4 |                         'scenario',  // Step 5
+2412 |   4 |                         'project',   // Step 6
+2413 |   4 |                         'behavioral',// Step 7
+2414 |   4 |                         'code',      // Step 8
+2415 |   4 |                         'conclusion' // Step 9
+2416 |   4 |                       ];
+2417 |   4 |                       setPHASES(freshPhases);
+2418 |   4 |                       setPhaseIndex(0);
+2419 |   4 |                       setPhaseCount(0);
+2420 |   4 |                       setPhase('greeting');
+2421 |   4 | 
+2422 |   4 |                       // Ensure state update happens after a microtask to allow audio to engage
+2423 |   5 |                       setTimeout(() => {
+2424 |   5 |                         setStage('interview');
+2425 |   5 |                         setTimeout(() => fetchNextQuestion('greeting'), 1500);
+2426 |   4 |                       }, 100);
+2427 |   3 |                     });
+2428 |   1 |                   }}
+2429 |   1 |                   className="flex-[2] py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xl shadow-xl shadow-indigo-500/20 transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3"
+2430 |   1 |                 >
+2431 |   1 |                   Start Final Interview <ArrowRight size={24} />
+2432 |   1 |                 </button>
+2433 |   1 |               </div>
+2434 |   1 |             </div>
+2435 |   1 |           </main>
+2436 |   1 |         )
+2437 |   0 |       }
+2438 |   0 | 
+2439 |   0 |       {/* STAGE: UPLOAD */}
+2440 |   1 |       {
+2441 |   1 |         stage === 'upload' && (
+2442 |   1 |           <main className="pt-32 pb-16 flex items-center justify-center px-8 min-h-screen relative">
+2443 |   1 |             {/* Back Button */}
+2444 |   1 |             <div className="absolute top-24 left-8 z-50">
+2445 |   1 |               <button onClick={() => router.push('/dashboard')} className={`flex items-center gap-2 ${theme === 'dark' ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'} transition-colors font-bold text-sm bg-transparent border-none cursor-pointer group`}>
+2446 |   1 |                 <ChevronRight size={18} className="rotate-180 group-hover:-translate-x-1 transition-transform" /> Back to Dashboard
+2447 |   1 |               </button>
+2448 |   1 |             </div>
+2449 |   1 |             <div className={styles.uploadStageWrapper}>
+2450 |   1 |               {/* Left: Agent Welcome */}
+2451 |   1 |               <div className={`${styles.agentWelcomeSection} hidden lg:flex`}>
+2452 |   1 |                 <div className={styles.wavingAgentContainer}>
+2453 |   1 |                   <img src="/waving_agent.png" alt="AI Agent" className={styles.wavingAgent} />
+2454 |   1 |                   <div className={styles.agentSpeechBubble}>
+2455 |   1 |                     Ready to start your journey, {name.split(' ')[0] || 'Champ'}?
+2456 |   1 |                   </div>
+2457 |   1 |                 </div>
+2458 |   1 |               </div>
+2459 |   1 | 
+2460 |   1 |               {/* Right: Upload Form */}
+2461 |   1 |               <div className={`${styles.glassCard} w-full max-w-xl p-6 md:p-12 rounded-[2rem] md:rounded-[2.5rem] border border-[var(--border)] shadow-2xl relative overflow-hidden`}>
+2462 |   1 |                 <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+2463 |   1 | 
+2464 |   1 |                 <h2 className="text-4xl font-black mb-4">Interview Setup</h2>
+2465 |   1 |                 <p className="text-[var(--text-muted)] mb-8 font-medium italic">&quot;Preparation is the key to success. Let&apos;s get you ready.&quot;</p>
+2466 |   1 | 
+2467 |   1 |                 <div className="space-y-6">
+2468 |   1 |                   <div>
+2469 |   1 |                     <h3 className="text-xl font-bold mb-4">Welcome, <span className="text-indigo-600">{name || 'Candidate'}</span>!</h3>
+2470 |   1 |                   </div>
+2471 |   1 | 
+2472 |   1 |                   {/* Name Input Field */}
+2473 |   1 |                   <div>
+2474 |   1 |                     <label className="block text-sm font-bold mb-2 ml-1">Full Name</label>
+2475 |   1 |                     <input
+2476 |   1 |                       type="text"
+2477 |   1 |                       value={name}
+2478 |   1 |                       onChange={(e) => setName(e.target.value)}
+2479 |   1 |                       placeholder="Enter your full name"
+2480 |   1 |                       className="w-full px-4 py-3 rounded-xl border-2 border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:border-indigo-500 outline-none transition-all font-bold"
+2481 |   1 |                     />
+2482 |   1 |                   </div>
+2483 |   1 | 
+2484 |   1 |                   <div>
+2485 |   1 |                     <label className="block text-sm font-bold mb-2 ml-1">Upload Resume (PDF)</label>
+2486 |   1 |                     <div className="relative group cursor-pointer h-32 border-2 border-dashed border-[var(--border)] rounded-2xl flex flex-center hover:border-indigo-500 transition-colors bg-[var(--background)]">
+2487 |   1 |                       <input type="file" onChange={e => setFile(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer" />
+2488 |   1 |                       <div className="w-full h-full flex flex-col items-center justify-center text-[var(--text-muted)] group-hover:text-indigo-600 transition-colors">
+2489 |   1 |                         <img src="/resume_icon.svg" alt="Resume" className="w-14 h-14 mb-2 opacity-90 group-hover:opacity-100 transition-opacity" />
+2490 |   1 |                         <span className="font-bold">{file ? file.name : "Click to select file"}</span>
+2491 |   1 |                       </div>
+2492 |   1 |                     </div>
+2493 |   1 |                   </div>
+2494 |   1 | 
+2495 |   1 |                   {/* Audio Test Button */}
+2496 |   1 |                   <div className="flex flex-col gap-2 w-full">
+2497 |   2 |                     {feedback && (
+2498 |   2 |                       <div className="text-red-500 text-xs font-bold animate-pulse flex items-center gap-1">
+2499 |   2 |                         <AlertCircle size={14} /> {feedback}
+2500 |   2 |                       </div>
+2501 |   1 |                     )}
+2502 |   1 |                     <div className="flex justify-between items-center w-full">
+2503 |   1 |                       <button
+2504 |   3 |                         onClick={() => {
+2505 |   3 |                           unlockAudio();
+2506 |   3 |                           speak("Checking audio system. If you can hear this, you are ready to proceed with the interview.");
+2507 |   1 |                         }}
+2508 |   1 |                         className="text-xs font-bold text-indigo-500 hover:text-indigo-400 flex items-center gap-2"
+2509 |   1 |                       >
+2510 |   1 |                         <Mic size={14} /> 1. Click to Unlock Audio
+2511 |   1 |                       </button>
+2512 |   1 | 
+2513 |   1 |                       <button
+2514 |   1 |                         onClick={() => speak("Verification successful. Audio is working perfectly.")}
+2515 |   1 |                         className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1"
+2516 |   1 |                       >
+2517 |   1 |                         <Volume2 size={14} /> 2. Test Voice
+2518 |   1 |                       </button>
+2519 |   1 |                     </div>
+2520 |   1 |                   </div>
+2521 |   1 |                   <button
+2522 |   1 |                     onClick={handleBeginInterview}
+2523 |   1 |                     disabled={loading}
+2524 |   1 |                     className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xl hover:bg-indigo-700 transition-all shadow-xl hover:shadow-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+2525 |   1 |                   >
+2526 |   1 |                     {loading ? "Analyzing Resume..." : "Begin Interview"}
+2527 |   1 |                   </button>
+2528 |   1 |                 </div>
+2529 |   1 |               </div>
+2530 |   1 |             </div>
+2531 |   1 |           </main>
+2532 |   1 |         )
+2533 |   0 |       }
+2534 |   0 | 
+2535 |   0 |       {/* STAGE: INTERVIEW (Professional Video Call Redesign) */}
+2536 |   1 |       {
+2537 |   1 |         stage === 'interview' && (
+2538 |   1 |           <main className="h-screen bg-[#fafbfc] flex flex-col p-4 md:p-6 lg:p-10 overflow-hidden font-sans relative">
+2539 |   1 | 
+2540 |   1 |             {/* AUDIO BLOCKED HELPER */}
+2541 |   2 |             {audioBlocked && (
+2542 |   2 |               <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[100] animate-bounce">
+2543 |   2 |                 <button
+2544 |   2 |                   onClick={unlockAudio}
+2545 |   2 |                   className="bg-yellow-400 text-black px-6 py-3 rounded-full font-black shadow-2xl border-4 border-black flex items-center gap-2"
+2546 |   2 |                 >
+2547 |   2 |                   <Sun size={20} /> AUDIO BLOCKED: CLICK TO UNMUTE
+2548 |   2 |                 </button>
+2549 |   2 |               </div>
+2550 |   1 |             )}
+2551 |   1 | 
+2552 |   1 | 
+2553 |   1 |             <div className="flex-1 flex flex-col lg:flex-row gap-8 h-full min-h-0">
+2554 |   1 | 
+2555 |   1 |               {/* LEFT: PROFESSIONAL VIDEO STAGE */}
+2556 |   1 |               <div className="flex-[2.2] flex flex-col relative rounded-[4rem] overflow-hidden bg-white shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border border-slate-100 group">
+2557 |   1 | 
+2558 |   1 |                 {/* Agent Backdrop */}
+2559 |   1 |                 <div className="absolute inset-0 flex items-center justify-center bg-[#f0f2f5]">
+2560 |   1 |                   <div className="relative w-full h-full overflow-hidden shadow-2xl">
+2561 |   1 |                     <video
+2562 |   1 |                       ref={agentVideoRef}
+2563 |   1 |                       src="/agent.mp4"
+2564 |   1 |                       loop
+2565 |   1 |                       muted
+2566 |   1 |                       playsInline
+2567 |   1 |                       className={`h-full w-full object-contain transition-opacity duration-1000 ${isSpeaking ? 'opacity-100' : 'opacity-95'}`}
+2568 |   1 |                     />
+2569 |   1 |                     <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
+2570 |   1 |                   </div>
+2571 |   1 |                 </div>
+2572 |   1 | 
+2573 |   1 |                 {/* Top Row UI */}
+2574 |   1 |                 <div className="absolute top-10 left-10 right-10 flex justify-between items-start z-30 pointer-events-none">
+2575 |   1 | 
+2576 |   1 |                   {/* Left: Spacer */}
+2577 |   1 |                   <div className="flex-1 mr-8"></div>
+2578 |   1 | 
+2579 |   1 |                   {/* User Camera PiP */}
+2580 |   1 |                   <div className="w-56 aspect-video bg-slate-800 rounded-3xl border-4 border-white shadow-2xl overflow-hidden group-hover:scale-105 transition-transform shrink-0 pointer-events-auto">
+2581 |   1 |                     <div className="absolute top-3 left-3 z-50">
+2582 |   1 |                       <div className={`flex items-center gap-1.5 px-2.5 py-1 ${proctorStatus.face ? 'bg-green-500/90' : 'bg-red-500/90'} backdrop-blur-md rounded-full border border-white/20`}>
+2583 |   1 |                         <div className={`w-1.5 h-1.5 bg-white rounded-full ${proctorStatus.face ? 'animate-pulse' : 'animate-ping'}`}></div>
+2584 |   1 |                         <span className="text-[8px] font-black text-white uppercase tracking-widest">
+2585 |   1 |                           {proctorStatus.face ? 'Face Detected' : 'No Face Detected'}
+2586 |   1 |                         </span>
+2587 |   1 |                       </div>
+2588 |   1 |                     </div>
+2589 |   1 |                     <video
+2590 |   3 |                       ref={(el) => {
+2591 |   3 |                         (videoRef as any).current = el;
+2592 |   4 |                         if (el && (currentStream || streamRef.current)) {
+2593 |   4 |                           const s = currentStream || streamRef.current;
+2594 |   4 |                           if (el.srcObject !== s) el.srcObject = s!;
+2595 |   3 |                         }
+2596 |   1 |                       }}
+2597 |   1 |                       autoPlay muted playsInline
+2598 |   1 |                       onCanPlay={(e) => (e.target as HTMLVideoElement).play().catch(() => { })}
+2599 |   1 |                       className="w-full h-full object-cover transform scale-x-[-1]"
+2600 |   1 |                     />
+2601 |   1 |                   </div>
+2602 |   1 |                 </div>
+2603 |   1 | 
+2604 |   1 |                 {/* Bottom Thinking / Overlay Section */}
+2605 |   1 |                 <div className="absolute bottom-12 left-0 right-0 z-40 flex flex-col items-center">
+2606 |   1 |                   {/* Question Display Card (Replaced Thinking Bar) */}
+2607 |   1 |                   <div className="w-full max-w-2xl px-6">
+2608 |   2 |                     {question ? (
+2609 |   2 |                       <div className="bg-white/95 backdrop-blur-xl border border-white/50 pt-8 pb-12 px-10 rounded-[2.5rem] shadow-2xl pointer-events-auto transition-all animate-in slide-in-from-bottom-5 duration-500 flex flex-col items-center text-center">
+2610 |   2 |                         <div className="flex items-center gap-2 mb-3">
+2611 |   2 |                           <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
+2612 |   2 |                           <span className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Current Question</span>
+2613 |   2 |                         </div>
+2614 |   2 |                         <p className="text-lg md:text-xl font-bold text-slate-800 leading-snug">
+2615 |   2 |                           {question}
+2616 |   2 |                         </p>
+2617 |   2 |                       </div>
+2618 |   2 |                     ) : (
+2619 |   2 |                       <div className="w-full max-w-xl mx-auto bg-white/90 backdrop-blur-md border border-slate-100 py-10 px-10 rounded-[2.5rem] shadow-2xl flex flex-col items-center justify-center gap-3">
+2620 |   2 |                         <div className="flex gap-2">
+2621 |   2 |                           {[0, 1, 2].map(i => <div key={i} className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }}></div>)}
+2622 |   2 |                         </div>
+2623 |   2 |                       </div>
+2624 |   1 |                     )}
+2625 |   1 |                   </div>
+2626 |   1 | 
+2627 |   1 |                   {/* Floating Mic Button */}
+2628 |   1 |                   <div className="mt-[-30px] relative z-50 pointer-events-auto">
+2629 |   1 |                     <div className="absolute inset-0 animate-ping bg-indigo-500/10 rounded-full"></div>
+2630 |   1 |                     <button
+2631 |   3 |                       onClick={() => {
+2632 |   4 |                         if (isListening) {
+2633 |   4 |                           isManualStopRef.current = true;
+2634 |   4 |                           try { recognitionRef.current?.stop(); } catch (e) { }
+2635 |   4 |                           setIsListening(false);
+2636 |   4 |                         } else {
+2637 |   4 |                           isManualStopRef.current = false;
+2638 |   4 |                           try { recognitionRef.current?.start(); } catch (e) { }
+2639 |   4 |                           setIsListening(true);
+2640 |   3 |                         }
+2641 |   1 |                       }}
+2642 |   1 |                       className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-[0_15px_30px_rgba(0,0,0,0.15)] relative ${isListening ? 'bg-red-500 text-white scale-110' : 'bg-white text-slate-600 hover:text-indigo-600'}`}>
+2643 |   1 |                       <Mic size={28} strokeWidth={2.5} className={isListening && audioLevel > 5 ? 'scale-110' : ''} />
+2644 |   1 |                       {/* Audio Pulse Ring */}
+2645 |   2 |                       {isListening && (
+2646 |   2 |                         <div className="absolute -inset-4 border-2 border-indigo-500/20 rounded-full animate-pulse transition-transform" style={{ scale: `${1 + (audioLevel / 50)}` }}></div>
+2647 |   1 |                       )}
+2648 |   1 |                     </button>
+2649 |   1 |                   </div>
+2650 |   1 |                 </div>
+2651 |   1 |               </div>
+2652 |   1 | 
+2653 |   1 |               {/* RIGHT: PROFESSIONAL SIDE PANEL */}
+2654 |   1 |               <div className="lg:w-[32rem] flex flex-col gap-4 h-full min-h-0 overflow-y-auto custom-scrollbar pr-2">
+2655 |   1 | 
+2656 |   1 |                 {/* Agent Profile Card */}
+2657 |   1 |                 <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-4">
+2658 |   1 |                   <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+2659 |   1 |                     <img src="/robot_avatar_new.png" alt="Agent" className="w-full h-full object-cover rounded-2xl" />
+2660 |   1 |                   </div>
+2661 |   1 |                   <div className="flex-1">
+2662 |   1 |                     <h4 className="text-base font-black text-slate-800">Agent Ishan</h4>
+2663 |   1 |                     <div className="flex items-center gap-1.5 mt-0.5">
+2664 |   1 |                       <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+2665 |   1 |                       <span className="text-[10px] font-black text-green-600 uppercase tracking-widest">Active Now</span>
+2666 |   1 |                     </div>
+2667 |   1 |                   </div>
+2668 |   1 |                 </div>
+2669 |   1 | 
+2670 |   1 |                 {/* Timer/Round Card */}
+2671 |   1 |                 <div className="grid grid-cols-2 gap-4">
+2672 |   1 |                   <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm text-center">
+2673 |   1 |                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Time Elapsed</span>
+2674 |   1 |                     <span className="text-2xl font-black text-indigo-600 font-mono tracking-tighter">{formatTime(elapsedTime)}</span>
+2675 |   1 |                   </div>
+2676 |   1 |                   <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm text-center">
+2677 |   1 |                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Status</span>
+2678 |   1 |                     <div className="inline-block px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[9px] font-black uppercase tracking-widest">Round 1</div>
+2679 |   1 |                   </div>
+2680 |   1 |                 </div>
+2681 |   1 | 
+2682 |   1 |                 {/* Transcript Card */}
+2683 |   1 |                 <div className="bg-white flex flex-col gap-4 flex-1 min-h-[350px] rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden group">
+2684 |   1 |                   <div className="p-6 pb-2 flex items-center justify-between">
+2685 |   1 |                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Live Transcript</h3>
+2686 |   1 |                     <div className="flex gap-2">
+2687 |   1 |                       <div className="px-2 py-0.5 bg-red-500 text-white rounded-md text-[8px] font-black uppercase tracking-widest flex items-center gap-1">
+2688 |   1 |                         <span className="w-1 h-1 bg-white rounded-full animate-pulse"></span> recording live
+2689 |   1 |                       </div>
+2690 |   1 |                       <div className="px-2 py-0.5 bg-green-100 text-green-600 rounded-md text-[8px] font-black uppercase tracking-widest flex items-center gap-1">
+2691 |   1 |                         <Sparkles size={8} /> accuracy optimized
+2692 |   1 |                       </div>
+2693 |   1 |                     </div>
+2694 |   1 |                   </div>
+2695 |   1 | 
+2696 |   1 |                   <div ref={transcriptScrollRef} className="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar text-center flex flex-col items-center">
+2697 |   2 |                     {!transcript && !interimTranscript ? (
+2698 |   2 |                       <div className="flex-1 flex items-center justify-center">
+2699 |   2 |                         <span className="text-slate-300 font-bold uppercase tracking-widest text-[10px]">Listening for voice...</span>
+2700 |   2 |                       </div>
+2701 |   2 |                     ) : (
+2702 |   2 |                       <div className="w-full h-auto py-4 text-base font-bold text-slate-800 leading-relaxed text-center whitespace-pre-wrap">
+2703 |   2 |                         {transcript}
+2704 |   3 |                         {interimTranscript && (
+2705 |   3 |                           <span className="text-indigo-500 opacity-70">
+2706 |   3 |                             {transcript ? " " : ""}{interimTranscript}
+2707 |   3 |                           </span>
+2708 |   2 |                         )}
+2709 |   2 |                         <div ref={transcriptEndRef} className="h-0 w-0" />
+2710 |   2 |                       </div>
+2711 |   1 |                     )}
+2712 |   1 |                   </div>
+2713 |   1 | 
+2714 |   1 |                   <div className="bg-indigo-50 py-3 mx-4 mb-4 rounded-xl text-center">
+2715 |   1 |                     <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest flex items-center justify-center gap-2">
+2716 |   1 |                       <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></div> Interviewer is listening
+2717 |   1 |                     </span>
+2718 |   1 |                   </div>
+2719 |   1 |                 </div>
+2720 |   1 | 
+2721 |   1 |                 {/* AI Evaluation Card */}
+2722 |   1 |                 <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+2723 |   1 |                   <div className="flex items-center gap-3">
+2724 |   1 |                     <Sparkles size={16} className="text-indigo-500" />
+2725 |   1 |                     <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">AI Evaluation Active</span>
+2726 |   1 |                   </div>
+2727 |   1 |                   <div className="w-2 h-2 bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]"></div>
+2728 |   1 |                 </div>
+2729 |   1 | 
+2730 |   1 |                 {/* Auto-Submit Alert Card */}
+2731 |   1 |                 <div className="bg-blue-50/50 p-6 rounded-[2rem] border border-blue-100 flex flex-col gap-2">
+2732 |   1 |                   <div className="flex items-center gap-3">
+2733 |   1 |                     <div className="flex gap-1">
+2734 |   1 |                       <div className="w-1 h-1 bg-blue-600 rounded-full animate-bounce"></div>
+2735 |   1 |                       <div className="w-1 h-1 bg-blue-600 rounded-full animate-bounce delay-100"></div>
+2736 |   1 |                       <div className="w-1 h-1 bg-blue-600 rounded-full animate-bounce delay-200"></div>
+2737 |   1 |                     </div>
+2738 |   1 |                     <span className="text-[10px] font-black text-blue-700 uppercase tracking-widest">Auto-Submit Active (10s Silence)</span>
+2739 |   1 |                   </div>
+2740 |   1 |                   <p className="text-[9px] text-blue-500 font-bold leading-relaxed ml-7">Answer will be submitted automatically after you stop speaking.</p>
+2741 |   1 |                 </div>
+2742 |   1 | 
+2743 |   1 |                 {/* Actions Section */}
+2744 |   1 |                 <div className="mt-auto flex flex-col gap-3 py-2">
+2745 |   1 |                   <button
+2746 |   1 |                     onClick={handleSubmitAnswer}
+2747 |   1 |                     disabled={loading || isSpeaking || fetchingQuestion}
+2748 |   1 |                     className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-2xl font-black text-base transition-all shadow-xl shadow-indigo-600/20 active:scale-95 flex items-center justify-center gap-3 uppercase tracking-widest"
+2749 |   1 |                   >
+2750 |   1 |                     Submit & Proceed <ArrowRight size={20} />
+2751 |   1 |                   </button>
+2752 |   1 | 
+2753 |   1 |                   <button
+2754 |   1 |                     onClick={handleEndInterview}
+2755 |   1 |                     className="w-full py-4 text-slate-400 font-bold flex items-center justify-center gap-2 hover:text-slate-600 transition-all text-xs uppercase tracking-widest border border-slate-100 rounded-2xl"
+2756 |   1 |                   >
+2757 |   1 |                     <LogOut size={14} /> End Interview Session
+2758 |   1 |                   </button>
+2759 |   1 |                 </div>
+2760 |   1 |               </div>
+2761 |   1 |             </div>
+2762 |   1 | 
+2763 |   1 |             {/* End Confirmation Modal (Integrated) */}
+2764 |   2 |             {showEndConfirm && (
+2765 |   2 |               <div className="fixed inset-0 z-[102] bg-slate-950/60 backdrop-blur-xl flex items-center justify-center p-6">
+2766 |   2 |                 <div className="bg-white p-12 rounded-[3.5rem] max-w-lg w-full text-center shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-300">
+2767 |   2 |                   <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-8">
+2768 |   2 |                     <BarChart size={40} />
+2769 |   2 |                   </div>
+2770 |   2 |                   <h2 className="text-3xl font-black mb-4 text-slate-800 tracking-tight">Generate Final Report?</h2>
+2771 |   2 |                   <p className="text-slate-500 mb-10 font-medium">This will end the interview and analyze your performance. You will receive a detailed PDF with score breakdowns.</p>
+2772 |   2 | 
+2773 |   2 |                   <div className="flex flex-col gap-4">
+2774 |   2 |                     <button onClick={confirmEndInterview} className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.5rem] font-black text-xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all">Generate My Report</button>
+2775 |   2 |                     <button onClick={() => setShowEndConfirm(false)} className="w-full py-4 text-slate-400 font-bold underline text-sm uppercase tracking-widest hover:text-slate-600">No, Continue Interview</button>
+2776 |   2 |                   </div>
+2777 |   2 |                 </div>
+2778 |   2 |               </div>
+2779 |   1 |             )}
+2780 |   1 |           </main>
+2781 |   1 |         )
+2782 |   0 |       }
+2783 |   0 | 
+2784 |   0 |       {/* STAGE: RESULTS */}
+2785 |   1 |       {
+2786 |   1 |         stage === 'results' && (
+2787 |   1 |           <main className="h-screen flex items-center justify-center p-8 bg-[var(--background)]">
+2788 |   1 |             <div className="w-full max-w-2xl bg-[var(--card-bg)] p-12 rounded-[3.5rem] border border-[var(--border)] shadow-[0_30px_100px_rgba(0,0,0,0.2)] text-center relative overflow-hidden">
+2789 |   1 |               <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-indigo-600 to-purple-600"></div>
+2790 |   1 | 
+2791 |   1 |               <div className="w-20 h-20 bg-green-500/10 text-green-500 rounded-3xl flex items-center justify-center mx-auto mb-8 relative">
+2792 |   1 |                 <CheckCircle size={40} />
+2793 |   1 |                 <img src="/atlas_hero.png" className="absolute -top-10 -left-20 w-32 opacity-20 animate-float" />
+2794 |   1 |               </div>
+2795 |   1 | 
+2796 |   1 |               <h1 className="text-4xl font-black mb-4">Interview Completed</h1>
+2797 |   1 |               <p className="text-[var(--text-muted)] mb-10 font-medium">Great job! Your performance has been analyzed by our AI engine.</p>
+2798 |   1 | 
+2799 |   1 |               <div className="grid grid-cols-2 gap-6 mb-12">
+2800 |   1 |                 <div className="p-6 bg-[var(--background)] rounded-3xl border border-[var(--border)]">
+2801 |   1 |                   <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Overall Score</div>
+2802 |   1 |                   <div className="text-4xl font-black text-indigo-600">{reportData?.score || 0}%</div>
+2803 |   1 |                 </div>
+2804 |   1 |                 <div className="p-6 bg-[var(--background)] rounded-3xl border border-[var(--border)]">
+2805 |   1 |                   <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Status</div>
+2806 |   1 |                   <div className="text-xl font-black text-green-600">PASSED</div>
+2807 |   1 |                 </div>
+2808 |   1 |               </div>
+2809 |   1 | 
+2810 |   1 |               <div className="flex flex-col gap-4">
+2811 |   1 |                 <div className="space-y-2">
+2812 |   1 |                   <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-2 opacity-70">Recommended: Secure your performance certificate</p>
+2813 |   1 |                   <button
+2814 |   1 |                     onClick={() => handleDownloadReport(true)}
+2815 |   1 |                     className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xl hover:bg-indigo-700 transition-all shadow-xl hover:shadow-indigo-500/30 flex items-center justify-center gap-3 active:scale-95"
+2816 |   1 |                   >
+2817 |   1 |                     <Monitor size={24} /> Download Final Report
+2818 |   1 |                   </button>
+2819 |   1 |                 </div>
+2820 |   1 | 
+2821 |   1 |               </div>
+2822 |   1 |             </div>
+2823 |   1 |           </main>
+2824 |   1 |         )
+2825 |   0 |       }
+2826 |   0 | 
+2827 |   0 |       {/* STAGE: REPORT */}
+2828 |   1 |       {
+2829 |   1 |         stage === 'report' && (
+2830 |   1 |           <main className="h-screen flex items-center justify-center p-8">
+2831 |   1 |             <div className="w-full max-w-2xl text-center bg-[var(--card-bg)] p-16 rounded-[3rem] border-8 border-red-500/20 shadow-2xl relative overflow-hidden">
+2832 |   1 |               <div className="absolute top-0 left-0 w-full h-4 bg-red-500"></div>
+2833 |   1 |               <div className="w-24 h-24 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-8">
+2834 |   1 |                 <Shield size={48} />
+2835 |   1 |               </div>
+2836 |   1 |               <h1 className="text-5xl font-black mb-6 tracking-tight">Access Terminated</h1>
+2837 |   1 |               <p className="text-xl text-[var(--text-muted)] font-medium mb-12 leading-relaxed">
+2838 |   1 |                 Security proctoring detected multiple violations (Tab switching / Gadget detection / Loss of focus). A detailed incident report has been sent to the dashboard.
+2839 |   1 |               </p>
+2840 |   1 |               <div className="flex gap-4 justify-center">
+2841 |   1 |                 <div className="flex flex-col gap-2">
+2842 |   1 |                   <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-2">Detailed incident evidence available below</p>
+2843 |   1 |                   <button
+2844 |   1 |                     onClick={() => handleDownloadReport(true)}
+2845 |   1 |                     className="px-6 py-5 bg-indigo-600 text-white rounded-2xl font-black text-lg hover:bg-indigo-700 transition-all shadow-xl flex items-center gap-2 active:scale-95"
+2846 |   1 |                   >
+2847 |   1 |                     <Monitor size={20} /> Download Incident Report
+2848 |   1 |                   </button>
+2849 |   1 |                 </div>
+2850 |   1 | 
+2851 |   1 |               </div>
+2852 |   1 |             </div>
+2853 |   1 |           </main>
+2854 |   1 |         )
+2855 |   0 |       }
+2856 |   0 | 
+2857 |   0 |       {/* GLOBAL SECURITY OVERLAYS */}
+2858 |   1 |       {
+2859 |   1 |         showFullscreenWarn && (
+2860 |   1 |           <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-xl flex items-center justify-center p-8">
+2861 |   1 |             <div className="bg-white dark:bg-gray-900 p-8 rounded-[3rem] max-w-lg text-center shadow-[0_0_50px_rgba(239,68,68,0.3)] border border-red-500/50 animate-in zoom-in duration-300">
+2862 |   1 |               <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+2863 |   1 |                 <AlertCircle size={40} />
+2864 |   1 |               </div>
+2865 |   1 |               <h2 className="text-3xl font-black mb-2 text-red-600 tracking-tight">Return to Fullscreen</h2>
+2866 |   1 |               <p className="text-slate-600 dark:text-slate-300 mb-8 font-medium">Exiting fullscreen mode is a security violation. You must stay in fullscreen to continue the interview.</p>
+2867 |   1 | 
+2868 |   1 |               <button
+2869 |   3 |                 onClick={() => {
+2870 |   3 |                   enterFullScreen();
+2871 |   3 |                   setShowFullscreenWarn(false);
+2872 |   3 |                   showFullscreenWarnRef.current = false;
+2873 |   1 |                 }}
+2874 |   1 |                 className="w-full py-5 bg-red-600 text-white rounded-2xl font-black text-lg hover:bg-red-700 transition-all shadow-xl shadow-red-500/30 active:scale-95"
+2875 |   1 |               >
+2876 |   1 |                 Enter Fullscreen Now
+2877 |   1 |               </button>
+2878 |   1 |               <p className="mt-5 text-[10px] text-red-500 font-black uppercase tracking-widest bg-red-50 inline-block px-3 py-1 rounded-full border border-red-100">
+2879 |   1 |                 Warning {fullscreenWarnCountRef.current} of 3
+2880 |   1 |               </p>
+2881 |   1 |             </div>
+2882 |   1 |           </div>
+2883 |   1 |         )
+2884 |   0 |       }
+2885 |   0 | 
+2886 |   1 |       {
+2887 |   1 |         showTabSwitchWarn && (
+2888 |   1 |           <div className="fixed inset-0 z-[301] bg-black/90 backdrop-blur-xl flex items-center justify-center p-8">
+2889 |   1 |             <div className="bg-white dark:bg-gray-900 p-8 rounded-[3rem] max-w-lg text-center shadow-[0_0_50px_rgba(245,158,11,0.3)] border border-orange-500/50 animate-in zoom-in duration-300">
+2890 |   1 |               <div className="w-20 h-20 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-6">
+2891 |   1 |                 <Monitor size={40} />
+2892 |   1 |               </div>
+2893 |   1 |               <h2 className="text-3xl font-black mb-2 text-orange-600 tracking-tight">Security Alert</h2>
+2894 |   1 |               <p className="text-slate-600 dark:text-slate-300 mb-8 font-medium">Tab switching is strictly monitored. Please remain focused on this window to avoid immediate termination.</p>
+2895 |   1 | 
+2896 |   1 |               <button
+2897 |   3 |                 onClick={() => {
+2898 |   3 |                   setShowTabSwitchWarn(false);
+2899 |   3 |                   showTabSwitchWarnRef.current = false;
+2900 |   3 |                   // Auto-resume logic
+2901 |   4 |                   if (!showFullscreenWarnRef.current) {
+2902 |   5 |                     if (stage === 'interview') {
+2903 |   5 |                       speak("Returning to the interview. " + questionRef.current);
+2904 |   5 |                     } else if (stage === 'code') {
+2905 |   5 |                       speak("Returning to the coding challenge.");
+2906 |   4 |                     }
+2907 |   3 |                   }
+2908 |   1 |                 }}
+2909 |   1 |                 className="w-full py-5 bg-orange-600 text-white rounded-2xl font-black text-lg hover:bg-orange-700 transition-all shadow-xl shadow-orange-500/30 active:scale-95"
+2910 |   1 |               >
+2911 |   1 |                 I Understand
+2912 |   1 |               </button>
+2913 |   1 |               <p className="mt-5 text-[10px] text-orange-500 font-black uppercase tracking-widest bg-orange-50 inline-block px-3 py-1 rounded-full border border-orange-100">
+2914 |   1 |                 {4 - tabSwitchCountRef.current} attempts remaining
+2915 |   1 |               </p>
+2916 |   1 |             </div>
+2917 |   1 |           </div>
+2918 |   1 |         )
+2919 |   0 |       }
+2920 |   0 | 
+2921 |   0 |     </div >
+2922 |   0 |   );
+2923 |  -1 | }
+!!! ERROR: Negative balance at line 2923
+2924 |   0 | 
+2925 |   1 | export default function Home() {
+2926 |   1 |   return (
+2927 |   1 |     <Suspense fallback={<div>Loading...</div>}>
+2928 |   1 |       <HomeContent />
+2929 |   1 |     </Suspense>
+2930 |   1 |   );
+2931 |   0 | }
+2932 |   0 | 

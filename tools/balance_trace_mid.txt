@@ -1,0 +1,1001 @@
+1001 |  -3 |     }
+1002 |  -4 |   }, [stage]);
+1003 |  -4 | 
+1004 |  -4 |   // STABLE VIOLATION LOGIC
+1005 |  -3 |   useEffect(() => {
+1006 |  -3 |     const monitoringStages = ['verification', 'calibration', 'instructions', 'interview', 'code'];
+1007 |  -3 |     if (!monitoringStages.includes(stage)) return;
+1008 |  -3 | 
+1009 |  -2 |     const check = () => {
+1010 |  -2 |       if (!monitoringStages.includes(stage)) return;
+1011 |  -2 |       const isExited = !document.fullscreenElement;
+1012 |  -2 |       const isHidden = document.visibilityState === 'hidden';
+1013 |  -2 | 
+1014 |  -1 |       if (isExited) {
+1015 |  -1 |         // If we are already showing warning, do nothing
+1016 |  -1 |         if (showFullscreenWarnRef.current) return;
+1017 |  -1 | 
+1018 |  -1 |         fullscreenWarnCountRef.current += 1;
+1019 |  -1 | 
+1020 |  -1 |         fetch("http://127.0.0.1:5000/proctor/event", {
+1021 |  -1 |           method: "POST", headers: { 'Content-Type': 'application/json' },
+1022 |  -1 |           body: JSON.stringify({ type: "FULLSCREEN_EXIT", message: `User exited full screen mode (Attempt ${fullscreenWarnCountRef.current})`, severity: "MEDIUM" })
+1023 |  -2 |         });
+1024 |  -2 | 
+1025 |  -1 |         if (fullscreenWarnCountRef.current >= 3) {
+1026 |  -1 |           handleTermination("Multiple (3+) fullscreen violations detected. Terminating interview for security.");
+1027 |  -1 |         } else {
+1028 |  -1 |           setShowFullscreenWarn(true);
+1029 |  -1 |           showFullscreenWarnRef.current = true;
+1030 |  -1 |           // Stop agent background voice completely when full screen is exited
+1031 |   0 |           try {
+1032 |   0 |             window.speechSynthesis.cancel();
+1033 |   0 |             setIsSpeaking(false);
+1034 |   0 |             isSpeakingRef.current = false;
+1035 |   0 |             // Stop recognition too
+1036 |   1 |             if (recognitionRef.current) {
+1037 |   1 |               recognitionRef.current.stop();
+1038 |   1 |               recognitionActiveRef.current = false;
+1039 |   1 |               setIsListening(false);
+1040 |   0 |             }
+1041 |   0 |             // Also pause any fallback audio playing
+1042 |   1 |             if ((window as any).audioRef?.current) {
+1043 |   1 |               (window as any).audioRef.current.pause();
+1044 |   1 |               (window as any).audioRef.current = null;
+1045 |   0 |             }
+1046 |  -1 |           } catch (e) { }
+1047 |  -1 |           speak("Full screen exited.");
+1048 |  -2 |         }
+1049 |  -3 |       }
+1050 |  -3 | 
+1051 |  -2 |       if (isHidden) {
+1052 |  -2 |         if (showTabSwitchWarnRef.current) return;
+1053 |  -2 |         tabSwitchCountRef.current += 1;
+1054 |  -2 |         fetch("http://127.0.0.1:5000/proctor/event", {
+1055 |  -2 |           method: "POST", headers: { 'Content-Type': 'application/json' },
+1056 |  -2 |           body: JSON.stringify({ type: "TAB_SWITCH", message: `Tab switch detected (Attempt ${tabSwitchCountRef.current})`, severity: tabSwitchCountRef.current >= 5 ? "CRITICAL" : "MEDIUM" })
+1057 |  -3 |         });
+1058 |  -2 |         if (tabSwitchCountRef.current >= 3) {
+1059 |  -2 |           handleTermination("Security violation: Maximum tab switches exceeded. Terminating interview.");
+1060 |  -2 |         } else {
+1061 |  -2 |           setShowTabSwitchWarn(true);
+1062 |  -2 |           showTabSwitchWarnRef.current = true;
+1063 |  -2 |           // Stop agent background voice completely for tab switch too
+1064 |  -1 |           try {
+1065 |  -1 |             window.speechSynthesis.cancel();
+1066 |  -1 |             setIsSpeaking(false);
+1067 |  -1 |             isSpeakingRef.current = false;
+1068 |  -1 |             // Stop recognition
+1069 |   0 |             if (recognitionRef.current) {
+1070 |   0 |               recognitionRef.current.stop();
+1071 |   0 |               recognitionActiveRef.current = false;
+1072 |   0 |               setIsListening(false);
+1073 |  -1 |             }
+1074 |   0 |             if (audioRef.current) {
+1075 |   0 |               audioRef.current.pause();
+1076 |   0 |               audioRef.current = null;
+1077 |  -1 |             }
+1078 |  -2 |           } catch (e) { }
+1079 |  -3 |         }
+1080 |  -3 |       } else {
+1081 |  -3 |         // Returned from hidden state
+1082 |  -2 |         if (showTabSwitchWarnRef.current) {
+1083 |  -2 |           setShowTabSwitchWarn(false);
+1084 |  -2 |           showTabSwitchWarnRef.current = false;
+1085 |  -2 |           // Auto-resume if in interview or code stage
+1086 |  -1 |           if (!showFullscreenWarnRef.current) {
+1087 |   0 |             if (stage === 'interview') {
+1088 |   1 |               setTimeout(() => {
+1089 |   1 |                 if (questionRef.current) speak("Returning to the interview. " + questionRef.current);
+1090 |   0 |               }, 500);
+1091 |   0 |             } else if (stage === 'code') {
+1092 |   1 |               setTimeout(() => {
+1093 |   1 |                 speak("Returning to the coding challenge.");
+1094 |   0 |               }, 500);
+1095 |  -1 |             }
+1096 |  -2 |           }
+1097 |  -3 |         }
+1098 |  -4 |       }
+1099 |  -5 |     };
+1100 |  -5 | 
+1101 |  -4 |     const handleFsChange = () => {
+1102 |  -3 |       if (!document.fullscreenElement) {
+1103 |  -3 |         check();
+1104 |  -3 |       } else {
+1105 |  -3 |         setShowFullscreenWarn(false);
+1106 |  -3 |         showFullscreenWarnRef.current = false;
+1107 |  -3 |         // Safety: ensure any stuck audio or speech state is cleared on return
+1108 |  -2 |         try {
+1109 |  -2 |           window.speechSynthesis.cancel();
+1110 |  -2 |           setIsSpeaking(false);
+1111 |  -2 |           isSpeakingRef.current = false;
+1112 |  -2 |           isManualStopRef.current = false; // Allow auto-resume
+1113 |  -3 |         } catch (e) { }
+1114 |  -3 | 
+1115 |  -3 |         // Explicitly resume interview flow - verbal nudge as requested ("it should ask right")
+1116 |  -2 |         setTimeout(() => {
+1117 |  -1 |           if (stage === 'interview') {
+1118 |   0 |             if (questionRef.current) {
+1119 |   0 |               speak("Resuming.");
+1120 |   0 |             } else {
+1121 |   0 |               safeStartRecognition();
+1122 |  -1 |             }
+1123 |  -1 |           } else if (stage === 'code') {
+1124 |  -1 |             speak("Returning to the coding challenge.");
+1125 |  -2 |           }
+1126 |  -3 |         }, 500);
+1127 |  -4 |       }
+1128 |  -5 |     };
+1129 |  -5 | 
+1130 |  -5 |     document.addEventListener('fullscreenchange', handleFsChange);
+1131 |  -5 |     document.addEventListener('visibilitychange', check);
+1132 |  -5 | 
+1133 |  -4 |     return () => {
+1134 |  -4 |       document.removeEventListener('fullscreenchange', handleFsChange);
+1135 |  -4 |       document.removeEventListener('visibilitychange', check);
+1136 |  -5 |     };
+1137 |  -6 |   }, [stage, showFullscreenWarn, question]); // Added question to ensure re-prompt has latest if needed
+1138 |  -6 | 
+1139 |  -6 |   // PROCTORING POLL & FRAME LOGIC
+1140 |  -5 |   useEffect(() => {
+1141 |  -5 |     // Continuous monitoring from verification onwards
+1142 |  -5 |     if (!['verification', 'calibration', 'instructions', 'interview', 'code'].includes(stage)) return;
+1143 |  -4 |     const detectExtensions = () => {
+1144 |  -4 |       // Check for common extension attributes or injected elements
+1145 |  -4 |       const indicators = [
+1146 |  -4 |         'data-gr-ext-installed', // Grammarly
+1147 |  -4 |         'data-grammarly-part',
+1148 |  -4 |         'data-extension-id', // Generic extension ID attribute
+1149 |  -4 |       ];
+1150 |  -4 | 
+1151 |  -4 |       const hasIndicators = indicators.some(attr =>
+1152 |  -4 |         document.documentElement.hasAttribute(attr) ||
+1153 |  -4 |         document.body.hasAttribute(attr) ||
+1154 |  -4 |         document.querySelector(`[${attr}]`)
+1155 |  -4 |       );
+1156 |  -4 | 
+1157 |  -4 |       // Check for unexpected scripts or iframes (common in extensions)
+1158 |  -4 |       const scripts = document.getElementsByTagName('script');
+1159 |  -4 |       const hasSuspiciousScript = Array.from(scripts).some(s =>
+1160 |  -4 |         s.src.includes('chrome-extension://') || s.src.includes('grammarly')
+1161 |  -4 |       );
+1162 |  -4 | 
+1163 |  -4 |       return hasIndicators || hasSuspiciousScript;
+1164 |  -5 |     };
+1165 |  -5 | 
+1166 |  -4 |     const poll = async () => {
+1167 |  -4 |       // SKIP termination checks during verification stage
+1168 |  -4 |       // Verification failures should stay on verification page, not trigger termination
+1169 |  -4 |       if (stage === 'verification') return;
+1170 |  -4 | 
+1171 |  -4 |       // EXTENSION CHECK
+1172 |  -3 |       if (detectExtensions() && (stage === 'interview' || stage === 'code')) {
+1173 |  -3 |         handleTermination("Security Violation: Browser extensions (like Grammarly or Translate) detected. Please disable all extensions to continue.");
+1174 |  -3 |         return;
+1175 |  -4 |       }
+1176 |  -4 | 
+1177 |  -4 |       // poll every 2s for backend-triggered termination (ID fraud)
+1178 |  -3 |       try {
+1179 |  -3 |         const res = await fetch("http://127.0.0.1:5000/proctor/status");
+1180 |  -3 |         const data = await res.json();
+1181 |  -3 |         const activeProctoringStages = ['calibration', 'instructions', 'interview', 'code'];
+1182 |  -2 |         if (data.should_terminate && activeProctoringStages.includes(stage)) {
+1183 |  -2 |           handleTermination(data.termination_reason || "Critical security violation detected. The interview is being terminated.");
+1184 |  -3 |         }
+1185 |  -4 |       } catch (e) { }
+1186 |  -5 |     };
+1187 |  -4 |     const sendFrame = async () => {
+1188 |  -4 |       const activeVideo = videoRef.current || verificationVideoRef.current;
+1189 |  -4 |       if (!activeVideo) return;
+1190 |  -4 |       const canvas = document.createElement('canvas');
+1191 |  -4 |       canvas.width = 640; canvas.height = 480;
+1192 |  -4 |       canvas.getContext('2d')?.drawImage(activeVideo, 0, 0, 640, 480);
+1193 |  -4 |       const img = canvas.toDataURL('image/jpeg', 0.8);
+1194 |  -3 |       try {
+1195 |  -3 |         const res = await fetch("http://127.0.0.1:5000/proctor/process_frame", {
+1196 |  -3 |           method: "POST", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: img })
+1197 |  -4 |         });
+1198 |  -4 |         const data = await res.json();
+1199 |  -4 |         const warning = data.warning || data.current_warning || '';
+1200 |  -4 | 
+1201 |  -4 |         // Optimize: Only update state if something changed
+1202 |  -3 |         setProctorStatus(prev => {
+1203 |  -3 |           if (prev.face === data.face_detected && prev.warning === warning) return prev;
+1204 |  -3 |           return { face: data.face_detected, warning: warning };
+1205 |  -4 |         });
+1206 |  -4 | 
+1207 |  -4 |         // Only terminate in active stages. 
+1208 |  -4 |         // Verification stage handles its own failures in captureAndVerify.
+1209 |  -4 |         const activeProctoringStages = ['calibration', 'instructions', 'interview', 'code'];
+1210 |  -3 |         if (activeProctoringStages.includes(stage) && data.should_terminate) {
+1211 |  -3 |           // Use the reason from backend if available, otherwise generic
+1212 |  -3 |           const reason = data.termination_reason || "Security Violation Detected. Interview Terminated.";
+1213 |  -3 |           handleTermination(reason);
+1214 |  -3 |           return;
+1215 |  -4 |         }
+1216 |  -3 |         if (warning.toLowerCase().includes("movement") || warning.toLowerCase().includes("down")) {
+1217 |  -3 |           lookingDownRef.current += 1;
+1218 |  -2 |           if (lookingDownRef.current > 4) {
+1219 |  -2 |             setFeedback("⚠️ Please maintain focus on the screen.");
+1220 |  -2 |             lookingDownRef.current = 0;
+1221 |  -3 |           }
+1222 |  -3 |         } else {
+1223 |  -3 |           lookingDownRef.current = 0;
+1224 |  -4 |         }
+1225 |  -4 |         if (!data.face_detected) noFaceRef.current += 1; else noFaceRef.current = 0;
+1226 |  -4 |         setShowNoFaceWarn(noFaceRef.current > 10);
+1227 |  -5 |       } catch (e) { }
+1228 |  -6 |     };
+1229 |  -6 |     const t = setInterval(poll, 2000);
+1230 |  -6 |     const f = setInterval(sendFrame, 500); // Increased frequency (2 FPS) for faster detection
+1231 |  -6 |     return () => { clearInterval(t); clearInterval(f); };
+1232 |  -7 |   }, [stage]);
+1233 |  -7 | 
+1234 |  -7 |   // 1. Lip Sync & Mic Control Effect
+1235 |  -6 |   useEffect(() => {
+1236 |  -6 |     if (stage !== 'interview') return;
+1237 |  -6 | 
+1238 |  -6 |     const v = agentVideoRef.current;
+1239 |  -6 |     if (!v) return;
+1240 |  -6 | 
+1241 |  -5 |     if (isSpeaking) {
+1242 |  -4 |       v.play().catch((e: any) => {
+1243 |  -4 |         if (e.name === 'AbortError' || e.message?.includes('pause') || e.name === 'NotAllowedError') return;
+1244 |  -4 |         console.error("Agent play failed:", e);
+1245 |  -5 |       });
+1246 |  -4 |       if (recognitionRef.current && recognitionActiveRef.current) {
+1247 |  -4 |         try { recognitionRef.current.stop(); } catch (e) { }
+1248 |  -5 |       }
+1249 |  -5 |     } else {
+1250 |  -5 |       // Small delay to ensure we don't pause a literally just started play()
+1251 |  -5 |       // or at least handle it silently via the catch above.
+1252 |  -5 |       try { v.pause(); } catch (e) { }
+1253 |  -5 |       if (stage === 'interview') safeStartRecognition();
+1254 |  -6 |     }
+1255 |  -7 |   }, [isSpeaking, stage]);
+1256 |  -7 | 
+1257 |  -7 |   const [verifyStatus, setVerifyStatus] = useState('');
+1258 |  -7 | 
+1259 |  -7 |   /* FAILSAFE TTS AUDIO REF */
+1260 |  -7 |   const audioRef = useRef<HTMLAudioElement | null>(null);
+1261 |  -7 | 
+1262 |  -6 |   const speak = (text: string, onComplete?: () => void) => {
+1263 |  -6 |     if (typeof window === 'undefined') return;
+1264 |  -6 |     const synth = window.speechSynthesis;
+1265 |  -6 | 
+1266 |  -6 |     // PREVENT RAPID-FIRE / REDUNDANT DEFERRALS
+1267 |  -6 |     const activeProctoringStages = ['verification', 'calibration', 'instructions', 'interview', 'code'];
+1268 |  -5 |     if (showFullscreenWarnRef.current || showTabSwitchWarnRef.current || (activeProctoringStages.includes(stage) && !document.fullscreenElement)) {
+1269 |  -5 |       if ((window as any)._lastDeferredText === text) return;
+1270 |  -5 |       (window as any)._lastDeferredText = text;
+1271 |  -5 |       console.log("⏳ Speak deferred (Visibility Violation)");
+1272 |  -4 |       setTimeout(() => {
+1273 |  -4 |         (window as any)._lastDeferredText = null;
+1274 |  -4 |         speak(text, onComplete);
+1275 |  -5 |       }, 1500);
+1276 |  -5 |       return;
+1277 |  -6 |     }
+1278 |  -6 | 
+1279 |  -6 |     // ── FIX: Give every speak() call its own "cancelled" token.
+1280 |  -6 |     const cancelledRef = { current: false };
+1281 |  -6 | 
+1282 |  -6 |     // Cancel any currently playing fallback audio FIRST
+1283 |  -5 |     if (audioRef.current) {
+1284 |  -5 |       audioRef.current.onplay = null;
+1285 |  -5 |       audioRef.current.onended = null;
+1286 |  -5 |       audioRef.current.onerror = null;
+1287 |  -5 |       audioRef.current.pause();
+1288 |  -5 |       audioRef.current = null;
+1289 |  -6 |     }
+1290 |  -6 | 
+1291 |  -5 |     if (utteranceRef.current) {
+1292 |  -5 |       utteranceRef.current.onstart = null;
+1293 |  -5 |       utteranceRef.current.onend = null;
+1294 |  -5 |       utteranceRef.current.onerror = null;
+1295 |  -5 |       utteranceRef.current = null;
+1296 |  -6 |     }
+1297 |  -6 | 
+1298 |  -6 |     try { synth.cancel(); } catch (e) { }
+1299 |  -6 | 
+1300 |  -6 |     let fallbackTimer: any = null;
+1301 |  -6 | 
+1302 |  -5 |     const playFallback = () => {
+1303 |  -5 |       if (cancelledRef.current) return;
+1304 |  -5 |       if (showFullscreenWarnRef.current || showTabSwitchWarnRef.current) return;
+1305 |  -5 | 
+1306 |  -5 |       const url = `http://127.0.0.1:5000/api/tts?text=${encodeURIComponent(text)}`;
+1307 |  -5 |       const audio = new Audio(url);
+1308 |  -5 |       audioRef.current = audio;
+1309 |  -5 | 
+1310 |  -4 |       audio.onplay = () => {
+1311 |  -4 |         if (cancelledRef.current) { audio.pause(); return; }
+1312 |  -4 |         setIsSpeaking(true);
+1313 |  -4 |         isSpeakingRef.current = true;
+1314 |  -5 |       };
+1315 |  -5 | 
+1316 |  -4 |       audio.onended = () => {
+1317 |  -4 |         if (cancelledRef.current) return;
+1318 |  -4 |         setIsSpeaking(false);
+1319 |  -4 |         isSpeakingRef.current = false;
+1320 |  -4 |         if (onComplete) onComplete();
+1321 |  -3 |         if (stage === 'interview') {
+1322 |  -3 |           safeStartRecognition();
+1323 |  -3 |           latestFnRef.current?.resetInactivityTimer?.();
+1324 |  -4 |         }
+1325 |  -5 |       };
+1326 |  -5 | 
+1327 |  -4 |       audio.onerror = () => {
+1328 |  -4 |         if (cancelledRef.current) return;
+1329 |  -4 |         setIsSpeaking(false);
+1330 |  -4 |         if (onComplete) onComplete();
+1331 |  -5 |       };
+1332 |  -5 |       audio.play().catch(() => { });
+1333 |  -6 |     };
+1334 |  -6 | 
+1335 |  -5 |     if (!synth) {
+1336 |  -5 |       playFallback();
+1337 |  -5 |       return;
+1338 |  -6 |     }
+1339 |  -6 | 
+1340 |  -5 |     const utter = () => {
+1341 |  -5 |       if (cancelledRef.current) return;
+1342 |  -5 |       if (fallbackTimer) clearTimeout(fallbackTimer);
+1343 |  -5 |       const utt = new SpeechSynthesisUtterance(text);
+1344 |  -5 |       utteranceRef.current = utt;
+1345 |  -5 |       const voices = synth.getVoices();
+1346 |  -4 |       if (voices.length > 0) {
+1347 |  -4 |         const preferred = voices.find(v => v.name.includes("David")) || voices.find(v => v.lang.startsWith('en') && !v.name.includes("Zira"));
+1348 |  -4 |         if (preferred) utt.voice = preferred;
+1349 |  -5 |       }
+1350 |  -4 |       utt.onstart = () => {
+1351 |  -4 |         if (cancelledRef.current) { synth.cancel(); return; }
+1352 |  -4 |         setIsSpeaking(true);
+1353 |  -4 |         isSpeakingRef.current = true;
+1354 |  -5 |       };
+1355 |  -4 |       utt.onend = () => {
+1356 |  -4 |         if (cancelledRef.current) return;
+1357 |  -4 |         setIsSpeaking(false);
+1358 |  -4 |         isSpeakingRef.current = false;
+1359 |  -4 |         if (onComplete) onComplete();
+1360 |  -3 |         if (stage === 'interview') {
+1361 |  -3 |           safeStartRecognition();
+1362 |  -3 |           latestFnRef.current?.resetInactivityTimer?.();
+1363 |  -4 |         }
+1364 |  -5 |       };
+1365 |  -4 |       utt.onerror = () => {
+1366 |  -4 |         if (cancelledRef.current) return;
+1367 |  -4 |         playFallback();
+1368 |  -5 |       };
+1369 |  -5 |       if (synth.paused) synth.resume();
+1370 |  -5 |       synth.speak(utt);
+1371 |  -6 |     };
+1372 |  -6 | 
+1373 |  -5 |     fallbackTimer = setTimeout(() => {
+1374 |  -5 |       if (!isSpeakingRef.current && !cancelledRef.current) playFallback();
+1375 |  -6 |     }, 2000);
+1376 |  -6 | 
+1377 |  -5 |     if (synth.getVoices().length === 0) {
+1378 |  -5 |       synth.addEventListener('voiceschanged', () => utter(), { once: true });
+1379 |  -5 |     } else {
+1380 |  -5 |       utter();
+1381 |  -6 |     }
+1382 |  -6 |     return () => { cancelledRef.current = true; };
+1383 |  -7 |   };
+1384 |  -7 | 
+1385 |  -6 |   const unlockAudio = () => {
+1386 |  -6 |     if (typeof window === 'undefined') return;
+1387 |  -6 |     const synth = window.speechSynthesis;
+1388 |  -6 |     // Essential for Chrome/Edge autoplay policy
+1389 |  -6 |     synth.cancel();
+1390 |  -6 |     synth.resume();
+1391 |  -6 | 
+1392 |  -6 |     // Heartbeat - force audio state activation
+1393 |  -6 |     const dummy = new SpeechSynthesisUtterance("");
+1394 |  -6 |     synth.speak(dummy);
+1395 |  -6 | 
+1396 |  -6 |     audioUnlockedRef.current = true;
+1397 |  -5 |     if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+1398 |  -5 |       audioContextRef.current.resume();
+1399 |  -6 |     }
+1400 |  -6 |     setAudioBlocked(false);
+1401 |  -7 |   };
+1402 |  -7 | 
+1403 |  -6 |   const handleBeginInterview = async () => {
+1404 |  -5 |     if (!file || !name) {
+1405 |  -5 |       alert("Please enter your name and upload a resume.");
+1406 |  -5 |       return;
+1407 |  -6 |     }
+1408 |  -6 | 
+1409 |  -6 |     // 1. Immediate Audio Unlock & Feedback
+1410 |  -6 |     speak("Analyzing your resume. Please wait a moment.");
+1411 |  -6 | 
+1412 |  -6 |     isTerminatingRef.current = false;
+1413 |  -6 | 
+1414 |  -6 |     setLoading(true);
+1415 |  -6 |     const formData = new FormData();
+1416 |  -6 |     formData.append('resume', file);
+1417 |  -6 |     formData.append('name', name);
+1418 |  -6 |     formData.append('email', email);
+1419 |  -6 |     if (user) formData.append('user_id', String(user.id));
+1420 |  -6 | 
+1421 |  -5 |     try {
+1422 |  -5 |       const res = await fetch('http://127.0.0.1:5000/api/upload_resume', {
+1423 |  -5 |         method: 'POST',
+1424 |  -5 |         body: formData
+1425 |  -6 |       });
+1426 |  -6 |       const data = await res.json();
+1427 |  -5 |       if (data.status === 'success') {
+1428 |  -5 |         // Start proctoring
+1429 |  -5 |         await fetch('http://127.0.0.1:5000/proctor/start', { method: 'POST' });
+1430 |  -5 | 
+1431 |  -5 |         speak(data.message || "Resume verified. Now, please verify your identity.");
+1432 |  -4 |         setTimeout(() => {
+1433 |  -4 |           setStage('verification');
+1434 |  -5 |         }, 1500);
+1435 |  -5 | 
+1436 |  -5 |       } else {
+1437 |  -5 |         const errorMsg = data.message || "Resume verification failed.";
+1438 |  -5 |         setFeedback("⚠️ " + errorMsg);
+1439 |  -5 |         setFile(null); // Clear file to force re-upload as per user request
+1440 |  -5 |         speak(errorMsg);
+1441 |  -6 |       }
+1442 |  -6 |     } catch (e) {
+1443 |  -6 |       setFeedback("❌ Connection error. Please ensure backend is running.");
+1444 |  -6 |       console.error(e);
+1445 |  -6 |     } finally {
+1446 |  -6 |       setLoading(false);
+1447 |  -7 |     }
+1448 |  -8 |   };
+1449 |  -8 | 
+1450 |  -8 |   // --- IDENTITY VERIFICATION ---
+1451 |  -8 |   const [verifyImage, setVerifyImage] = useState<string | null>(null);
+1452 |  -8 |   const [verifying, setVerifying] = useState(false);
+1453 |  -8 |   const [verifyFailCount, setVerifyFailCount] = useState(0);
+1454 |  -8 | 
+1455 |  -7 |   useEffect(() => {
+1456 |  -7 |     if (stage !== 'verification') return;
+1457 |  -7 | 
+1458 |  -7 |     // Poll every 150ms until the video element is mounted AND stream is attached
+1459 |  -6 |     const interval = setInterval(() => {
+1460 |  -6 |       // Try ref first, then query DOM by id as a fallback
+1461 |  -6 |       const el = verificationVideoRef.current ||
+1462 |  -6 |         (document.getElementById('verification-video') as HTMLVideoElement | null);
+1463 |  -6 | 
+1464 |  -6 |       if (!el) return; // element not mounted yet, keep polling
+1465 |  -6 | 
+1466 |  -6 |       // Update ref if found via DOM
+1467 |  -5 |       if (!verificationVideoRef.current && el) {
+1468 |  -5 |         (verificationVideoRef as any).current = el;
+1469 |  -6 |       }
+1470 |  -6 | 
+1471 |  -6 |       // Check all possible sources for the stream
+1472 |  -6 |       const s = streamRef.current || currentStream || (window as any).__cameraStream;
+1473 |  -6 |       if (!s) return;
+1474 |  -6 | 
+1475 |  -6 |       // Sync state if we found a stream in refs/window but not state
+1476 |  -6 |       if (!currentStream && s) setCurrentStream(s);
+1477 |  -6 | 
+1478 |  -6 |       // Ensure stream tracks are enabled
+1479 |  -6 |       s.getTracks().forEach((t: MediaStreamTrack) => { if (!t.enabled) t.enabled = true; });
+1480 |  -6 | 
+1481 |  -5 |       if (el.srcObject !== s) {
+1482 |  -5 |         el.srcObject = s;
+1483 |  -5 |         console.log('✅ Stream attached to verification video (poll)');
+1484 |  -6 |       }
+1485 |  -6 |       el.play().catch(() => { });
+1486 |  -6 | 
+1487 |  -6 |       // Stop polling once video is playing
+1488 |  -5 |       if (el.readyState >= 2) {
+1489 |  -5 |         clearInterval(interval);
+1490 |  -6 |       }
+1491 |  -7 |     }, 150);
+1492 |  -7 | 
+1493 |  -7 |     return () => clearInterval(interval);
+1494 |  -8 |   }, [stage, currentStream]);
+1495 |  -8 | 
+1496 |  -8 | 
+1497 |  -7 |   const captureAndVerify = async () => {
+1498 |  -7 |     if (!verificationVideoRef.current) return;
+1499 |  -7 |     setVerifying(true);
+1500 |  -7 |     setVerifyStatus("Capturing biometric data...");
+1501 |  -7 | 
+1502 |  -7 |     // Capture
+1503 |  -7 |     const canvas = document.createElement('canvas');
+1504 |  -7 |     const video = verificationVideoRef.current;
+1505 |  -7 |     canvas.width = 400; canvas.height = 400;
+1506 |  -7 |     const ctx = canvas.getContext('2d');
+1507 |  -7 | 
+1508 |  -6 |     if (ctx && video) {
+1509 |  -6 |       const size = Math.min(video.videoWidth, video.videoHeight);
+1510 |  -6 |       const x = (video.videoWidth - size) / 2;
+1511 |  -6 |       const y = (video.videoHeight - size) / 2;
+1512 |  -6 |       ctx.drawImage(video, x, y, size, size, 0, 0, 400, 400);
+1513 |  -7 |     }
+1514 |  -7 |     const img = canvas.toDataURL('image/jpeg', 0.8);
+1515 |  -7 | 
+1516 |  -6 |     try {
+1517 |  -6 |       setVerifyStatus("Comparing with database records...");
+1518 |  -6 |       const res = await fetch("http://127.0.0.1:5000/api/auth/verify_face", {
+1519 |  -6 |         method: "POST", headers: { 'Content-Type': 'application/json' },
+1520 |  -6 |         body: JSON.stringify({ user_id: user?.id, image: img })
+1521 |  -7 |       });
+1522 |  -7 |       const data = await res.json();
+1523 |  -7 | 
+1524 |  -6 |       if (data.status === 'success') {
+1525 |  -6 |         setVerifyStatus(data.message || "✅ Identity & Eyes Verified Successfully!");
+1526 |  -6 |         setProctorStatus({ face: true, warning: '' });
+1527 |  -6 |         setVerifying(false);
+1528 |  -6 |         speak(data.message || "Identity verified. Now, let's calibrate your environment.", () => { });
+1529 |  -6 | 
+1530 |  -6 |         // Signal proctoring reset to clear any previous noise
+1531 |  -6 |         fetch("http://127.0.0.1:5000/proctor/reset", { method: "POST" }).catch(() => { });
+1532 |  -6 | 
+1533 |  -5 |         setTimeout(() => {
+1534 |  -5 |           setStage('calibration');
+1535 |  -6 |         }, 2000);
+1536 |  -6 |       } else {
+1537 |  -6 |         setVerifyFailCount(prev => prev + 1);
+1538 |  -6 |         setVerifyStatus("❌ " + (data.message || "Verification failed."));
+1539 |  -6 |         speak(data.message || "Identity verification failed. Please try again.");
+1540 |  -6 |         setVerifying(false);
+1541 |  -7 |       }
+1542 |  -7 |     } catch (e) {
+1543 |  -7 |       setVerifyStatus("❌ Connection error. Identity verification is required to proceed.");
+1544 |  -7 |       setVerifying(false);
+1545 |  -8 |     }
+1546 |  -9 |   };
+1547 |  -9 | 
+1548 |  -9 | 
+1549 |  -8 |   const handleEndInterview = async () => {
+1550 |  -8 |     setShowEndConfirm(true);
+1551 |  -9 |   };
+1552 |  -9 | 
+1553 |  -8 |   const confirmEndInterview = async () => {
+1554 |  -8 |     if (isTerminatingRef.current) return;
+1555 |  -8 |     isTerminatingRef.current = true;
+1556 |  -8 | 
+1557 |  -8 |     setShowEndConfirm(false);
+1558 |  -8 |     setLoading(true);
+1559 |  -8 | 
+1560 |  -7 |     if (typeof window !== 'undefined') {
+1561 |  -7 |       window.speechSynthesis.cancel();
+1562 |  -6 |       if (recognitionRef.current) {
+1563 |  -6 |         try { recognitionRef.current.stop(); } catch (e) { }
+1564 |  -7 |       }
+1565 |  -8 |     }
+1566 |  -8 |     recognitionActiveRef.current = false;
+1567 |  -8 |     setIsListening(false);
+1568 |  -8 | 
+1569 |  -7 |     try {
+1570 |  -7 |       // 1. Submit any current "last words" if they exist
+1571 |  -7 |       const finalUserAns = (transcript.trim() + " " + interimTranscript.trim()).trim();
+1572 |  -6 |       if (finalUserAns && finalUserAns.length > 5 && (stage === 'interview' || stage === 'code')) {
+1573 |  -6 |         console.log("📝 Submitting final partial answer before ending...");
+1574 |  -6 |         await fetch("http://127.0.0.1:5000/api/interview/answer", {
+1575 |  -6 |           method: "POST",
+1576 |  -6 |           headers: { 'Content-Type': 'application/json' },
+1577 |  -6 |           body: JSON.stringify({ question: question, answer: finalUserAns })
+1578 |  -7 |         });
+1579 |  -8 |       }
+1580 |  -8 | 
+1581 |  -8 |       // 2. Conclude the interview session
+1582 |  -8 |       const res = await fetch("http://127.0.0.1:5000/api/interview/finish", {
+1583 |  -8 |         method: "POST",
+1584 |  -8 |         headers: { 'Content-Type': 'application/json' },
+1585 |  -8 |         body: JSON.stringify({ user_id: user?.id })
+1586 |  -9 |       });
+1587 |  -9 |       const data = await res.json();
+1588 |  -9 | 
+1589 |  -8 |       if (data.status === 'success') {
+1590 |  -8 |         setReportData(data);
+1591 |  -8 | 
+1592 |  -8 |         // 3. Professional Closing
+1593 |  -7 |         speak("Thank you for your time. The interview session is now concluded. Your performance report is being finalized.", () => {
+1594 |  -7 |           setStage('results');
+1595 |  -6 |           if (document.fullscreenElement) {
+1596 |  -6 |             document.exitFullscreen().catch(() => { });
+1597 |  -7 |           }
+1598 |  -7 |           handleDownloadReport();
+1599 |  -8 |         });
+1600 |  -8 | 
+1601 |  -8 |         // Fallback for stage change
+1602 |  -7 |         setTimeout(() => {
+1603 |  -7 |           setStage('results');
+1604 |  -6 |           if (document.fullscreenElement) {
+1605 |  -6 |             document.exitFullscreen().catch(() => { });
+1606 |  -7 |           }
+1607 |  -7 |           handleDownloadReport();
+1608 |  -8 |         }, 4000);
+1609 |  -9 |       }
+1610 |  -9 |     } catch (e) {
+1611 |  -9 |       console.error("Error ending interview:", e);
+1612 |  -9 |       setStage('results'); // Fallback
+1613 |  -9 |     } finally {
+1614 |  -9 |       setLoading(false);
+1615 | -10 |     }
+1616 | -11 |   };
+1617 | -11 | 
+1618 | -11 | 
+1619 | -11 |   // --- GLOBAL KEYBOARD SHORTCUTS ---
+1620 | -10 |   useEffect(() => {
+1621 |  -9 |     const handleKeyDown = (e: KeyboardEvent) => {
+1622 |  -9 |       // Don't trigger if we're typing in a textarea (like in code round)
+1623 |  -9 |       const isInput = (e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA';
+1624 |  -9 | 
+1625 |  -8 |       if (e.key === 'Enter') {
+1626 |  -7 |         if (stage === 'verification' && !verifying) {
+1627 |  -7 |           e.preventDefault();
+1628 |  -7 |           captureAndVerify();
+1629 |  -7 |         } else if (stage === 'interview' && !isSpeaking) {
+1630 |  -7 |           // If we're not in an input, allow Enter to submit
+1631 |  -6 |           if (!isInput) {
+1632 |  -6 |             e.preventDefault();
+1633 |  -6 |             handleSubmitAnswer();
+1634 |  -7 |           }
+1635 |  -7 |         } else if (stage === 'code' && (e.ctrlKey || e.metaKey)) {
+1636 |  -7 |           // Support Ctrl+Enter for code submission
+1637 |  -7 |           e.preventDefault();
+1638 |  -7 |           handleSubmitCode();
+1639 |  -8 |         }
+1640 |  -9 |       }
+1641 | -10 |     };
+1642 | -10 | 
+1643 | -10 |     window.addEventListener('keydown', handleKeyDown);
+1644 | -10 |     return () => window.removeEventListener('keydown', handleKeyDown);
+1645 | -11 |   }, [stage, verifying, isSpeaking, transcript]);
+1646 | -11 | 
+1647 | -11 |   return (
+1648 | -11 |     <div className={`min-h-screen transition-colors duration-500 bg-[var(--background)] text-[var(--foreground)]`}>
+1649 | -11 | 
+1650 | -10 |       {(stage === 'landing' || stage === 'results' || stage === 'report') && (
+1651 | -10 |         <nav className={`h-20 w-full flex items-center justify-center border-b ${theme === 'dark' ? 'border-slate-800 bg-slate-950/80' : 'border-slate-100 bg-white/80'} backdrop-blur-xl sticky top-0 z-[100] transition-all duration-300`}>
+1652 | -10 |           <div className="w-full max-w-[1400px] flex items-center justify-between px-8 md:px-12">
+1653 | -10 |             <div className="flex items-center gap-5 group cursor-pointer" onClick={() => router.push('/')}>
+1654 | -10 |               <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center font-black text-white shadow-2xl shadow-indigo-600/30 group-hover:scale-110 transition-transform">AI</div>
+1655 | -10 |               <div className="flex flex-col">
+1656 | -10 |                 <span className={`font-black text-2xl tracking-tighter leading-none ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Interview.AI</span>
+1657 | -10 |                 <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mt-1">Intelligence 2.0</span>
+1658 | -10 |               </div>
+1659 | -10 |             </div>
+1660 | -10 | 
+1661 | -10 |             <div className="flex items-center gap-6 lg:gap-10">
+1662 | -10 |               <div className="hidden lg:flex gap-10">
+1663 | -10 |                 <Link href="#features" className={`text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} hover:text-indigo-600 uppercase tracking-[0.2em] transition-colors`}>Features</Link>
+1664 | -10 |                 <Link href="#instructions" className={`text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} hover:text-indigo-600 uppercase tracking-[0.2em] transition-colors`}>Guidelines</Link>
+1665 | -10 |                 <Link href="#faq" className={`text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} hover:text-indigo-600 uppercase tracking-[0.2em] transition-colors`}>FAQs</Link>
+1666 | -10 |               </div>
+1667 | -10 | 
+1668 | -10 |               <div className={`h-8 w-px ${theme === 'dark' ? 'bg-white/10' : 'bg-slate-200'} mx-2`}></div>
+1669 | -10 | 
+1670 | -10 |               <div className="flex items-center gap-4">
+1671 | -10 |                 {/* Premium Theme Toggle */}
+1672 | -10 |                 <button
+1673 | -10 |                   onClick={toggleTheme}
+1674 | -10 |                   className={`p-3 rounded-2xl border ${theme === 'dark' ? 'bg-white/5 border-white/10 text-yellow-400 hover:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-white hover:border-indigo-200'} border transition-all shadow-sm active:scale-90`}
+1675 | -10 |                   title={theme === 'dark' ? "Activate Daylight Mode" : "Activate Midnight Mode"}
+1676 | -10 |                 >
+1677 | -10 |                   {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+1678 | -10 |                 </button>
+1679 | -10 | 
+1680 |  -9 |                 {user ? (
+1681 |  -9 |                   <div className="flex items-center gap-3">
+1682 |  -9 |                     <button
+1683 |  -9 |                       onClick={() => router.push('/dashboard')}
+1684 |  -9 |                       className="px-6 py-3 bg-indigo-600 text-white rounded-[18px] text-[11px] font-black shadow-xl shadow-indigo-500/30 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all flex items-center gap-2 uppercase tracking-widest"
+1685 |  -9 |                     >
+1686 |  -9 |                       <LayoutDashboard size={14} /> My Deck
+1687 |  -9 |                     </button>
+1688 |  -9 |                   </div>
+1689 |  -9 |                 ) : (
+1690 |  -9 |                   <div className="flex items-center gap-4">
+1691 |  -9 |                     <button onClick={() => router.push('/login')} className={`text-[11px] font-black ${theme === 'dark' ? 'text-slate-300' : 'text-slate-900'} hover:text-indigo-600 uppercase tracking-widest px-2`}>Login</button>
+1692 |  -9 |                     <button onClick={() => router.push('/signup')} className="px-7 py-3.5 bg-indigo-600 text-white rounded-[18px] text-[11px] font-black shadow-2xl shadow-indigo-600/30 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all active:scale-95 uppercase tracking-widest">Enroll Now</button>
+1693 |  -9 |                   </div>
+1694 | -10 |                 )}
+1695 | -10 |               </div>
+1696 | -10 |             </div>
+1697 | -10 |           </div>
+1698 | -10 |         </nav>
+1699 | -11 |       )}
+1700 | -11 | 
+1701 | -11 | 
+1702 | -11 |       {/* STAGE: LANDING */}
+1703 | -10 |       {
+1704 | -10 |         stage === 'landing' && (
+1705 | -10 |           <>
+1706 | -10 |             <main className={styles.heroSection}>
+1707 | -10 |               <div className={styles.heroContent}>
+1708 | -10 | 
+1709 | -10 | 
+1710 | -10 |                 <h1 className={styles.heroTitle}>
+1711 | -10 |                   Experience <span className={styles.gradientText}>Reel Interviews</span>.<br />
+1712 | -10 |                   Before the Real One.
+1713 | -10 |                 </h1>
+1714 | -10 | 
+1715 | -10 |                 {/* STAGE: CODE EDITOR (New Step 4 End) */}
+1716 | -10 |                 {/* (Moved Code Block out) */}
+1717 | -10 | 
+1718 | -10 |                 {/* STAGE: UPLOAD */}
+1719 | -10 | 
+1720 | -10 |                 <p className={styles.heroSubtitle}>
+1721 | -10 |                   Join thousands of students forcing their way into top tech jobs.
+1722 | -10 |                   Real-time voice interaction, emotion analysis, and resume-tailored questions.
+1723 | -10 |                 </p>
+1724 | -10 | 
+1725 | -10 |                 <div className={`${styles.ctaGroup} relative z-10`}>
+1726 | -10 |                   <button
+1727 |  -8 |                     onClick={() => {
+1728 |  -7 |                       if (user) {
+1729 |  -7 |                         enterFullScreen();
+1730 |  -7 |                         setStage('upload');
+1731 |  -7 |                       } else {
+1732 |  -7 |                         router.push('/login');
+1733 |  -8 |                       }
+1734 | -10 |                     }}
+1735 | -10 |                     className={`${styles.btnPrimary} cursor-pointer`}
+1736 | -10 |                   >
+1737 | -10 |                     Start Mock Interview
+1738 | -10 |                   </button>
+1739 | -10 |                   <button
+1740 | -10 |                     className={`${styles.btnSecondary} cursor-pointer`}
+1741 |  -8 |                     onClick={() => {
+1742 |  -8 |                       const el = document.getElementById('features');
+1743 |  -8 |                       if (el) el.scrollIntoView({ behavior: 'smooth' });
+1744 |  -8 |                       else router.push('/signup'); // Fallback
+1745 | -10 |                     }}
+1746 | -10 |                   >
+1747 | -10 |                     Why Use This?
+1748 | -10 |                   </button>
+1749 | -10 |                 </div>
+1750 | -10 |               </div>
+1751 | -10 | 
+1752 | -10 |               <div className={styles.heroImageContainer}>
+1753 | -10 |                 <div className="relative">
+1754 | -10 |                   <div className="absolute -inset-4 bg-indigo-500/10 blur-3xl rounded-full"></div>
+1755 | -10 |                   <img
+1756 | -10 |                     src="/robot_hero_final.png"
+1757 | -10 |                     alt="AI Interviewer"
+1758 | -10 |                     className={styles.heroImage}
+1759 | -10 |                   />
+1760 | -10 |                   {/* Premium Halo Effect */}
+1761 | -10 |                   <div className="absolute inset-0 bg-white/40 rounded-full blur-[100px] -z-10 animate-pulse" />
+1762 | -10 |                 </div>
+1763 | -10 |               </div>
+1764 | -10 |             </main>
+1765 | -10 | 
+1766 | -10 |             {/* INSTRUCTIONS SECTION */}
+1767 | -10 |             <section id="instructions" className={styles.instructionsSection}>
+1768 | -10 |               <div className="max-w-7xl mx-auto px-6 md:px-8">
+1769 | -10 |                 <div className="text-center mb-16">
+1770 | -10 |                   <span className="text-indigo-600 font-bold tracking-wider uppercase text-sm">How It Works</span>
+1771 | -10 |                   <h2 className="text-3xl md:text-5xl font-black mt-3 mb-6">4 Steps to Your Dream Job.</h2>
+1772 | -10 |                   <p className="text-[var(--text-muted)] max-w-2xl mx-auto text-lg">Follow this roadmap to master your skills and dominate your next technical interview.</p>
+1773 | -10 |                 </div>
+1774 | -10 | 
+1775 | -10 |                 <div className={`${styles.instructionsContainer} ${styles['stepStage' + activeInstructionStep]}`}>
+1776 | -10 |                   {/* Step 1 */}
+1777 | -10 |                   <div
+1778 | -10 |                     className={`${styles.stepNode} ${activeInstructionStep === 0 ? styles.stepActive : ''} cursor-pointer`}
+1779 |  -8 |                     onClick={() => {
+1780 |  -7 |                       if (user) {
+1781 |  -7 |                         enterFullScreen();
+1782 |  -7 |                         setStage('upload');
+1783 |  -7 |                       } else {
+1784 |  -7 |                         router.push('/login');
+1785 |  -8 |                       }
+1786 | -10 |                     }}
+1787 | -10 |                   >
+1788 | -10 |                     <div className={styles.stepCircle}>
+1789 | -10 |                       <FileText size={32} />
+1790 | -10 |                       <div className={styles.stepBadge}>1</div>
+1791 | -10 |                     </div>
+1792 | -10 |                     <div className={styles.stepContent}>
+1793 | -10 |                       <h3 className={styles.stepTitle}>Resume Upload</h3>
+1794 | -10 |                       <p className={styles.stepText}>Start by uploading your current resume. Our AI analyzes your experience, skills, and projects in seconds.</p>
+1795 | -10 |                     </div>
+1796 | -10 |                   </div>
+1797 | -10 | 
+1798 | -10 |                   {/* Step 2 */}
+1799 | -10 |                   <div
+1800 | -10 |                     className={`${styles.stepNode} ${activeInstructionStep === 1 ? styles.stepActive : ''} cursor-pointer`}
+1801 |  -8 |                     onClick={() => {
+1802 |  -7 |                       if (user) {
+1803 |  -7 |                         enterFullScreen();
+1804 |  -7 |                         setStage('upload');
+1805 |  -7 |                       } else {
+1806 |  -7 |                         router.push('/login');
+1807 |  -8 |                       }
+1808 | -10 |                     }}
+1809 | -10 |                   >
+1810 | -10 |                     <div className={styles.stepCircle}>
+1811 | -10 |                       <Sparkles size={32} />
+1812 | -10 |                       <div className={styles.stepBadge}>2</div>
+1813 | -10 |                     </div>
+1814 | -10 |                     <div className={styles.stepContent}>
+1815 | -10 |                       <h3 className={styles.stepTitle}>AI Adaptation</h3>
+1816 | -10 |                       <p className={styles.stepText}>The platform generates a unique set of questions specifically tailored to your background and targeting role.</p>
+1817 | -10 |                     </div>
+1818 | -10 |                   </div>
+1819 | -10 | 
+1820 | -10 |                   {/* Step 3 */}
+1821 | -10 |                   <div
+1822 | -10 |                     className={`${styles.stepNode} ${activeInstructionStep === 2 ? styles.stepActive : ''} cursor-pointer`}
+1823 |  -8 |                     onClick={() => {
+1824 |  -7 |                       if (user) {
+1825 |  -7 |                         enterFullScreen();
+1826 |  -7 |                         setStage('upload');
+1827 |  -7 |                       } else {
+1828 |  -7 |                         router.push('/login');
+1829 |  -8 |                       }
+1830 | -10 |                     }}
+1831 | -10 |                   >
+1832 | -10 |                     <div className={styles.stepCircle}>
+1833 | -10 |                       <Mic size={32} />
+1834 | -10 |                       <div className={styles.stepBadge}>3</div>
+1835 | -10 |                     </div>
+1836 | -10 |                     <div className={styles.stepContent}>
+1837 | -10 |                       <h3 className={styles.stepTitle}>Mock Session</h3>
+1838 | -10 |                       <p className={styles.stepText}>Enter the realistic interview room. Face voice-based questions, coding challenges, and proctoring.</p>
+1839 | -10 |                     </div>
+1840 | -10 |                   </div>
+1841 | -10 | 
+1842 | -10 |                   {/* Step 4 */}
+1843 | -10 |                   <div
+1844 | -10 |                     className={`${styles.stepNode} ${activeInstructionStep === 3 ? styles.stepActive : ''} cursor-pointer`}
+1845 |  -8 |                     onClick={() => {
+1846 |  -7 |                       if (user) {
+1847 |  -7 |                         enterFullScreen();
+1848 |  -7 |                         setStage('upload');
+1849 |  -7 |                       } else {
+1850 |  -7 |                         router.push('/login');
+1851 |  -8 |                       }
+1852 | -10 |                     }}
+1853 | -10 |                   >
+1854 | -10 |                     <div className={styles.stepCircle}>
+1855 | -10 |                       <BarChart size={32} />
+1856 | -10 |                       <div className={styles.stepBadge}>4</div>
+1857 | -10 |                     </div>
+1858 | -10 |                     <div className={styles.stepContent}>
+1859 | -10 |                       <h3 className={styles.stepTitle}>Expert Feedback</h3>
+1860 | -10 |                       <p className={styles.stepText}>Complete the round to receive an instant report. Fix your weak points and try again until you're perfect.</p>
+1861 | -10 |                     </div>
+1862 | -10 |                   </div>
+1863 | -10 |                 </div>
+1864 | -10 |               </div>
+1865 | -10 |             </section>
+1866 | -10 | 
+1867 | -10 |             {/* FEATURES SECTION (Restored) */}
+1868 | -10 |             <section id="features" className="flex flex-col justify-center py-24 bg-[var(--card-bg)] border-t border-[var(--border)]">
+1869 | -10 |               <div className="max-w-7xl mx-auto px-6 md:px-8">
+1870 | -10 |                 <div className="text-center mb-16">
+1871 | -10 |                   <span className="text-indigo-600 font-bold tracking-wider uppercase text-sm">Why Choose Us</span>
+1872 | -10 |                   <h2 className="text-3xl md:text-5xl font-black mt-3 mb-6">Master Every Interview Stage.</h2>
+1873 | -10 |                   <p className="text-[var(--text-muted)] max-w-2xl mx-auto text-lg">From behavioral questions to live coding challenges, we simulate it all with AI precision.</p>
+1874 | -10 |                 </div>
+1875 | -10 | 
+1876 | -10 |                 <div className="grid md:grid-cols-3 gap-8">
+1877 | -10 |                   {/* Row 1 */}
+1878 | -10 |                   <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-indigo-500 transition-all group">
+1879 | -10 |                     <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform"><Sparkles size={24} /></div>
+1880 | -10 |                     <h3 className="text-lg font-bold mb-3">Builds Confidence</h3>
+1881 | -10 |                     <p className="text-sm text-[var(--text-muted)]">Practice in a stress-free environment. Overcome anxiety and gain the confidence to ace your real interview.</p>
+1882 | -10 |                   </div>
+1883 | -10 |                   <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-purple-500 transition-all group">
+1884 | -10 |                     <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 mb-6 group-hover:scale-110 transition-transform"><FileText size={24} /></div>
+1885 | -10 |                     <h3 className="text-lg font-bold mb-3">Resume Analysis</h3>
+1886 | -10 |                     <p className="text-sm text-[var(--text-muted)]">Our AI scans your resume to generate tailored questions, ensuring you practice what actually matters for your role.</p>
+1887 | -10 |                   </div>
+1888 | -10 |                   <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-green-500 transition-all group">
+1889 | -10 |                     <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center text-green-600 mb-6 group-hover:scale-110 transition-transform"><Monitor size={24} /></div>
+1890 | -10 |                     <h3 className="text-lg font-bold mb-3">Real Experience</h3>
+1891 | -10 |                     <p className="text-sm text-[var(--text-muted)]">Experience the pressure of a real interview with realistic voice interactions, strict proctoring, and live coding.</p>
+1892 | -10 |                   </div>
+1893 | -10 | 
+1894 | -10 |                   {/* Row 2 */}
+1895 | -10 |                   <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-indigo-500 transition-all group">
+1896 | -10 |                     <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 mb-6 group-hover:scale-110 transition-transform"><Mic size={24} /></div>
+1897 | -10 |                     <h3 className="text-lg font-bold mb-3">Voice-First AI</h3>
+1898 | -10 |                     <p className="text-sm text-[var(--text-muted)]">Speak naturally. Our AI listens, understands, and responds with human-like latency and voice.</p>
+1899 | -10 |                   </div>
+1900 | -10 |                   <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-red-500 transition-all group">
+1901 | -10 |                     <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600 mb-6 group-hover:scale-110 transition-transform"><Shield size={24} /></div>
+1902 | -10 |                     <h3 className="text-lg font-bold mb-3">Strict Proctoring</h3>
+1903 | -10 |                     <p className="text-sm text-[var(--text-muted)]">Simulate exam conditions with full-screen enforcement, tab monitoring, and gadget detection.</p>
+1904 | -10 |                   </div>
+1905 | -10 |                   <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-orange-500 transition-all group">
+1906 | -10 |                     <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 mb-6 group-hover:scale-110 transition-transform"><BarChart size={24} /></div>
+1907 | -10 |                     <h3 className="text-lg font-bold mb-3">Detailed Reporting</h3>
+1908 | -10 |                     <p className="text-sm text-[var(--text-muted)]">Get instant feedback, actionable insights, and a downloadable PDF report of your performance.</p>
+1909 | -10 |                   </div>
+1910 | -10 |                 </div>
+1911 | -10 |               </div>
+1912 | -10 |             </section>
+1913 | -10 | 
+1914 | -10 |             {/* FAQ SECTION */}
+1915 | -10 |             <section id="faq" className={styles.faqSection}>
+1916 | -10 |               <div className="max-w-7xl mx-auto px-6 md:px-8">
+1917 | -10 |                 <h2 className={styles.faqHeader}>FAQs</h2>
+1918 | -10 |                 <div className={styles.faqGrid}>
+1919 | -10 |                   {/* Column 1 */}
+1920 | -10 |                   <div className={styles.faqCol}>
+1921 |  -9 |                     {faqs.slice(0, 4).map((faq, i) => (
+1922 |  -9 |                       <div
+1923 |  -9 |                         key={i}
+1924 |  -9 |                         className={`${styles.faqItem} ${activeFaqIndex === i ? styles.faqItemActive : ''}`}
+1925 |  -9 |                         onClick={() => setActiveFaqIndex(activeFaqIndex === i ? null : i)}
+1926 |  -9 |                       >
+1927 |  -9 |                         <div className="flex justify-between items-center w-full">
+1928 |  -9 |                           <span className={styles.faqQuestion}>{faq.q}</span>
+1929 |  -9 |                           <ChevronRight size={18} className={styles.faqIcon} />
+1930 |  -9 |                         </div>
+1931 |  -9 |                         <div className={`${styles.faqAnswer} ${activeFaqIndex === i ? styles.faqAnswerVisible : ''}`}>
+1932 |  -9 |                           <p className={styles.faqDesc}>{faq.a}</p>
+1933 |  -9 |                         </div>
+1934 |  -9 |                       </div>
+1935 | -10 |                     ))}
+1936 | -10 |                   </div>
+1937 | -10 | 
+1938 | -10 |                   {/* Column 2 */}
+1939 | -10 |                   <div className={styles.faqCol}>
+1940 |  -8 |                     {faqs.slice(4).map((faq, i) => {
+1941 |  -8 |                       const idx = i + 4;
+1942 |  -8 |                       return (
+1943 |  -8 |                         <div
+1944 |  -8 |                           key={idx}
+1945 |  -8 |                           className={`${styles.faqItem} ${activeFaqIndex === idx ? styles.faqItemActive : ''}`}
+1946 |  -8 |                           onClick={() => setActiveFaqIndex(activeFaqIndex === idx ? null : idx)}
+1947 |  -8 |                         >
+1948 |  -8 |                           <div className="flex justify-between items-center w-full">
+1949 |  -8 |                             <span className={styles.faqQuestion}>{faq.q}</span>
+1950 |  -8 |                             <ChevronRight size={18} className={styles.faqIcon} />
+1951 |  -8 |                           </div>
+1952 |  -8 |                           <div className={`${styles.faqAnswer} ${activeFaqIndex === idx ? styles.faqAnswerVisible : ''}`}>
+1953 |  -8 |                             <p className={styles.faqDesc}>{faq.a}</p>
+1954 |  -8 |                           </div>
+1955 |  -8 |                         </div>
+1956 |  -8 |                       );
+1957 | -10 |                     })}
+1958 | -10 |                   </div>
+1959 | -10 |                 </div>
+1960 | -10 |               </div>
+1961 | -10 |             </section>
+1962 | -10 |           </>
+1963 | -10 |         )
+1964 | -11 |       }
+1965 | -11 | 
+1966 | -11 |       {/* STAGE: CODE */}
+1967 | -10 |       {
+1968 | -10 |         stage === 'code' && (
+1969 | -10 |           <main className="h-screen flex flex-col lg:flex-row bg-[#0f172a] text-white">
+1970 | -10 |             <div className="w-full lg:w-96 bg-[#1e293b] border-b lg:border-r border-slate-700 p-4 lg:p-6 flex flex-col gap-4 justify-between overflow-y-auto max-h-[30vh] lg:max-h-full">
+1971 | -10 |               <div>
+1972 | -10 |                 <div className="flex items-center gap-4 mb-4">
+1973 | -10 |                   <div className="px-3 py-1 bg-indigo-600 rounded-lg text-xs font-black uppercase tracking-widest">Coding Round</div>
+1974 | -10 |                   <h2 className="text-xl font-bold text-slate-200">Problem {currentCodingIdx + 1} of {codingProblems.length}</h2>
+1975 | -10 |                 </div>
+1976 | -10 |                 <div className="flex items-center gap-4">
+1977 | -10 |                   <div className="text-xs font-mono text-slate-400">Time: {formatTime(elapsedTime)}</div>
+1978 | -10 |                   <div className="h-2 w-32 bg-slate-700 rounded-full overflow-hidden">
+1979 | -10 |                     <div className="h-full bg-indigo-500 transition-all duration-500" style={{ width: `${((currentCodingIdx + 1) / codingProblems.length) * 100}%` }}></div>
+1980 | -10 |                   </div>
+1981 | -10 |                 </div>
+1982 | -10 |               </div>
+1983 | -10 |             </div>
+1984 | -10 | 
+1985 | -10 |             <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+1986 | -10 |               <div className="w-full lg:w-1/3 p-6 md:p-8 border-b lg:border-r border-slate-800 bg-[#0f172a] overflow-y-auto max-h-[40%] lg:max-h-none">
+1987 | -10 |                 <h1 className="text-xl md:text-2xl font-black mb-4 text-white tracking-tight">{codingProblems[currentCodingIdx]?.title}</h1>
+1988 | -10 |                 <div className="inline-block px-2.5 py-1 bg-green-500/10 text-green-500 rounded-md text-[10px] font-black uppercase tracking-wider mb-6 border border-green-500/20">
+1989 | -10 |                   Difficulty: {codingProblems[currentCodingIdx]?.difficulty || 'Medium'}
+1990 | -10 |                 </div>
+1991 | -10 | 
+1992 | -10 |                 <div className="space-y-6 text-slate-300 leading-relaxed font-medium">
+1993 | -10 |                   <div>
+1994 | -10 |                     <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-2">Description</h3>
+1995 | -10 |                     <p>{codingProblems[currentCodingIdx]?.description}</p>
+1996 | -10 |                   </div>
+1997 | -10 | 
+1998 |  -9 |                   {codingProblems[currentCodingIdx]?.test_cases && (
+1999 |  -9 |                     <div>
+2000 |  -9 |                       <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-3">Example Test Cases</h3>
+2001 |  -9 |                       <div className="space-y-3">

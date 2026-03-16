@@ -1,0 +1,108 @@
+[
+    {
+        "id": 1,
+        "title": "Factorial Calculation",
+        "description": "Write a function to calculate the factorial of a non-negative integer n. The factorial of n is the product of all positive integers less than or equal to n.",
+        "test_cases": [
+            {
+                "input": "5",
+                "expected": "120"
+            },
+            {
+                "input": "0",
+                "expected": "1"
+            },
+            {
+                "input": "3",
+                "expected": "6"
+            }
+        ],
+        "difficulty": 1,
+        "solution_approach": "Use recursion (n * fact(n-1)) or a loop from 1 to n.",
+        "time_complexity": "O(n)"
+    },
+    {
+        "id": 2,
+        "title": "Check Palindrome String",
+        "description": "Given a string, check if it is a palindrome (reads the same forwards and backwards). Print 'True' or 'False'. Ignoring case and non-alphanumeric characters is optional for this basic version.",
+        "test_cases": [
+            {
+                "input": "madam",
+                "expected": "True"
+            },
+            {
+                "input": "hello",
+                "expected": "False"
+            },
+            {
+                "input": "racecar",
+                "expected": "True"
+            }
+        ],
+        "difficulty": 2,
+        "solution_approach": "Compare the string with its reverse (s == s[::-1]).",
+        "time_complexity": "O(n)"
+    },
+    {
+        "id": 3,
+        "title": "FizzBuzz",
+        "description": "Given an integer n, print numbers from 1 to n. But for multiples of 3 print 'Fizz', for multiples of 5 print 'Buzz', and for multiples of both print 'FizzBuzz'. Output as a space-separated string.",
+        "test_cases": [
+            {
+                "input": "5",
+                "expected": "1 2 Fizz 4 Buzz"
+            },
+            {
+                "input": "15",
+                "expected": "1 2 Fizz 4 Buzz Fizz 7 8 Fizz Buzz 11 Fizz 13 14 FizzBuzz"
+            }
+        ],
+        "difficulty": 2,
+        "solution_approach": "Loop from 1 to n, use if-elif-else for modulo checks.",
+        "time_complexity": "O(n)"
+    },
+    {
+        "id": 4,
+        "title": "Find Maximum Element",
+        "description": "Given a list of numbers as a comma-separated string (e.g., '1, 5, 3, 9, 2'), find and print the maximum number.",
+        "test_cases": [
+            {
+                "input": "1, 5, 3, 9, 2",
+                "expected": "9"
+            },
+            {
+                "input": "-10, -5, -20, -1",
+                "expected": "-1"
+            },
+            {
+                "input": "100",
+                "expected": "100"
+            }
+        ],
+        "difficulty": 1,
+        "solution_approach": "Split string by comma, convert to integers, allow max() function or loop.",
+        "time_complexity": "O(n)"
+    },
+    {
+        "id": 5,
+        "title": "Count Vowels",
+        "description": "Given a string, count and print the number of vowels (a, e, i, o, u) in it. Case insensitive.",
+        "test_cases": [
+            {
+                "input": "Hello World",
+                "expected": "3"
+            },
+            {
+                "input": "Python Programming",
+                "expected": "4"
+            },
+            {
+                "input": "Fly",
+                "expected": "0"
+            }
+        ],
+        "difficulty": 1,
+        "solution_approach": "Loop through string and check if char in 'aeiouAEIOU'.",
+        "time_complexity": "O(n)"
+    }
+]

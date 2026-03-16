@@ -1,0 +1,501 @@
+   1 |  0 | "use client";
+   2 |  0 | /* eslint-disable @typescript-eslint/no-explicit-any */
+   3 |  0 | import React, { useState, useEffect, useRef, Suspense } from 'react';
+   4 |  0 | import styles from './home.module.css';
+   5 |  0 | import { useRouter, useSearchParams } from 'next/navigation';
+   6 |  0 | import Link from 'next/link';
+   7 |  0 | import { useAuth } from './auth-context';
+   8 |  0 | import { Sun, Moon, Shield, Camera, Mic, Monitor, User, CheckCircle, Check, AlertCircle, LogOut, Sparkles, FileText, BarChart, ArrowRight, Volume2, ChevronRight, Brain, LayoutDashboard, Play, Terminal, Video } from 'lucide-react';
+   9 |  0 | import { useTheme } from './theme-context';
+  10 |  0 | import Editor from "@monaco-editor/react";
+  11 |  0 | 
+  12 |  1 | function HomeContent() {
+  13 |  1 |   const { user, logout, loading: authLoading } = useAuth();
+  14 |  1 |   const { theme, toggleTheme } = useTheme();
+  15 |  1 | 
+  16 |  1 |   const [stage, setStage] = useState<'landing' | 'upload' | 'systemCheck' | 'verification' | 'calibration' | 'instructions' | 'interview' | 'code' | 'report' | 'results'>('landing');
+  17 |  1 |   const [reportData, setReportData] = useState<any>(null);
+  18 |  1 |   const [name, setName] = useState('');
+  19 |  1 |   const [email, setEmail] = useState('');
+  20 |  1 |   const [file, setFile] = useState<File | null>(null);
+  21 |  1 |   const [loading, setLoading] = useState(false);
+  22 |  1 |   const [proctorStatus, setProctorStatus] = useState({ face: false, warning: '' });
+  23 |  1 | 
+  24 |  2 |   useEffect(() => {
+  25 |  3 |     if (user && stage === 'landing') {
+  26 |  3 |       setName(user.name);
+  27 |  3 |       setEmail(user.email);
+  28 |  2 |     }
+  29 |  1 |   }, [user, stage]);
+  30 |  1 | 
+  31 |  1 |   const searchParams = useSearchParams();
+  32 |  2 |   useEffect(() => {
+  33 |  2 |     const startParam = searchParams.get('start');
+  34 |  2 |     const setupStages = ['upload', 'verification', 'calibration', 'instructions'];
+  35 |  2 | 
+  36 |  3 |     if (startParam === 'true' && user) {
+  37 |  3 |       if (stage === 'landing') setStage('upload');
+  38 |  3 |     } else if (!startParam) {
+  39 |  3 |       // If user navigates back to base URL without 'start', return to landing from any setup stage
+  40 |  4 |       if (setupStages.includes(stage)) {
+  41 |  4 |         setStage('landing');
+  42 |  3 |       }
+  43 |  2 |     }
+  44 |  1 |   }, [searchParams, user, stage]);
+  45 |  1 | 
+  46 |  2 |   const [checks, setChecks] = useState({
+  47 |  2 |     fullscreen: false,
+  48 |  2 |     camera: false,
+  49 |  2 |     screenShare: false
+  50 |  1 |   });
+  51 |  1 |   const [checkLoading, setCheckLoading] = useState(false);
+  52 |  1 | 
+  53 |  1 |   const [question, setQuestion] = useState('');
+  54 |  1 |   const [transcript, setTranscript] = useState('');
+  55 |  1 |   const [interimTranscript, setInterimTranscript] = useState('');
+  56 |  1 |   const [isListening, setIsListening] = useState(false);
+  57 |  1 |   const [isSpeaking, setIsSpeaking] = useState(false);
+  58 |  1 |   const [interviewId, setInterviewId] = useState<string | null>(null);
+  59 |  1 |   const [isFinishing, setIsFinishing] = useState(false);
+  60 |  1 |   const [feedback, setFeedback] = useState('');
+  61 |  1 |   const [questionCount, setQuestionCount] = useState(0);
+  62 |  1 |   const [phase, setPhase] = useState('warmup');
+  63 |  1 |   const [phaseCount, setPhaseCount] = useState(0);
+  64 |  1 | 
+  65 |  1 |   // Helper: Fisher-Yates shuffle
+  66 |  2 |   const shuffleArray = (arr: string[]) => {
+  67 |  2 |     const a = [...arr];
+  68 |  3 |     for (let i = a.length - 1; i > 0; i--) {
+  69 |  3 |       const j = Math.floor(Math.random() * (i + 1));
+  70 |  3 |       [a[i], a[j]] = [a[j], a[i]];
+  71 |  2 |     }
+  72 |  2 |     return a;
+  73 |  1 |   };
+  74 |  1 | 
+  75 |  1 |   const buildPhases = () => [
+  76 |  1 |     'greeting',    // Step 1
+  77 |  1 |     'warmup',      // Step 2 (2-3 questions)
+  78 |  1 |     'intro',       // Step 3 (Mandatory)
+  79 |  1 |     'resume',      // Step 4 (Skills, Projects, Tech)
+  80 |  1 |     'code',        // Step 5
+  81 |  1 |     'case_study',  // Step 6 (1-2 questions)
+  82 |  1 |     'behavioral',  // Step 7
+  83 |  1 |     'scenario_hr', // Step 8
+  84 |  1 |     'teamwork',    // Step 9
+  85 |  1 |     'conclusion'   // Final Politeness
+  86 |  1 |   ];
+  87 |  1 | 
+  88 |  1 |   const [PHASES, setPHASES] = useState<string[]>(buildPhases);
+  89 |  1 |   const [phaseIndex, setPhaseIndex] = useState(0);
+  90 |  1 | 
+  91 |  1 |   // Auto-clear feedback
+  92 |  2 |   useEffect(() => {
+  93 |  3 |     if (feedback) {
+  94 |  3 |       const t = setTimeout(() => setFeedback(''), 4000);
+  95 |  3 |       return () => clearTimeout(t);
+  96 |  2 |     }
+  97 |  1 |   }, [feedback]);
+  98 |  1 | 
+  99 |  1 |   const [audioLevel, setAudioLevel] = useState(0);
+ 100 |  1 |   const [audioBlocked, setAudioBlocked] = useState(false);
+ 101 |  1 |   const audioUnlockedRef = useRef(false);
+ 102 |  1 |   const audioContextRef = useRef<AudioContext | null>(null);
+ 103 |  1 |   const analyserRef = useRef<AnalyserNode | null>(null);
+ 104 |  1 |   const transcriptEndRef = useRef<HTMLDivElement>(null);
+ 105 |  1 | 
+ 106 |  1 |   const [codingProblems, setCodingProblems] = useState<any[]>([]);
+ 107 |  1 |   const [currentCodingIdx, setCurrentCodingIdx] = useState(0);
+ 108 |  1 |   const [codeAnswer, setCodeAnswer] = useState('');
+ 109 |  1 |   const [codingLanguage, setCodingLanguage] = useState<'python' | 'java' | 'c' | 'javascript'>('python');
+ 110 |  1 |   const [fetchingQuestion, setFetchingQuestion] = useState(false);
+ 111 |  1 |   const [codingOutput, setCodingOutput] = useState('');
+ 112 |  1 |   const [isRunningCode, setIsRunningCode] = useState(false);
+ 113 |  1 | 
+ 114 |  1 |   const [lastCodingStats, setLastCodingStats] = useState({ passed: 0, total: 0 });
+ 115 |  1 | 
+ 116 |  1 |   // INACTIVITY & SILENCE HANDLING
+ 117 |  1 |   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+ 118 |  1 |   const hasRepeatedRef = useRef(false);
+ 119 |  1 |   const lastActivityRef = useRef<number>(Date.now());
+ 120 |  1 | 
+ 121 |  2 |   const getPhaseThreshold = (pIndex: number) => {
+ 122 |  2 |     const p = PHASES[pIndex];
+ 123 |  2 |     if (p === 'greeting') return 1;
+ 124 |  2 |     if (p === 'warmup') return 1;
+ 125 |  2 |     if (p === 'intro') return 1;
+ 126 |  2 |     if (p === 'technical') return 2;
+ 127 |  2 |     if (p === 'scenario') return 1;
+ 128 |  2 |     if (p === 'project') return 1;
+ 129 |  2 |     if (p === 'behavioral') return 1;
+ 130 |  2 |     if (p === 'code') return 1;
+ 131 |  2 |     if (p === 'conclusion') return 1;
+ 132 |  2 |     return 1;
+ 133 |  1 |   };
+ 134 |  1 | 
+ 135 |  1 | 
+ 136 |  1 |   const tabSwitchCountRef = useRef(0);
+ 137 |  1 |   const lookingDownRef = useRef(0);
+ 138 |  1 |   const hasStartedRef = useRef(false);
+ 139 |  1 |   const isManualStopRef = useRef(false);
+ 140 |  1 | 
+ 141 |  1 |   const showNoFaceWarnRef = useRef(false);
+ 142 |  1 |   const [showFullscreenWarn, setShowFullscreenWarn] = useState(false);
+ 143 |  1 |   const showFullscreenWarnRef = useRef(false);
+ 144 |  1 |   const [showTabSwitchWarn, setShowTabSwitchWarn] = useState(false);
+ 145 |  1 |   const showTabSwitchWarnRef = useRef(false);
+ 146 |  1 |   const [showEndConfirm, setShowEndConfirm] = useState(false);
+ 147 |  1 |   const [showNoFaceWarn, setShowNoFaceWarn] = useState(false);
+ 148 |  1 |   const fullscreenWarnCountRef = useRef(0);
+ 149 |  1 |   const noFaceRef = useRef(0);
+ 150 |  1 | 
+ 151 |  1 |   const [backendStatus, setBackendStatus] = useState<'connected' | 'disconnected'>('connected');
+ 152 |  1 |   const recognitionActiveRef = useRef(false);
+ 153 |  1 |   const transcriptScrollRef = useRef<HTMLDivElement | null>(null);
+ 154 |  1 | 
+ 155 |  2 |   useEffect(() => {
+ 156 |  3 |     if (transcriptScrollRef.current) {
+ 157 |  3 |       transcriptScrollRef.current.scrollTop = transcriptScrollRef.current.scrollHeight;
+ 158 |  2 |     }
+ 159 |  1 |   }, [transcript, interimTranscript]);
+ 160 |  1 | 
+ 161 |  1 |   const interviewStartTimeRef = useRef<number | null>(null);
+ 162 |  1 |   const [elapsedTime, setElapsedTime] = useState(0);
+ 163 |  1 | 
+ 164 |  1 |   // Refs for State in Callbacks
+ 165 |  1 |   const questionRef = useRef('');
+ 166 |  1 |   const isSpeakingRef = useRef(false);
+ 167 |  1 |   const hasDownloadedRef = useRef(false);
+ 168 |  1 |   const [activeFaqIndex, setActiveFaqIndex] = useState<number | null>(null);
+ 169 |  1 |   const [activeInstructionStep, setActiveInstructionStep] = useState(0);
+ 170 |  1 | 
+ 171 |  2 |   useEffect(() => {
+ 172 |  3 |     if (stage === 'landing') {
+ 173 |  4 |       const interval = setInterval(() => {
+ 174 |  4 |         setActiveInstructionStep((prev) => (prev + 1) % 4);
+ 175 |  3 |       }, 3000);
+ 176 |  3 |       return () => clearInterval(interval);
+ 177 |  2 |     }
+ 178 |  1 |   }, [stage]);
+ 179 |  1 | 
+ 180 |  1 |   const faqs = [
+ 181 |  2 |     {
+ 182 |  2 |       q: "How does the AI generate interview questions?",
+ 183 |  2 |       a: "Our AI analyzes your uploaded resume using advanced LLMs to extract your specific skills, projects, and experiences. It then generates tailored questions that challenge your expertise and adapt to your previous answers."
+ 184 |  1 |     },
+ 185 |  2 |     {
+ 186 |  2 |       q: "Is the proctoring engine active during the entire session?",
+ 187 |  2 |       a: "Yes, the proctoring system monitors your video feed, tab switches, and full-screen status throughout the entire interview to ensure a fair and secure environment."
+ 188 |  1 |     },
+ 189 |  2 |     {
+ 190 |  2 |       q: "What happens if I exit fullscreen mode more than 3 times?",
+ 191 |  2 |       a: "The system allows for up to 3 warnings. Exceeding this limit will result in an automatic termination of the interview session to maintain strict evaluation standards."
+ 192 |  1 |     },
+ 193 |  2 |     {
+ 194 |  2 |       q: "Can I download my performance report immediately?",
+ 195 |  2 |       a: "Absolutely. Once the interview is complete, a comprehensive PDF report including your scores, visual evidence of violations, and detailed feedback is generated and made available on your dashboard."
+ 196 |  1 |     },
+ 197 |  2 |     {
+ 198 |  2 |       q: "What coding languages are supported in the coding round?",
+ 199 |  2 |       a: "Currently, we support Python, Java, C, and JavaScript. You can select your preferred language at the start of the coding evaluation stage."
+ 200 |  1 |     },
+ 201 |  2 |     {
+ 202 |  2 |       q: "Is my resume data used to train the AI model?",
+ 203 |  2 |       a: "No, your privacy is our priority. Your resume and interview data are used solely for your personal evaluation and reporting. We do not use candidate data for model training purposes."
+ 204 |  1 |     },
+ 205 |  2 |     {
+ 206 |  2 |       q: "Do I need to pay for every interview session?",
+ 207 |  2 |       a: "We offer a tier-based system. Basic users can access limited practice sessions, while our Premium tiers provide unlimited interviews, advanced proctoring, and deep technical analytics."
+ 208 |  1 |     },
+ 209 |  2 |     {
+ 210 |  2 |       q: "My camera isn't working, can I still take the interview?",
+ 211 |  2 |       a: "Since our platform relies on visual proctoring for security, a working camera is required for the system verification stage before the interview begins."
+ 212 |  1 |     }
+ 213 |  1 |   ];
+ 214 |  1 | 
+ 215 |  2 |   useEffect(() => {
+ 216 |  2 |     questionRef.current = question;
+ 217 |  2 |     hasDownloadedRef.current = false; // Reset when interview state changes (e.g. restart flow)
+ 218 |  1 |   }, [question, stage === 'landing']);
+ 219 |  1 | 
+ 220 |  2 |   useEffect(() => {
+ 221 |  2 |     let interval: NodeJS.Timeout;
+ 222 |  3 |     if (stage === 'interview') {
+ 223 |  3 |       if (!interviewStartTimeRef.current) interviewStartTimeRef.current = Date.now();
+ 224 |  4 |       interval = setInterval(() => {
+ 225 |  4 |         setElapsedTime(Math.floor((Date.now() - (interviewStartTimeRef.current || Date.now())) / 1000));
+ 226 |  3 |       }, 1000);
+ 227 |  2 |     }
+ 228 |  2 |     return () => clearInterval(interval);
+ 229 |  1 |   }, [stage]);
+ 230 |  1 | 
+ 231 |  2 |   const resetInactivityTimer = () => {
+ 232 |  2 |     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+ 233 |  2 |     if (stage !== 'interview' || isSpeakingRef.current) return;
+ 234 |  2 | 
+ 235 |  2 |     // User requested: 2m -> repeat -> 2m -> move to next
+ 236 |  3 |     inactivityTimerRef.current = setTimeout(() => {
+ 237 |  3 |       latestFnRef.current?.handleInactivity?.();
+ 238 |  2 |     }, 120000);
+ 239 |  2 |     lastActivityRef.current = Date.now();
+ 240 |  1 |   };
+ 241 |  1 | 
+ 242 |  1 |   const latestFnRef = useRef<any>({});
+ 243 |  1 | 
+ 244 |  2 |   useEffect(() => {
+ 245 |  3 |     latestFnRef.current = {
+ 246 |  3 |       resetInactivityTimer,
+ 247 |  3 |       resetSilenceTimer,
+ 248 |  3 |       handleInactivity,
+ 249 |  3 |       handleSubmitAnswer,
+ 250 |  3 |       handlePhaseProgress,
+ 251 |  3 |       transcript,
+ 252 |  3 |       interimTranscript,
+ 253 |  3 |       isSpeakingRef,
+ 254 |  3 |       stage
+ 255 |  2 |     };
+ 256 |  1 |   });
+ 257 |  1 | 
+ 258 |  1 |   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+ 259 |  2 |   const resetSilenceTimer = () => {
+ 260 |  2 |     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+ 261 |  2 |     if (stage !== 'interview' || isSpeakingRef.current) return;
+ 262 |  2 | 
+ 263 |  2 |     // Start 15s timer for auto-submit
+ 264 |  3 |     silenceTimerRef.current = setTimeout(() => {
+ 265 |  3 |       const { transcript, interimTranscript, isSpeakingRef, handleSubmitAnswer, stage: latestStage } = latestFnRef.current;
+ 266 |  3 |       const currentAns = (transcript.trim() + " " + interimTranscript.trim()).trim();
+ 267 |  3 |       // Lowered threshold to 3 characters for quiet/short affirmative answers
+ 268 |  4 |       if (currentAns.length >= 3 && !isSpeakingRef.current && latestStage === 'interview') {
+ 269 |  4 |         console.log("⏱️ Auto-submitting after silence...");
+ 270 |  4 |         handleSubmitAnswer();
+ 271 |  3 |       }
+ 272 |  2 |     }, 15000); // 15s is more natural than 30s
+ 273 |  1 |   };
+ 274 |  1 | 
+ 275 |  2 |   const handleInactivity = async () => {
+ 276 |  2 |     if (stage !== 'interview' || isSpeakingRef.current) return;
+ 277 |  2 | 
+ 278 |  3 |     if (!hasRepeatedRef.current) {
+ 279 |  3 |       console.log("🕒 Inactivity (1m): Repeating question");
+ 280 |  3 |       hasRepeatedRef.current = true;
+ 281 |  3 |       setTranscript('');
+ 282 |  3 |       setInterimTranscript('');
+ 283 |  4 |       speak("I noticed it's been a minute without a response. Let me repeat the question for you: " + (questionRef.current || "Could you please answer the previous question?"), () => {
+ 284 |  4 |         resetInactivityTimer();
+ 285 |  3 |       });
+ 286 |  3 |     } else {
+ 287 |  3 |       console.log("🕒 Extended inactivity (1m after repeat): Skipping question");
+ 288 |  3 |       hasRepeatedRef.current = false;
+ 289 |  3 | 
+ 290 |  4 |       try {
+ 291 |  4 |         setTranscript('');
+ 292 |  4 |         setInterimTranscript('');
+ 293 |  4 |         await fetch("http://127.0.0.1:5000/api/interview/answer", {
+ 294 |  4 |           method: "POST",
+ 295 |  4 |           headers: { 'Content-Type': 'application/json' },
+ 296 |  5 |           body: JSON.stringify({
+ 297 |  5 |             question: questionRef.current,
+ 298 |  5 |             answer: "No response (1 minute timeout after repeat)",
+ 299 |  5 |             inactivity: true
+ 300 |  4 |           })
+ 301 |  3 |         });
+ 302 |  2 |       } catch (e) { console.error("Silence submission error", e); }
+ 303 |  2 | 
+ 304 |  3 |       speak("Since I haven't received a response in the last minute, I will move on to the next part of our interview to ensure we stay on schedule.", () => {
+ 305 |  3 |         handlePhaseProgress();
+ 306 |  2 |       });
+ 307 |  1 |     }
+ 308 |  0 |   };
+ 309 |  0 | 
+ 310 |  1 |   useEffect(() => {
+ 311 |  2 |     if (stage === 'interview' && !isSpeaking) {
+ 312 |  2 |       resetInactivityTimer();
+ 313 |  2 |     } else {
+ 314 |  2 |       if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+ 315 |  1 |     }
+ 316 |  0 |   }, [stage, isSpeaking]);
+ 317 |  0 | 
+ 318 |  1 |   const formatTime = (seconds: number) => {
+ 319 |  1 |     const mins = Math.floor(seconds / 60);
+ 320 |  1 |     const secs = seconds % 60;
+ 321 |  1 |     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+ 322 |  0 |   };
+ 323 |  0 | 
+ 324 |  0 |   const router = useRouter();
+ 325 |  0 |   const recognitionRef = useRef<any>(null);
+ 326 |  0 |   const recognitionInstanceRef = useRef<any>(null);
+ 327 |  0 |   const isStartingRef = useRef(false);
+ 328 |  0 |   const videoRef = useRef<HTMLVideoElement>(null);
+ 329 |  0 | 
+ 330 |  0 |   // AUTO SCROLL TRANSCRIPT
+ 331 |  1 |   useEffect(() => {
+ 332 |  2 |     if (transcriptEndRef.current) {
+ 333 |  2 |       transcriptEndRef.current.scrollIntoView({ behavior: 'smooth' });
+ 334 |  1 |     }
+ 335 |  1 |     console.log("📝 Current Transcript State:", { transcript, interimTranscript });
+ 336 |  0 |   }, [transcript, interimTranscript]);
+ 337 |  0 | 
+ 338 |  0 |   const agentVideoRef = useRef<HTMLVideoElement>(null);
+ 339 |  0 |   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+ 340 |  0 |   const verificationVideoRef = useRef<HTMLVideoElement>(null);
+ 341 |  0 |   const isTerminatingRef = useRef(false);
+ 342 |  0 | 
+ 343 |  0 |   const [frequencyData, setFrequencyData] = useState<number[]>(new Array(16).fill(0));
+ 344 |  0 | 
+ 345 |  0 |   // ANIMATE AUDIO LEVEL & WAVEFORM
+ 346 |  1 |   useEffect(() => {
+ 347 |  2 |     if (!isListening) {
+ 348 |  2 |       setAudioLevel(0);
+ 349 |  2 |       setFrequencyData(new Array(16).fill(0));
+ 350 |  2 |       return;
+ 351 |  1 |     }
+ 352 |  1 | 
+ 353 |  1 |     let animationFrame: number;
+ 354 |  2 |     const updateLevel = () => {
+ 355 |  3 |       if (analyserRef.current) {
+ 356 |  3 |         const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+ 357 |  3 |         analyserRef.current.getByteFrequencyData(dataArray);
+ 358 |  3 | 
+ 359 |  3 |         const average = dataArray.reduce((p, c) => p + c, 0) / dataArray.length;
+ 360 |  3 |         setAudioLevel(average * 2.5); // Boosted sensitivity factor for visual confirmation
+ 361 |  3 | 
+ 362 |  3 |         const bars = 16;
+ 363 |  3 |         const step = Math.floor(dataArray.length / 2 / bars);
+ 364 |  3 |         const sampled = [];
+ 365 |  4 |         for (let i = 0; i < bars; i++) {
+ 366 |  4 |           sampled.push(dataArray[i * step]);
+ 367 |  3 |         }
+ 368 |  3 |         setFrequencyData(sampled);
+ 369 |  3 |         animationFrame = requestAnimationFrame(updateLevel);
+ 370 |  2 |       }
+ 371 |  1 |     };
+ 372 |  1 |     updateLevel();
+ 373 |  2 |     return () => {
+ 374 |  2 |       if (animationFrame) cancelAnimationFrame(animationFrame);
+ 375 |  1 |     };
+ 376 |  0 |   }, [isListening]);
+ 377 |  0 | 
+ 378 |  1 |   const safeStartRecognition = () => {
+ 379 |  2 |     if (!recognitionRef.current || recognitionActiveRef.current || isStartingRef.current) {
+ 380 |  2 |       console.log("🚫 Mic start skipped: state mismatch.", { active: recognitionActiveRef.current, starting: isStartingRef.current });
+ 381 |  2 |       return;
+ 382 |  1 |     }
+ 383 |  1 | 
+ 384 |  1 |     // STRICT: Do not start listening if we are in a warning state or not in fullscreen
+ 385 |  2 |     if (showFullscreenWarnRef.current || showTabSwitchWarnRef.current || (stage !== 'landing' && !document.fullscreenElement)) {
+ 386 |  2 |       console.log("🚫 Mic start blocked: Fullscreen/Visibility violation active.");
+ 387 |  2 |       return;
+ 388 |  1 |     }
+ 389 |  1 | 
+ 390 |  1 |     // CRITICAL: Ensure AI is NOT speaking before starting mic
+ 391 |  2 |     if (isSpeakingRef.current || isManualStopRef.current || stage !== 'interview') {
+ 392 |  2 |       console.log("🚫 Mic start blocked: AI speaking or manual stop active.");
+ 393 |  2 |       return;
+ 394 |  1 |     }
+ 395 |  1 | 
+ 396 |  2 |     try {
+ 397 |  2 |       isStartingRef.current = true;
+ 398 |  2 |       recognitionRef.current.start();
+ 399 |  2 |       console.log("🎤 Mic started successfully.");
+ 400 |  2 |     } catch (e: any) {
+ 401 |  3 |       if (e.name !== 'InvalidStateError') {
+ 402 |  3 |         console.error("Mic start failed:", e);
+ 403 |  2 |       }
+ 404 |  2 |     } finally {
+ 405 |  2 |       setTimeout(() => { isStartingRef.current = false; }, 500);
+ 406 |  1 |     }
+ 407 |  0 |   };
+ 408 |  0 | 
+ 409 |  0 |   const streamRef = useRef<MediaStream | null>(null);
+ 410 |  0 |   const [currentStream, setCurrentStream] = useState<MediaStream | null>(null);
+ 411 |  0 | 
+ 412 |  1 |   useEffect(() => {
+ 413 |  1 |     // Keep camera active from the moment they start the flow (upload stage) until the end
+ 414 |  1 |     const isCameraNeeded = ['upload', 'verification', 'calibration', 'instructions', 'interview', 'code'].includes(stage);
+ 415 |  1 | 
+ 416 |  2 |     const init = async () => {
+ 417 |  3 |       if (isCameraNeeded) {
+ 418 |  3 |         // Check if stream is active and tracks are live
+ 419 |  3 |         const isStreamActive = streamRef.current &&
+ 420 |  3 |           streamRef.current.getTracks().length > 0 &&
+ 421 |  3 |           streamRef.current.getVideoTracks()[0]?.readyState === 'live';
+ 422 |  3 | 
+ 423 |  4 |         if (isStreamActive) {
+ 424 |  4 |           console.log("♻️ Reusing existing camera stream");
+ 425 |  4 |           const stream = streamRef.current!;
+ 426 |  4 |           setCurrentStream(stream);
+ 427 |  5 |           const syncEl = (el: HTMLVideoElement | null) => {
+ 428 |  5 |             if (el && el.srcObject !== stream) { el.srcObject = stream; el.play().catch(() => { }); }
+ 429 |  4 |           };
+ 430 |  4 |           syncEl(videoRef.current);
+ 431 |  4 |           syncEl(verificationVideoRef.current);
+ 432 |  4 |           return;
+ 433 |  3 |         }
+ 434 |  3 | 
+ 435 |  4 |         try {
+ 436 |  4 |           console.log(`🎥 Initializing camera for stage: ${stage}`);
+ 437 |  4 |           // Try HD first, fallback to basic if device rejects constraints
+ 438 |  4 |           let stream: MediaStream;
+ 439 |  5 |           try {
+ 440 |  6 |             stream = await navigator.mediaDevices.getUserMedia({
+ 441 |  6 |               video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+ 442 |  7 |               audio: {
+ 443 |  7 |                 echoCancellation: true,
+ 444 |  7 |                 noiseSuppression: false,
+ 445 |  7 |                 autoGainControl: true
+ 446 |  6 |               }
+ 447 |  5 |             });
+ 448 |  5 |           } catch {
+ 449 |  5 |             console.warn("⚠️ HD camera failed — retrying with basic constraints");
+ 450 |  5 |             stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+ 451 |  4 |           }
+ 452 |  4 | 
+ 453 |  4 |           streamRef.current = stream;
+ 454 |  4 |           setCurrentStream(stream);
+ 455 |  4 |           // Global backup — survives React re-renders and stage transitions
+ 456 |  4 |           (window as any).__cameraStream = stream;
+ 457 |  4 | 
+ 458 |  5 |           const attachStream = (el: HTMLVideoElement | null) => {
+ 459 |  5 |             if (!el) return;
+ 460 |  5 |             el.srcObject = stream;
+ 461 |  5 |             el.play().catch(e => { if (e.name !== 'AbortError') console.warn("Video play:", e.name); });
+ 462 |  4 |           };
+ 463 |  4 |           attachStream(videoRef.current);
+ 464 |  4 |           attachStream(verificationVideoRef.current);
+ 465 |  4 |           // Re-sync after render settles
+ 466 |  4 |           setTimeout(() => { attachStream(videoRef.current); attachStream(verificationVideoRef.current); }, 700);
+ 467 |  4 | 
+ 468 |  4 |           // Audio Visualizer
+ 469 |  5 |           try {
+ 470 |  5 |             const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+ 471 |  5 |             const source = audioCtx.createMediaStreamSource(stream);
+ 472 |  5 |             const analyser = audioCtx.createAnalyser();
+ 473 |  5 |             analyser.fftSize = 256;
+ 474 |  5 |             source.connect(analyser);
+ 475 |  5 |             audioContextRef.current = audioCtx;
+ 476 |  5 |             analyserRef.current = analyser;
+ 477 |  4 |           } catch { /* non-critical */ }
+ 478 |  4 | 
+ 479 |  4 |           setFeedback('');
+ 480 |  4 |           console.log("✅ Camera stream active");
+ 481 |  4 | 
+ 482 |  4 |         } catch (e: any) {
+ 483 |  4 |           console.warn("📸 Media Error:", e.name, e.message);
+ 484 |  5 |           if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+ 485 |  5 |             setFeedback("⚠️ Camera blocked! Click the 🔒 lock icon in your browser address bar → Allow Camera & Microphone → then refresh.");
+ 486 |  5 |           } else if (e.name === 'NotReadableError' || e.name === 'TrackStartError') {
+ 487 |  5 |             setFeedback("⚠️ Camera in use by another app (Zoom, Teams). Close them and refresh.");
+ 488 |  5 |           } else if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
+ 489 |  5 |             setFeedback("⚠️ No camera found. Please connect a webcam and refresh.");
+ 490 |  5 |           } else {
+ 491 |  5 |             setFeedback(`⚠️ Camera error (${e.name}). Please refresh the page.`);
+ 492 |  4 |           }
+ 493 |  3 |         }
+ 494 |  3 |       } else {
+ 495 |  4 |         if (streamRef.current) {
+ 496 |  4 |           console.log("🛑 Stopping camera stream (not needed for this stage)");
+ 497 |  4 |           streamRef.current.getTracks().forEach(t => t.stop());
+ 498 |  4 |           streamRef.current = null;
+ 499 |  4 |           setCurrentStream(null);
+ 500 |  4 |           (window as any).__cameraStream = null;
+ 501 |  4 |           if (audioContextRef.current) { audioContextRef.current.close().catch(() => { }); audioContextRef.current = null; }

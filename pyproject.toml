@@ -1,0 +1,47 @@
+[project]
+name = "ai-interviewer"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "deepface",
+    "fastapi",
+    "flask",
+    "flask-bcrypt",
+    "flask-cors",
+    "groq",
+    "gtts",
+    "imageio-ffmpeg>=0.6.0",
+    "librosa>=0.11.0",
+    "matplotlib",
+    "mediapipe",
+    "numba>=0.64.0",
+    "numpy",
+    "opencv-python",
+    "psycopg2-binary",
+    "pypdf2",
+    "python-dotenv",
+    "python-multipart",
+    "pyttsx3",
+    "reportlab",
+    "requests",
+    "scikit-image>=0.25.2",
+    "tqdm>=4.67.3",
+    "torch",
+    "torchvision",
+    "torchaudio",
+    "ultralytics",
+    "uvicorn",
+    "werkzeug",
+]
+
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch" }
+torchvision = { index = "pytorch" }
+torchaudio = { index = "pytorch" }

@@ -1,0 +1,39 @@
+# AI Interviewer Platform - Dependencies
+
+# Core Backend & API
+flask
+flask-cors
+flask-bcrypt
+python-dotenv
+requests
+psycopg2-binary
+werkzeug
+fastapi
+uvicorn
+python-multipart
+
+# AI & LLM
+groq
+
+# Data Processing & Visualization
+numpy
+matplotlib
+
+# Media Processing (Computer Vision & Proctoring)
+opencv-python
+mediapipe
+ultralytics
+deepface
+face_recognition
+
+# PDF Processing & Reporting
+PyPDF2
+reportlab
+
+# TTS (Text-to-Speech)
+pyttsx3
+gTTS
+
+# Wav2Lip
+librosa
+torch
