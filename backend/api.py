@@ -1322,6 +1322,6 @@ def start_flask_server(problems=None):
 if __name__ == '__main__':
     start_flask_server()
 
-@app.route("/")
+@app.route("/api/health")
 def health():
     return {"status": "ok"}, 200
