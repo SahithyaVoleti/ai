@@ -1306,9 +1306,10 @@ def report_violation():
         
     return jsonify({"status": "received"})
 
+@app.route('/', methods=['GET'])
 @app.route('/api/health', methods=['GET'])
 def health():
-    return jsonify({"status": "ok"})
+    return jsonify({"status": "ok", "message": "AI Interviewer API is running"})
 
 def start_flask_server(problems=None):
     global current_problems, interview_active
@@ -1320,3 +1321,7 @@ def start_flask_server(problems=None):
 
 if __name__ == '__main__':
     start_flask_server()
+
+@app.route("/")
+def health():
+    return {"status": "ok"}, 200
