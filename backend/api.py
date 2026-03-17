@@ -1319,9 +1319,9 @@ def start_flask_server(problems=None):
     print("\n🚀 Flask Server Running on http://0.0.0.0:5000")
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False, threaded=True)
 
-@app.route('/health')
-def health_check():
-    return {"status": "healthy"}, 200
+@app.route('/api/health')
+def api_health_check():
+    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}, 200
 
 if __name__ == '__main__':
     start_flask_server()
