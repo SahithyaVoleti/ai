@@ -8,6 +8,9 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     libxrender-dev \
     gcc \
+    g++ \
+    make \
+    cmake \
     python3-dev \
     curl \
     && rm -rf /var/lib/apt/lists/*
