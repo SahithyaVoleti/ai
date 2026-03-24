@@ -13,7 +13,6 @@ dependencies = [
     "groq",
     "gtts",
     "imageio-ffmpeg>=0.6.0",
-    "librosa>=0.11.0",
     "matplotlib",
     "mediapipe",
     "numba>=0.64.0",

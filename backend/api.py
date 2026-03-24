@@ -1202,29 +1202,7 @@ except Exception as e:
 
         audio_file = filename_wav if os.path.exists(filename_wav) else filename_mp3
 
-        if lip_sync:
-            try:
-                from lip_sync_engine import engine as lip_engine
-                print(f"🎬 Starting Wav2Lip sync for text: '{text[:20]}...'")
-                output_name = f"synced_{timestamp}.mp4"
-                
-                # Make sure old synced videos are cleaned from frontend/public to save space
-                public_dir = os.path.join(os.path.dirname(current_dir), 'frontend', 'public')
-                if os.path.exists(public_dir):
-                    for f in os.listdir(public_dir):
-                        if f.startswith('synced_') and f.endswith('.mp4'):
-                            try: os.remove(os.path.join(public_dir, f))
-                            except: pass
 
-                # Generate lip sync video
-                video_filename = lip_engine.generate_synced_video(audio_file, output_name)
-                if video_filename:
-                    video_url = request.host_url.rstrip('/') + f"/api/video/{video_filename}"
-                    return jsonify({"video_url": video_url})
-                else:
-                    print("⚠️ Wav2Lip failed, falling back to audio only")
-            except Exception as lip_err:
-                print(f"⚠️ Lip sync error: {lip_err}")
 
         # Return audio fallback
         if os.path.exists(filename_wav) and os.path.getsize(filename_wav) > 0:

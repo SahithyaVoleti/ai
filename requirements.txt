@@ -33,7 +33,3 @@ reportlab
 # TTS (Text-to-Speech)
 pyttsx3
 gTTS
-
-# Wav2Lip
-librosa
-torch
