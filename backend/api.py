@@ -303,8 +303,8 @@ def verify_face():
          
     stored_photo = database.get_user_photo(user_id)
     if not stored_photo:
-         return jsonify({"status": "error", "message": "No profile photo found. Account integrity check failed."}), 400
-         
+         print(f"🚨 CRITICAL: No profile photo found for {user_id}. Blocking verification.")
+         return jsonify({"status": "error", "message": "Identity Error: No registered profile photo found. Please re-sign up or contact admin."}), 403
     # REAL COMPARISON LOGIC WOULD GO HERE using deepface/face_recognition
     # For this environment, we enforce that both images effectively exist.
     # We can add a simple string comparison if it's the SAME exact base64 (unlikely)
@@ -338,9 +338,11 @@ def verify_face():
         
         if matched:
              # Set the PROFILE PHOTO as the baseline for continuous verification
-             # This ensures we always verify against the authenticated ground truth.
              proctor_service.set_reference_profile(p_frame)
              print(f"✅ Identity Baseline established (Ground Truth) for user {user_id}")
+             # Sync session and record successful verification snapshot
+             proctor_service.session_id = manager.session_id
+             proctor_service.save_evidence(frame, "Identity Verified")
         else:
              print(f"Mismatch: Identity Mismatch for user {user_id}: distance={distance:.4f} Msg: {feedback}")
              return jsonify({
@@ -654,9 +656,21 @@ def upload_resume():
     if not allowed_file(file.filename):
         return jsonify({"status": "error", "message": "Only PDF files are allowed"}), 400
     
-    filename = secure_filename(file.filename)
+    # --- CLEANUP PREVIOUS RESUMES (DISK PROTECTION) ---
+    # To save space, we search for and delete any old resumes uploaded by this same person.
     timestamp = time.strftime("%Y%m%d_%H%M%S")
-    saved_filename = f"{timestamp}_{candidate_name.replace(' ', '_')}_{filename}"
+    safe_candidate_name = candidate_name.replace(' ', '_')
+    for old_file in os.listdir(app.config['UPLOAD_FOLDER']):
+        if safe_candidate_name in old_file:
+            try:
+                os.remove(os.path.join(app.config['UPLOAD_FOLDER'], old_file))
+                print(f"🗑️ Deleted old resume for {candidate_name} to save disk space.")
+            except:
+                pass
+
+    # Save the new resume
+    filename = secure_filename(file.filename)
+    saved_filename = f"{safe_candidate_name}_{filename}"
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], saved_filename)
     
     file.save(filepath)
@@ -666,10 +680,13 @@ def upload_resume():
     
     # Process with Manager
     success, msg = manager.load_resume(filepath)
+    manager.resume_path = filepath # Link for auto-deletion after report
     # Reset proctoring and session state for fresh interview
     proctor_service.should_terminate = False
     proctor_service.termination_reason = None
     proctor_service.violations = []
+    proctor_service.session_id = manager.session_id # Early Sync
+    proctor_service.active_profile_encoding = None
     # ✅ Clear previous interview history so warmup & question logic starts fresh
     manager.history = []
     manager.evaluations = []
@@ -681,14 +698,14 @@ def upload_resume():
     manager.start_time = datetime.now()
     
     if not success:
-         return jsonify({"status": "error", "message": "resume not matched please upload correct resume"}), 400
+         return jsonify({"status": "error", "message": msg}), 400
 
     match, detected_name = manager.verify_candidate_match(candidate_name, manager.resume_text)
     if not match:
          resume_uploaded = False
          return jsonify({
              "status": "error", 
-             "message": "resume not matched please upload correct resume"
+             "message": f"Resume name mismatch: The resume belongs to '{detected_name}', but you entered '{candidate_name}'. Please verify the name or upload correct resume."
          }), 400
 
     manager.candidate_name = candidate_name
@@ -752,7 +769,7 @@ def submit_answer():
 
 @app.route('/api/generate_video', methods=['POST'])
 def generate_video():
-    """Endpoint for generating synchronized audio from text (Video LipSync Disabled)."""
+    """Endpoint for generating synchronized audio from text (Streaming & Auto-Delete)."""
     data = request.json
     if not data or 'text' not in data:
         return jsonify({"status": "error", "message": "Text is required"}), 400
@@ -761,16 +778,29 @@ def generate_video():
     
     try:
         from interview_video_pipeline import generate_synced_video
-        # pipeline now only returns audio_url since lipsync is deleted
         _, output_audio_path = generate_synced_video(text)
         
-        if output_audio_path:
-             filename = os.path.basename(output_audio_path)
-             base_url = request.host_url.rstrip('/')
-             return jsonify({
-                 "status": "success", 
-                 "audio_url": f"{base_url}/static/audio/{filename}"
-             })
+        if output_audio_path and os.path.exists(output_audio_path):
+             from flask import send_file
+             from io import BytesIO
+             
+             # 1. Read the audio file into memory (RAM)
+             with open(output_audio_path, 'rb') as f:
+                 audio_bytes = f.read()
+                 
+             # 2. IMMEDIATELY delete it from disk!
+             try:
+                 os.remove(output_audio_path)
+                 # Also remove any leftover .wav audio file created during TTS
+                 wav_path = output_audio_path.replace(".mp3", ".wav")
+                 if os.path.exists(wav_path):
+                     os.remove(wav_path)
+             except Exception as e:
+                 print(f"Warning: Failed to auto-delete {output_audio_path}: {e}")
+                 
+             # 3. Stream the bytes back directly to the frontend
+             return send_file(BytesIO(audio_bytes), mimetype="audio/mp3")
+             
         else:
              return jsonify({"status": "error", "message": "Failed to generate audio."}), 500
     except Exception as e:
@@ -801,7 +831,14 @@ def finish_interview():
         except Exception:
             pass
 
-        manager.evidence_path = getattr(proctor_service, 'evidence_path', None)
+        # Find the Identity Verified image if it exists
+        identity_image = None
+        for v in manager.violations:
+            if v.get('type') == 'Identity Verified':
+                identity_image = v.get('image_path')
+                break
+        
+        manager.evidence_path = identity_image # Point to specific file, not dir
         proctor_score = proctor_service.get_score() if hasattr(proctor_service, 'get_score') else 100
         manager.proctor_score = proctor_score
 
@@ -1289,11 +1326,33 @@ def report_violation():
 def health():
     return jsonify({"status": "ok", "message": "AI Interviewer API is running"})
 
+def cleanup_static_audio():
+    """Removes all files from static/audio directory to free up space on startup."""
+    try:
+        static_audio_dir = os.path.abspath(os.path.join(current_dir, '..', 'static', 'audio'))
+        if os.path.exists(static_audio_dir):
+            count = 0
+            for f in os.listdir(static_audio_dir):
+                file_path = os.path.join(static_audio_dir, f)
+                if os.path.isfile(file_path):
+                    try:
+                        os.remove(file_path)
+                        count += 1
+                    except Exception:
+                        pass
+            print(f"🧹 Auto-cleaned up {count} temporary files from static/audio/")
+    except Exception as e:
+         print(f"Cleanup Error during startup: {e}")
+
 def start_flask_server(problems=None):
     global current_problems, interview_active
     if problems:
         current_problems = problems
     interview_active = True
+    
+    # Auto-clean temporary storage
+    cleanup_static_audio()
+    
     print("\n🚀 Flask Server Running on http://0.0.0.0:5000")
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False, threaded=True)
 

@@ -1482,7 +1482,7 @@ function HomeContent() {
 
   /* FAILSAFE TTS AUDIO REF */
 
-  const speak = (text: string, onComplete?: () => void) => {
+  const speak = (text: string, onComplete?: () => void, bypassDeferral = false) => {
     if (typeof window === 'undefined') return;
     const synth = window.speechSynthesis;
 
@@ -1525,7 +1525,7 @@ function HomeContent() {
     // 3. RAPID-FIRE / REDUNDANT DEFERRALS
     const activeProctoringStages = ['verification', 'calibration', 'instructions', 'interview', 'code'];
     const isNotInFullscreen = activeProctoringStages.includes(stage) && !document.fullscreenElement;
-    if (showFullscreenWarnRef.current || showTabSwitchWarnRef.current || isNotInFullscreen) {
+    if (!bypassDeferral && (showFullscreenWarnRef.current || showTabSwitchWarnRef.current || isNotInFullscreen)) {
       if ((window as any)._lastDeferredText === text) return;
       (window as any)._lastDeferredText = text;
       console.log("⏳ Speak deferred (Visibility Violation)");
@@ -1538,7 +1538,7 @@ function HomeContent() {
       setTimeout(() => {
         if (myId !== globalSpeechTokenRef.current) return; // Stale
         (window as any)._lastDeferredText = null;
-        speak(text, onComplete);
+        speak(text, onComplete, bypassDeferral);
       }, 1500);
       return;
     }
@@ -1807,7 +1807,7 @@ function HomeContent() {
       } else {
         const errorMsg = data.message || "Resume verification failed.";
         setFeedback("⚠️ " + errorMsg);
-        setFile(null); // Clear file to force re-upload as per user request
+        // Do NOT clear the file state, since clearing it without clearing the HTML input causes onChange to permanently fail for the same file.
         speak(errorMsg);
       }
     } catch (e) {
@@ -1852,8 +1852,8 @@ function HomeContent() {
       }
       el.play().catch(() => { });
 
-      // Stop polling once video is playing
-      if (el.readyState >= 2) {
+      // Stop polling once video is playing and size is available
+      if (el.readyState >= 2 && el.videoWidth > 0) {
         clearInterval(interval);
       }
     }, 150);
@@ -1902,7 +1902,9 @@ function HomeContent() {
         setVerifyStatus("✅ " + (data.message || "Identity & Eyes Verified Successfully!"));
         setProctorStatus({ face: true, warning: '' });
         setVerifying(false);
-        speak(data.message || "Identity verified. Now, let's calibrate your environment."),
+        speak(data.message || "Identity verified. Now, let's calibrate your environment.", () => {
+          setStage('calibration');
+        }, true);
         
         // Signal proctoring reset
         fetch("http://localhost:5000/proctor/reset", { method: "POST" }).catch(() => { });
@@ -2056,7 +2058,7 @@ function HomeContent() {
               <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center font-black text-white shadow-2xl shadow-indigo-600/30 group-hover:scale-110 transition-transform">AI</div>
               <div className="flex flex-col">
                 <span className={`font-black text-2xl tracking-tighter leading-none ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Interview.AI</span>
-                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mt-1">Intelligence 2.0</span>
+                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mt-1"></span>
               </div>
             </div>
 
@@ -3461,7 +3463,6 @@ function HomeContent() {
 
               <div className="w-20 h-20 bg-green-500/10 text-green-500 rounded-3xl flex items-center justify-center mx-auto mb-8 relative">
                 <CheckCircle size={40} />
-                <img src="/atlas_hero.png" className="absolute -top-10 -left-20 w-32 opacity-20 animate-float" />
               </div>
 
               <h1 className="text-4xl font-black mb-4">Interview Completed</h1>

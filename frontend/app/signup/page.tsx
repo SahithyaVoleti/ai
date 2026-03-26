@@ -153,7 +153,7 @@ export default function Signup() {
         let isStopped = false;
 
         const syncCamera = async () => {
-            if (chatStep === 6 && !capturedImage && !streamRef.current) {
+            if (chatStep === 7 && !capturedImage && !streamRef.current) {
                 try {
                     console.log("📸 Requesting camera access...");
                     let stream: MediaStream;
@@ -202,10 +202,10 @@ export default function Signup() {
         syncCamera();
 
         // If camera is active and video element just mounted/updated
-        if (cameraActive && streamRef.current && videoRef.current && !videoRef.current.srcObject) {
+        if (chatStep === 7 && streamRef.current && videoRef.current && !videoRef.current.srcObject) {
             videoRef.current.srcObject = streamRef.current;
             videoRef.current.play().catch(e => {
-                if (e.name !== 'AbortError' && e.name !== 'NotAllowedError') console.error("Video delayed play failed:", e);
+                if (e.name !== 'AbortError') console.error("Camera mount play failed:", e);
             });
         }
 
@@ -257,7 +257,7 @@ export default function Signup() {
         if (!inputValue.trim()) return;
 
         // Add User Message
-        const displayedText = chatStep === 5 ? '•'.repeat(inputValue.length) : inputValue;
+        const displayedText = chatStep === 6 ? '•'.repeat(inputValue.length) : inputValue;
         const userMsg: Message = {
             id: Date.now() + Math.random(),
             sender: 'user',
@@ -700,6 +700,7 @@ export default function Signup() {
                         <div className="flex items-center gap-2 cursor-pointer">
                             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-lg">I</div>
                             <span className="text-xl font-bold tracking-tight">Interview.AI</span>
+                            {/* Branding removed */}
                         </div>
                     </div>
                     <div className="mt-12">
@@ -867,14 +868,14 @@ export default function Signup() {
                                             value={inputValue}
                                             onChange={(e) => setInputValue(e.target.value)}
                                             placeholder={getPlaceholder()}
-                                            disabled={isTyping || chatStep > 5}
-                                            autoComplete={chatStep === 5 ? "new-password" : "off"}
+                                            disabled={isTyping || chatStep > 6}
+                                            autoComplete={chatStep === 6 ? "new-password" : "off"}
                                             className="w-full bg-[var(--card-bg)] border border-[var(--border)] text-[var(--foreground)] placeholder-[var(--text-muted)] text-lg px-6 py-4 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-[var(--background)] transition-all shadow-inner"
                                             autoFocus
                                         />
                                         <button
                                             type="submit"
-                                            disabled={!inputValue.trim() || isTyping || chatStep > 5}
+                                            disabled={!inputValue.trim() || isTyping || chatStep > 6}
                                             className={`
                         absolute right-2 p-3 rounded-xl transition-all duration-200
                         ${!inputValue.trim() ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md transform hover:scale-105'}

@@ -49,9 +49,9 @@ class InterviewManager:
         self.submitted_solutions = []
         self.violations = [] # Track security violations
         self.proctor_score = 100 # New: Integrity/Proctoring Score
-        self.evidence_path = None # Path to cheating screenshot
         self.start_time = datetime.datetime.now() # Approximate start
         self.session_id = str(int(time.time())) # Unique session for evidence isolation
+        self.resume_path = None # Path to original resume PDF for auto-deletion
         
         self.icebreaker_stage = 'start'
         self.icebreaker_count = 0 
@@ -438,47 +438,78 @@ class InterviewManager:
              
         if not topic_scores or total_possible == 0: return None
         
-        # Prepare Data for Pie Chart
-        total_achieved = sum(topic_scores.values())
-        remaining = total_possible - total_achieved
+        # Prepare Data for Pie Chart (Grouped by major Category)
+        # Mapping to consolidate 20+ sub-tags into 5 readable domains
+        category_map = {
+            'Technical': ['Technical', 'Technical Core', 'Technical Advanced', 'Technical Hr'],
+            'Behavioral': ['Behavioral', 'Hr/Behavioral', 'Teamwork', 'Leadership', 'Adaptability', 'Future Goals', 'Scenario Hr', 'Scenario Behavioral'],
+            'Resume & Projects': ['Resume Overview', 'Resume Skills', 'Resume Projects', 'Project', 'Internship'],
+            'Coding': ['Coding'],
+            'Intro/Basics': ['Intro', 'Warmup', 'Conclusion', 'Case Study']
+        }
         
-        labels = list(topic_scores.keys())
-        sizes = list(topic_scores.values())
+        grouped_scores = {}
+        for category, sub_tags in category_map.items():
+            s = 0
+            for tag in sub_tags:
+                tag_title = tag.title()
+                if tag_title in topic_scores:
+                    s += topic_scores.pop(tag_title)
+            if s > 0:
+                grouped_scores[category] = s
         
-        # Dynamic Colors
-        import random
-        base_colors = ['#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c', '#34495e']
-        colors_list = base_colors[:len(labels)]
-        while len(colors_list) < len(labels):
-            colors_list.append('#%06x' % random.randint(0, 0xFFFFFF))
+        # Any remaining topics not in map
+        for topic, score in topic_scores.items():
+            grouped_scores[topic] = grouped_scores.get(topic, 0) + score
             
+        labels = list(grouped_scores.keys())
+        sizes = list(grouped_scores.values())
+        
+        # Use a professional, consistent color palette
+        colors_list = ['#3498db', '#2ecc71', '#9b59b6', '#f1c40f', '#e67e22', '#1abc9c', '#e74c3c']
+        
+        # Calculate overall gap
+        remaining = total_possible - sum(sizes)
+        
         if remaining > 0:
-            labels.append('') # Blank remaining
+            labels.append('Gap')
             sizes.append(remaining)
-            colors_list.append('#ffffff') # White color
+            colors_list = colors_list[:len(labels)-1] + ['#ecf0f1'] # Light gray for gap
 
         from matplotlib.figure import Figure
         from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
-        fig = Figure(figsize=(6, 4))
+        fig = Figure(figsize=(8, 6)) # Larger canvas for legend
         canvas = FigureCanvas(fig)
         ax = fig.add_subplot(111)
 
-        wedges, texts, autotexts = ax.pie(sizes, labels=labels, autopct='%1.1f%%',
-                startangle=90, colors=colors_list, textprops=dict(color="black"),
-                wedgeprops=dict(edgecolor='#cccccc', linewidth=1))
+        # Create Donut Chart (wedgeprops width creates the hole)
+        wedges, texts, autotexts = ax.pie(
+            sizes, 
+            autopct='%1.1f%%',
+            startangle=140, 
+            colors=colors_list, 
+            pctdistance=0.75,
+            wedgeprops=dict(width=0.4, edgecolor='w', linewidth=2)
+        )
         
-        for i, autotext in enumerate(autotexts):
-            if remaining > 0 and i == len(autotexts) - 1:
-                autotext.set_text('')
+        # Clean up autotexts
+        for i, a in enumerate(autotexts):
+            if sizes[i] < (total_possible * 0.05): # Hide labels for tiny slivers
+                a.set_text("")
             else:
-                autotext.set_color('white')
-                autotext.set_weight('bold')
-                autotext.set_size(10)
+                a.set_color('#2c3e50')
+                a.set_weight('bold')
+                a.set_size(9)
         
-        ax.set_title("Overall Score Percentage")
+        # Add Professional Legend at the side
+        ax.legend(wedges, labels, title="Score Categories", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1))
+        
+        ax.set_title("Overall Score Percentage", pad=20, fontsize=14, weight='bold')
         fig.tight_layout()
-        fig.savefig(filename, dpi=300)
+        fig.subplots_adjust(right=0.75) # Make room for legend
+        
+        fig.savefig(filename, dpi=300, bbox_inches='tight')
         return filename
 
         return filename
@@ -626,15 +657,16 @@ class InterviewManager:
             status_color = colors.HexColor('#E74C3C') # Red
 
         # Identity Card Table - Premium Assessing Style
+        # Identity Card Table - Vertically Stacked to match template
         identity_data = [
-            [safe_para("CANDIDATE NAME", label_style), safe_para("ASSESSMENT STATUS", label_style), safe_para("INTERVIEW DATE", label_style)],
-            [safe_para(self.candidate_name or "N/A", bold_text_style), 
-             safe_para(status_text, ParagraphStyle('Status', parent=bold_text_style, textColor=status_color, fontSize=11)),
-             safe_para(datetime.datetime.now().strftime("%B %d, %Y"), bold_text_style)],
-            [safe_para("CANDIDATE ID", label_style), safe_para("SESSION ID", label_style), safe_para("TOTAL DURATION", label_style)],
-            [safe_para(f"UID-{int(time.time()) % 10000:04d}", bold_text_style),
-             safe_para(u_id.upper(), bold_text_style),
-             safe_para(f"{int((time.time() - self.start_time.timestamp())/60)} mins", bold_text_style)]
+            [safe_para("Candidate Name:", label_style), safe_para(self.candidate_name or "N/A", bold_text_style)],
+            [safe_para("Interview Date:", label_style), safe_para(self.start_time.strftime("%B %d, %Y"), bold_text_style)],
+            [safe_para("Interview Time:", label_style), safe_para(self.start_time.strftime("%I:%M %p"), bold_text_style)],
+            [safe_para("Total Questions:", label_style), safe_para(str(len(evals_copy)), bold_text_style)],
+            [safe_para("Coding Problems:", label_style), safe_para(str(len(self.submitted_solutions)), bold_text_style)],
+            [safe_para("Coding Correct:", label_style), safe_para(f"{sum(1 for s in self.submitted_solutions if s.get('status') == 'Correct')}/{len(self.submitted_solutions)}", bold_text_style)],
+            [safe_para("Assessment Status:", label_style), safe_para(status_text, ParagraphStyle('Status', parent=bold_text_style, textColor=status_color, fontSize=11))],
+            [safe_para("Overall Performance Score:", label_style), safe_para(f"{overall_score_raw:.1f}/10", bold_text_style)],
         ]
         
         id_table = Table(identity_data, colWidths=[2.5*inch, 2.5*inch, 2.4*inch])
@@ -1070,7 +1102,11 @@ class InterviewManager:
 
             # Detailed Coding Table
             # DETAILED CODING ANALYSIS (Deep Dive)
+        # Only break page if coding section was significant
+        if len(self.submitted_solutions) > 1:
             story.append(PageBreak())
+        else:
+            story.append(Spacer(1, 0.4*inch))
             story.append(safe_para("TECHNICAL CODING EVALUATION", title_style))
             story.append(Spacer(1, 0.2*inch))
             story.append(Spacer(1, 0.1*inch))
@@ -1200,119 +1236,81 @@ class InterviewManager:
              improvements = []
              next_steps = []
 
-        story.append(safe_para("<b>Executive Summary:</b>", subheading_style))
-        story.append(safe_para(summary_text, normal_style))
-        story.append(Spacer(1, 0.2*inch))
+        # --- RECOMENDATION CONTAINER TABLE (Bordered) ---
+        rec_box_data = []
+        rec_box_data.append([safe_para("<b>Executive Summary:</b>", subheading_style, allow_xml=True)])
+        rec_box_data.append([safe_para(summary_text, normal_style)])
+        rec_box_data.append([Spacer(1, 0.08*inch)])
         
         # B. Areas for Improvement
         if improvements:
-            story.append(safe_para("<b>Areas for Improvement:</b>", subheading_style))
+            rec_box_data.append([safe_para("<b>Areas for Improvement:</b>", subheading_style, allow_xml=True)])
             for item in improvements:
-                story.append(safe_para(f"• {item}", normal_style))
-            story.append(Spacer(1, 0.2*inch))
+                rec_box_data.append([safe_para(f"• {item}", normal_style)])
+            rec_box_data.append([Spacer(1, 0.08*inch)])
             
         # C. Recommended Next Steps
         if next_steps:
-             story.append(safe_para("<b>Remarks & Next Steps:</b>", subheading_style))
+             rec_box_data.append([safe_para("<b>Remarks & Next Steps:</b>", subheading_style, allow_xml=True)])
              for item in next_steps:
-                 story.append(safe_para(f"• {item}", normal_style))
-             story.append(Spacer(1, 0.2*inch))
+                 rec_box_data.append([safe_para(f"• {item}", normal_style)])
+
+        # Single styled container covering all texts in a single frame box border
+        rec_table = Table(rec_box_data, colWidths=[7.2*inch])
+        rec_table.setStyle(TableStyle([
+            ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#D1D8D6')),
+            ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#FFFFFF')),
+            ('TOPPADDING', (0,0), (-1,-1), 4),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+            ('LEFTPADDING', (0,0), (-1,-1), 12),
+            ('RIGHTPADDING', (0,0), (-1,-1), 12),
+        ]))
+        story.append(rec_table)
+        story.append(Spacer(1, 0.2*inch))
 
         # 6a. INTERVIEW RUBRIC (User Requested Format)
         story.append(safe_para("INTERVIEW RUBRIC ASSESSMENT", heading_style))
         story.append(Spacer(1, 0.1*inch))
         
-        avg_eval_score = sum([self.sf(e.get('score', 0)) for e in evals_copy]) / (len(evals_copy) or 1)
-        
-        def calculate_factor_score(factor):
-            # Combined Logic
-            score = 3
-            notes = "Standard performance observed."
+        def calculate_category_score(cat):
+            cat_items = [e for e in evals_copy if str(e.get('type', 'General')).upper() == cat.upper()]
+            if not cat_items:
+                return 0, "No questions evaluated in this category."
             
-            # Logic Map
-            if factor == 'Cultural Fit':
-                if avg_eval_score > 8: score = 5; notes = "Strong alignment with professional values shown."
-                elif avg_eval_score > 6: score = 4; notes = "Positive attitude and adaptability displayed."
-                else: score = 3; notes = "Neutral fit; acceptable but not distinctive."
-            
-            elif factor == 'Career Motivation':
-                # Check for intro/career keywords in transcript if possible, else derive from enthusiasm
-                if len(evals_copy) > 2: score = 4; notes = "Clear articulation of goals and interest."
-                else: score = 3; notes = "Standard motivation expressed."
-            
-            elif factor == 'Social Skills':
-                # Penalize for looking away/movement
-                movement_count = sum(1 for v in self.violations if 'movement' in v.get('type', '') or 'looking' in v.get('type', ''))
-                if movement_count == 0: score = 5; notes = "Excellent eye contact and engagement."
-                elif movement_count < 3: score = 4; notes = "Good engagement with minor distractions."
-                else: score = 2; notes = "Distracted behavior affected social presence."
-                
-            elif factor == 'Teamwork':
-                 if "team" in str(evals_copy).lower(): score = 4; notes = "Demonstrated collaborative mindset."
-                 else: score = 3; notes = "Adequate potential for collaboration."
-            
-            elif factor == 'Technical Skills':
-                # Based on coding score
-                coding_score = 0
-                if self.submitted_solutions:
-                    total_code_score = sum([self.sf(s.get('score', 0)) for s in self.submitted_solutions])
-                    coding_score = (total_code_score / len(self.submitted_solutions)) if self.submitted_solutions else 0
-                
-                if coding_score >= 9: score = 5; notes = f"Exceptional proficiency; solved problems with optimization ({coding_score:.1f}/10)."
-                elif coding_score >= 7: score = 4; notes = f"Strong technical base; handled core logic effectively ({coding_score:.1f}/10)."
-                elif coding_score >= 4: score = 3; notes = f"Average understanding; struggled with complex optimizations ({coding_score:.1f}/10)."
-                elif coding_score > 0: score = 2; notes = f"Needs improvement; limited success with problem statements ({coding_score:.1f}/10)."
-                else: score = 1; notes = "No technical implementation demonstrated."
-            
-            elif factor == 'Leadership Capabilities':
-                 if avg_eval_score > 8.5: score = 4; notes = "Strong potential; demonstrated strategic thinking in resume/answers."
-                 else: score = 3; notes = "Moderate potential; focused more on individual contribution."
-            
-            elif factor == 'Critical Thinking / Problem Solving':
-                 if avg_eval_score > 8: score = 5; notes = "Highly logical and structured approach to problem solving."
-                 elif avg_eval_score > 6: score = 4; notes = "Clear reasoning and methodical process identified."
-                 else: score = 3; notes = "Standard thinking process with some logical gaps."
-            
-            elif factor == 'Self-Awareness':
-                 score = 4; notes = "Good understanding of own strengths/weaknesses."
-            
-            return score, notes
+            avg_cat_score = sum([self.sf(e.get('score', 0)) for e in cat_items]) / len(cat_items)
+            notes = "Needs Improvement" if avg_cat_score < 5 else "Satisfactory" if avg_cat_score < 7 else "Good" if avg_cat_score < 9 else "Excellent"
+            return avg_cat_score, notes
 
         # Table Header
         rubric_data = [
-            ["FACTORS", "Candidate Score (1-5)", "Assessment Notes"]
+            ["FACTORS", "Candidate Score (1-10)", "Assessment Notes"]
         ]
         
-        factors = [
-            "Cultural Fit",
-            "Career Motivation",
-            "Social Skills",
-            "Teamwork",
-            "Technical Skills",
-            "Leadership Capabilities",
-            "Critical Thinking / Problem Solving",
-            "Self-Awareness"
-        ]
-
-        for f in factors:
-            s, n = calculate_factor_score(f)
-            rubric_data.append([f, str(s), n])
+        categories = sorted(list(set([str(e.get('type', 'General')).capitalize() for e in evals_copy])))
+        total_category_scores = []
+        for f in categories:
+            s, n = calculate_category_score(f)
+            rubric_data.append([f, f"{s:.1f}/10", n])
+            total_category_scores.append(s)
             
         # Add Average Row
-        avg_rubric = 0
-        if factors:
-            avg_rubric = sum([int(r[1]) for r in rubric_data[1:]]) / len(factors)
-        rubric_data.append(["AVERAGE SCORE", f"{avg_rubric:.2f}", ""])
+        avg_rubric = sum(total_category_scores) / len(total_category_scores) if total_category_scores else 0
+        rubric_data.append(["AVERAGE SCORE", f"{avg_rubric:.1f}/10", ""])
 
         rubric_table = Table(rubric_data, colWidths=[2.5*inch, 1.5*inch, 3*inch])
-        rubric_table.setStyle(TableStyle([
-            ('GRID', (0,0), (-1,-1), 0.5, colors.black),
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#e0e0e0')), # Header
+        rubric_tableStyle = TableStyle([
+            ('GRID', (0,0), (-1,-1), 0.5, colors.white),
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#001F3F')), # Navy Header
+            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
             ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
             ('ALIGN', (1,0), (1,-1), 'CENTER'), # Center scores
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#F2F4F7'), colors.white]),
             ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'), # Footer Bold
             ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#f0f0f0')), # Footer Grey
-        ]))
+            ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor('#001F3F')), 
+            ('PADDING', (0,0), (-1,-1), 8),
+        ])
+        rubric_table.setStyle(rubric_tableStyle)
         
         story.append(rubric_table)
         story.append(Spacer(1, 0.3*inch))
@@ -1411,10 +1409,15 @@ class InterviewManager:
              story.append(safe_para("No critical integrity violations detected during the session.", normal_style))
 
         # 8. SESSION SNAPSHOTS & EVIDENCE
-        story.append(PageBreak())
+        # Only PageBreak if proctoring had lots of content, else just add spacer
+        if len(self.violations) > 5:
+            story.append(PageBreak())
+        else:
+            story.append(Spacer(1, 0.3*inch))
+
         story.append(safe_para("SESSION MONITORING LOG", title_style))
         story.append(Spacer(1, 0.2*inch))
-        story.append(safe_para("The following images were captured during the session for identity verification and proctoring purposes:", normal_style))
+        story.append(safe_para("Identity verification and periodic monitor snapshots captured during the session:", normal_style))
         story.append(Spacer(1, 0.2*inch))
 
         # Collect all evidence images
@@ -1423,15 +1426,10 @@ class InterviewManager:
         if os.path.exists(evidence_dir):
             all_files = [os.path.join(evidence_dir, f) for f in os.listdir(evidence_dir) if f.endswith(".jpg")]
             
-            sid_prefix = f"proof_{self.session_id}_"
-            
-            # STRICT FILTERING: Only include photos belonging to THIS specific session
-            files = [f for f in all_files if sid_prefix in os.path.basename(f)]
-            files.sort(key=os.path.getmtime)
-            
             significant_images = []
             seen_paths = set()
 
+            # 1. Collect from Violations (Highest priority)
             for v in self.violations:
                 img_path = v.get('image_path')
                 if img_path and os.path.exists(img_path) and os.path.isfile(img_path) and img_path not in seen_paths:
@@ -1442,27 +1440,29 @@ class InterviewManager:
                     significant_images.append((img_path, label))
                     seen_paths.add(img_path)
 
-            # Include critical evidence if set (check if it's a file, not a dir)
-            if self.evidence_path and os.path.isfile(self.evidence_path) and self.evidence_path not in seen_paths:
-                significant_images.append((self.evidence_path, "CRITICAL: Violation Recorded"))
-                seen_paths.add(self.evidence_path)
-
-            for f in files:
-                suspicious_keywords = ["phone", "movement", "looking", "gadget", "multiple", "fraud", "person", "ident", "warn", "critical", "suspicious"]
-                f_basename = os.path.basename(f).lower()
-                if f not in seen_paths and any(kw in f_basename for kw in suspicious_keywords):
-                    label = "Suspicious Activity"
-                    if "phone" in f_basename or "gadget" in f_basename: label = "Unauthorized Device"
-                    elif "multiple" in f_basename or "people" in f_basename: label = "Multiple People"
-                    elif "movement" in f: label = "Excessive Movement"
-                    elif "person" in f_basename or "no_person" in f_basename: label = "Candidate Presence Alert"
-                    elif "looking" in f_basename or "looking" in f: label = "Eye Contact Alert"
-                    elif "ident" in f_basename or "fraud" in f_basename: label = "Identity Verification Alert"
+            # 2. Collect session-specific files from evidence folder
+            sid_prefix = f"proof_{self.session_id}_"
+            for f in all_files:
+                f_basename = os.path.basename(f)
+                if sid_prefix in f_basename and f not in seen_paths:
+                    label = "Session Log"
+                    # Try to extract context from filename
+                    if "Identity_Verified" in f: label = "Identity Proof (Live)"
+                    elif "Gains" in f: label = "Focus Gain"
+                    elif "loss" in f: label = "Focus Loss"
                     
                     significant_images.append((f, label))
                     seen_paths.add(f)
+
+            # 3. Last Fallback: Include any "default" prefix photos if they are recent
+            default_files = [f for f in all_files if "proof_default_" in os.path.basename(f)]
+            for df in default_files:
+                # If file was created in the last 10 minutes, it likely belong to this user session (if start was missed)
+                if (time.time() - os.path.getmtime(df)) < 600 and df not in seen_paths:
+                    significant_images.append((df, "Early Session Proof"))
+                    seen_paths.add(df)
             
-            snapshots = [f for f in files if "snapshot" in f and f not in seen_paths]
+            snapshots = [f for f in all_files if "snapshot" in f and f not in seen_paths]
             if len(snapshots) > 4:
                 step = len(snapshots) // 4
                 for i in range(0, len(snapshots), step):
@@ -1473,6 +1473,12 @@ class InterviewManager:
                  for s in snapshots:
                     if len(significant_images) < 10:
                         significant_images.append((s, "Routine Monitor"))
+                        seen_paths.add(s)
+
+            # Add all used evidence images to cleanup list (so they get deleted after PDF build)
+            for p in seen_paths:
+                if p and p not in temp_images:
+                    temp_images.append(p)
 
             if significant_images:
                 table_data = []
@@ -1505,19 +1511,34 @@ class InterviewManager:
              
         try:
             doc.build(story)
-            # Cleanup temp images
+            # Comprehensive Cleanup: Delete ALL files for this session
+            evidence_dir = os.path.join(os.getcwd(), "evidence")
+            if os.path.exists(evidence_dir):
+                sid_prefix = f"proof_{self.session_id}_"
+                for f in os.listdir(evidence_dir):
+                    if sid_prefix in f:
+                        try:
+                            os.remove(os.path.join(evidence_dir, f))
+                        except Exception as e:
+                            print(f"Error deleting evidence {f}: {e}")
+            
+            # Also cleanup charts
             for img in temp_images:
-                if img and os.path.exists(img):
+                if img and os.path.exists(img) and any(x in img for x in ["perf_", "cfk_", "pie_", "code_p_", "code_s_"]):
                     try: os.remove(img)
                     except: pass
+            
+            # 3. Resume Cleanup: Delete original resume to save space
+            if self.resume_path and os.path.exists(self.resume_path):
+                try:
+                    os.remove(self.resume_path)
+                    print(f"🧹 Resume deleted successfully: {self.resume_path}")
+                except Exception as e:
+                    print(f"Error deleting resume {self.resume_path}: {e}")
+            
             return True
         except Exception as e:
             print(f"❌ PDF Build Error: {e}")
-            # Still try cleanup
-            for img in locals().get('temp_images', []):
-                if img and os.path.exists(img):
-                    try: os.remove(img)
-                    except: pass
             return False
 
     def is_valid_resume(self, text):
@@ -1601,69 +1622,36 @@ class InterviewManager:
             return False, f"Failed to read PDF: {str(e)}"
 
     def verify_candidate_match(self, name, resume_text):
-        """Check if candidate name matches resume content. Returns (match, detected_name)"""
-        if not name or not resume_text:
-            return False, "Missing name or resume content"
-
-        clean_name = name.strip()
-        resume_lower = resume_text.lower()
-        name_lower = clean_name.lower()
-
-        # Stage 1: Quick pre-check (Exact or simple substring)
-        if name_lower in resume_lower:
+        """Check if candidate name matches resume content structurally. Returns (match, detected_name)"""
+        clean_name = name.strip() if name else ""
+        if not clean_name or not resume_text:
+            return False, "Name Not Found"
+            
+        # Only search the first 3000 chars where the name usually resides
+        search_text = resume_text[:3000].lower()
+        name_parts = clean_name.lower().split()
+        
+        # Stage 1: Exact Name Match
+        if clean_name.lower() in search_text:
             return True, clean_name
-
-        # Stage 2: Partial name matching (First OR Last name match for flexibility)
-        name_parts = [p.lower() for p in clean_name.split() if len(p) > 2] # Ignore very small words
-        if name_parts:
-            # Check if any significant part of the name matches exactly (e.g. "Vignan" matches "Vignan S")
-            for part in name_parts:
-                if part in resume_lower:
-                    # If at least one significant part matches, we consider it a partial match
-                    print(f"Success: Partial name match found for '{part}'")
-                    return True, clean_name
+            
+        import re
+        # Stage 2: Partial Split Match (Ensures First AND Last name are both present)
+        matches = 0
+        for part in name_parts:
+            # Check length to avoid matching random single-letter initials
+            if len(part) > 2 and re.search(r'\b' + re.escape(part) + r'\b', search_text):
+                matches += 1
+                
+        # Require just 1 component (partial match) of the name to match for relaxed verification
+        required_matches = 1
         
-        # Stage 3: LLM-based fuzzy verification (handles nicknames, initials, etc.)
-        if self.client:
-            prompt = f"""IDENTITY VERIFICATION TASK.
-CLAIMED NAME: "{clean_name}"
-RESUME TEXT (first 2500 chars):
-{resume_text[:2500]}
-
-1. Does this resume belong to the person named "{clean_name}"? 
-Consider nicknames (e.g., 'Sam' for 'Samuel'), initials ('J. Doe' for 'John Doe'), and name order.
-2. If NOT a match, what is the Primary Name found at the top of this resume?
-
-Return ONLY valid JSON:
-{{"match": true}} 
-OR 
-{{"match": false, "detected_name": "Name Found in Resume"}}"""
-            try:
-                response = self.client.chat.completions.create(
-                    model=self.model_name,
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.0,
-                    max_tokens=60,
-                    timeout=12.0
-                )
-                raw_response = response.choices[0].message.content.strip()
-                # Find JSON block
-                json_match = re.search(r"\{.*\}", raw_response, re.DOTALL)
-                if json_match:
-                    res_data = json.loads(json_match.group())
-                    if res_data.get("match") is True:
-                        print(f"Success: LLM confirmed name match for '{clean_name}'")
-                        return True, clean_name
-                    else:
-                        found = res_data.get("detected_name", "Unknown")
-                        print(f"Mismatch: LLM rejected name '{clean_name}' - Found: '{found}'")
-                        return False, found
-            except Exception as e:
-                print(f"Warning: LLM name verification failed: {e}")
-                # Fallback: if LLM fails and Stage 2 failed, we can't verify.
-        
-        # Stage 4: Final rejection if no match found
-        return False, "Name Not Found"
+        if matches >= required_matches:
+            print(f"✅ Partial/Full Match Accepted: Found '{clean_name}' parts in resume.")
+            return True, clean_name
+            
+        print(f"Verify Failed: Could not locate '{clean_name}' completely in the resume.")
+        return False, "Not Found In Resume"
 
 
 

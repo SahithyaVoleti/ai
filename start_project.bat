@@ -3,7 +3,7 @@ echo ==========================================
 echo   AI Interviewer - Unified Starter
 echo ==========================================
 
-start cmd /k "echo Starting Backend... && cd /d %~dp0backend && uv run python api.py"
+start cmd /k "echo Starting Backend... && cd /d %~dp0backend && ..\.venv\Scripts\activate.bat && python api.py"
 start cmd /k "echo Starting Frontend... && cd /d %~dp0frontend && npm run dev"
 
 echo Project is starting in separate windows.
