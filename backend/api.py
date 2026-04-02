@@ -29,11 +29,15 @@ from proctoring_engine.service import ProctoringService
 import database
 import smtplib
 from email.message import EmailMessage
+import resume_analyzer
+from pdfminer.high_level import extract_text
 # from lip_sync_engine import engine as lip_sync_engine # Removed Wav2Lip
 
 app = Flask(__name__)
 
-# Error Handlers for JSON responses
+# AI Interviewer Backend - Consolidated version
+print("\n[INIT] AI INTERVIEWER BACKEND - VERSION 2.0 (FIXED)\n")
+
 @app.errorhandler(500)
 def internal_error(error):
     import traceback
@@ -126,7 +130,7 @@ def send_otp_email(to_email, otp):
         print(f"Current OTP: {otp} (Saved to {otp_file})\n")
         return True, f"Code generated. Check {otp_file} for code."
 
-    print(f"\n📧 [Email Service] Attempting to send OTP via Brevo to: {to_email}")
+    print(f"\n[EMAIL] [Service] Attempting to send OTP via Brevo to: {to_email}")
 
     url = "https://api.brevo.com/v3/smtp/email"
     headers = {
@@ -234,6 +238,21 @@ def login():
     if user:
         return jsonify({"status": "success", "user": user})
     return jsonify({"status": "error", "message": "Invalid credentials"}), 401
+
+@app.route('/api/user/select-plan', methods=['POST'])
+def select_plan():
+    """Allows a user to select a subscription plan."""
+    data = request.json
+    user_id = data.get('user_id')
+    plan_id = data.get('plan_id')
+    
+    if not user_id or not plan_id:
+         return jsonify({"status": "error", "message": "Missing user_id or plan_id"}), 400
+         
+    success = database.update_user_plan(user_id, plan_id)
+    if success:
+         return jsonify({"status": "success", "message": "Plan updated successfully"})
+    return jsonify({"status": "error", "message": "Failed to update plan"}), 500
 
 @app.route('/api/admin/login', methods=['POST'])
 def admin_login():
@@ -344,30 +363,19 @@ def verify_face():
              proctor_service.session_id = manager.session_id
              proctor_service.save_evidence(frame, "Identity Verified")
         else:
-             print(f"Mismatch: Identity Mismatch for user {user_id}: distance={distance:.4f} Msg: {feedback}")
+             print(f"❌ Mismatch: Identity Verification Failed for user {user_id}: distance={distance:.4f} Msg: {feedback}")
+             # STRICT: Log failure to proctoring events
+             proctor_service.record_event("IDENTITY_MISMATCH_ATTEMPT", f"Identity verification failed (Biometric match: False).", "HIGH", frame)
              return jsonify({
                  "status": "error", 
-                 "message": f"{feedback}"
+                 "message": f"Identity Verification Failed: {feedback}"
              }), 403
 
-        print(f"Success: Identity Verified (Distance: {distance:.4f})")
-
-        # 2. General Frame Processing (Check if face is actually there)
-        result = proctor_service.process_frame(frame)
-        
-        # EYE VERIFICATION STEP
+        # 2. Eye Verification (Ensuring engagement)
         eyes_verified, eye_msg = proctor_service.verify_eyes(frame)
         
         if not eyes_verified:
-            # STRICT: No more permissive silhouette fallback for account authentication
-            if result.get("low_light"):
-                 print(f"🛑 Identity verification attempted in low light. Denied for security.")
-                 return jsonify({
-                    "status": "error", 
-                    "message": "Poor Lighting: Face not clearly visible. Please move to a better lit area for identity verification.", 
-                    "confidence": 0.0
-                }), 400
-
+            print(f"⚠️ Eye Verification Failed for user {user_id}: {eye_msg}")
             return jsonify({
                 "status": "error", 
                 "message": f"Biometric Validation Failed: {eye_msg}. Please look directly at the camera.",
@@ -375,10 +383,12 @@ def verify_face():
             }), 400
              
         # High confidence success if Face and Eyes found
+        print(f"✨ Success: Identity Verified for user {user_id} (Distance: {distance:.4f})")
         return jsonify({
             "status": "success", 
             "message": "Identity & Eye Contact Verified", 
             "confidence": 0.99,
+            "match_distance": round(float(distance), 4),
             "should_terminate": proctor_service.should_terminate,
             "termination_reason": proctor_service.termination_reason
         })
@@ -775,36 +785,32 @@ def generate_video():
         return jsonify({"status": "error", "message": "Text is required"}), 400
         
     text = data.get('text')
-    
     try:
+        print(f"🎬 Video generation request for text: {text[:50]}...")
+        # 1. Generate synced video components
         from interview_video_pipeline import generate_synced_video
         _, output_audio_path = generate_synced_video(text)
         
         if output_audio_path and os.path.exists(output_audio_path):
+             # 2. Read file to memory
              from flask import send_file
              from io import BytesIO
-             
-             # 1. Read the audio file into memory (RAM)
              with open(output_audio_path, 'rb') as f:
                  audio_bytes = f.read()
-                 
-             # 2. IMMEDIATELY delete it from disk!
-             try:
-                 os.remove(output_audio_path)
-                 # Also remove any leftover .wav audio file created during TTS
-                 wav_path = output_audio_path.replace(".mp3", ".wav")
-                 if os.path.exists(wav_path):
-                     os.remove(wav_path)
-             except Exception as e:
-                 print(f"Warning: Failed to auto-delete {output_audio_path}: {e}")
-                 
-             # 3. Stream the bytes back directly to the frontend
-             return send_file(BytesIO(audio_bytes), mimetype="audio/mp3")
              
+             # 3. Cleanup
+             try: os.remove(output_audio_path)
+             except: pass
+             
+             print(f"✅ Video generation success for: {text[:50]}")
+             return send_file(BytesIO(audio_bytes), mimetype="audio/mp3")
         else:
+             print(f"❌ Video generation FAILED: Path {output_audio_path} missing.")
              return jsonify({"status": "error", "message": "Failed to generate audio."}), 500
     except Exception as e:
-        print(f"Audio Generation Error: {e}")
+        import traceback
+        print(f"⚠️ Audio Generation CRITICAL Error: {e}")
+        traceback.print_exc()
         return jsonify({"status": "error", "message": str(e)}), 500
 
 from flask import send_from_directory
@@ -848,13 +854,20 @@ def finish_interview():
         # 3. Save interview record to database
         interview_id = None
         if user_id:
+            # Sync Resume Score for report
+            user_data = database.get_user_by_id(user_id)
+            if user_data and user_data.get('resume_score') is not None:
+                manager.resume_score = user_data.get('resume_score')
+
             details = {
                 'candidate_name': manager.candidate_name,
                 'evaluations': manager.evaluations,
                 'violations': manager.violations,
                 'submitted_solutions': manager.submitted_solutions,
                 'proctor_score': proctor_score,
-                'evidence_path': manager.evidence_path
+                'evidence_path': manager.evidence_path,
+                'session_id': manager.session_id,
+                'resume_analysis_results': manager.resume_analysis_results
             }
             interview_id = database.save_interview(user_id, score, details)
 
@@ -1091,7 +1104,7 @@ def download_report():
     try:
         success = manager.generate_pdf_report(filepath)
     except Exception as e:
-        print(f"❌ PDF Generation Error: {e}")
+        print(f"[ERROR] PDF Generation Error: {e}")
         import traceback
         traceback.print_exc()
         success = False
@@ -1133,6 +1146,8 @@ def download_past_report(interview_id):
     temp_manager.submitted_solutions = details.get('submitted_solutions', [])
     temp_manager.proctor_score = details.get('proctor_score', 100)
     temp_manager.evidence_path = details.get('evidence_path', None)
+    temp_manager.session_id = details.get('session_id', temp_manager.session_id)
+    temp_manager.resume_analysis_results = details.get('resume_analysis_results')
     
     # Try to parse date for start_time (to find evidence)
     try:
@@ -1321,6 +1336,37 @@ def report_violation():
         
     return jsonify({"status": "received"})
 
+
+@app.route('/api/analyze-resume', methods=['POST'])
+def analyze_resume_endpoint():
+    data = request.json
+    user_id = data.get('user_id')
+    
+    if not user_id:
+        return jsonify({"status": "error", "message": "User ID required"}), 400
+        
+    user = database.get_user_by_id(user_id)
+    if not user or not user.get('resume_path'):
+        return jsonify({"status": "error", "message": "Resume not found"}), 404
+        
+    try:
+        # Extract text and analyze
+        text = extract_text(user['resume_path'])
+        analysis = resume_analyzer.analyze_resume_ats(text, [])
+        
+        # Save score to DB
+        database.update_resume_score(user_id, analysis['score'])
+        
+        # Sync with manager for PDF report
+        manager.resume_score = analysis['score']
+        
+        return jsonify({
+            "status": "success",
+            "analysis": analysis
+        })
+    except Exception as e:
+         return jsonify({"status": "error", "message": f"Analysis failed: {str(e)}"}), 500
+
 @app.route('/', methods=['GET'])
 @app.route('/api/health', methods=['GET'])
 def health():
@@ -1340,7 +1386,7 @@ def cleanup_static_audio():
                         count += 1
                     except Exception:
                         pass
-            print(f"🧹 Auto-cleaned up {count} temporary files from static/audio/")
+            print(f"[CLEAN] Auto-cleaned up {count} temporary files from static/audio/")
     except Exception as e:
          print(f"Cleanup Error during startup: {e}")
 
@@ -1353,12 +1399,38 @@ def start_flask_server(problems=None):
     # Auto-clean temporary storage
     cleanup_static_audio()
     
-    print("\n🚀 Flask Server Running on http://0.0.0.0:5000")
+    print("\n[START] Flask Server Running on http://0.0.0.0:5000")
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False, threaded=True)
 
-@app.route('/api/health')
-def api_health_check():
-    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}, 200
+
+@app.route('/api/auth/logout', methods=['POST'])
+def global_logout():
+    """Explicitly clears all server-side global state for the current session."""
+    global resume_uploaded, current_candidate_info, proctor_service, violations, proctor_active, proctor_start_time
+    
+    print(f"[AUTH] Global logout triggered for {current_candidate_info.get('name', 'Unknown')}")
+    
+    # 1. Reset Proctoring
+    if proctor_service:
+        try: proctor_service.stop()
+        except: pass
+        proctor_service = None
+    
+    violations = {"tab_switches": 0, "fullscreen_exits": 0, "face_not_detected": 0}
+    proctor_active = False
+    proctor_start_time = None
+    
+    # 2. Reset Interview Manager
+    manager.reset()
+    
+    # 3. Clear Candidate Info
+    resume_uploaded = False
+    current_candidate_info = {}
+    
+    return jsonify({
+        "status": "success", 
+        "message": "Global session cleared. Backend state reset."
+    })
 
 if __name__ == '__main__':
     start_flask_server()

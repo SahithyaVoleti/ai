@@ -158,11 +158,23 @@ export default function PracticePage() {
         }).catch(() => { });
     };
 
-    /* ============ RUN CODE ============ */
+    /* ============ JUDGE0 LANGUAGE MAPPING ============ */
+    const getLanguageId = (lang: Language): number => {
+        const mapping: Record<string, number> = {
+            "python": 71,       // Python 3.8.1
+            "javascript": 63,   // Node.js 12.14.0
+            "cpp": 54,         // C++ (GCC 9.2.0)
+            "c": 50,           // C (GCC 9.2.0)
+            "java": 62,        // Java (OpenJDK 13.0.1)
+            "sql": 82          // SQL (SQLite 3.31.1)
+        };
+        return mapping[lang] || 71; // Default to Python
+    };
+
     const runCode = async () => {
         if (!selected || examViolated) return;
 
-        setOutput("⏳ Running test cases...\n");
+        setOutput("⏳ Executing secure test blocks on backend...");
 
         let passed = 0;
         let logs: string[] = [];
@@ -171,32 +183,45 @@ export default function PracticePage() {
             const tc = selected.testCases[i];
 
             try {
-                const res = await fetch(
-                    "https://hackintern.onrender.com/api/compiler/run",
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            language,
-                            code,
-                            input: tc.input,
-                        }),
-                    }
-                );
+                // CALLING OUR SECURE BACKEND RUNNER
+                const res = await fetch("http://localhost:5000/api/run_code", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        language_id: getLanguageId(language),
+                        source_code: code,
+                        stdin: tc.input,
+                    }),
+                });
 
                 const data = await res.json();
-                const actual = (data.output || "").trim();
-
-                if (actual === tc.expected) {
-                    passed++;
-                    logs.push(`✅ Test Case ${i + 1} Passed`);
-                } else {
-                    logs.push(
-                        `❌ Test Case ${i + 1} Failed (Expected: ${tc.expected}, Got: ${actual})`
-                    );
+                
+                if (res.status === 401) {
+                    logs.push(`⚠️ Error: Server Judge0 Key Not Set (.env). Contact Admin.`);
+                    break;
                 }
-            } catch {
-                logs.push(`❌ Test Case ${i + 1} Error`);
+
+                if (data.status === 'success') {
+                    const actualResult = (data.stdout || "").trim();
+                    const expectedResult = tc.expected.trim();
+
+                    if (actualResult === expectedResult) {
+                        passed++;
+                        logs.push(`✅ Test Case ${i + 1}: Passed`);
+                    } else {
+                        logs.push(`❌ Test Case ${i + 1}: Failed`);
+                        logs.push(`   Expected: [${expectedResult}]`);
+                        logs.push(`   Got: [${actualResult}]`);
+                    }
+                } else {
+                    logs.push(`❌ Test Case ${i + 1}: Compilation/Runtime Error`);
+                    logs.push(`   Details: ${data.stderr || data.error || 'Check server logs'}`);
+                    break;
+                }
+            } catch (err) {
+                console.error("Execution error:", err);
+                logs.push(`❌ Test Case ${i + 1}: Backend Connection Timeout`);
+                break;
             }
         }
 
@@ -207,8 +232,8 @@ export default function PracticePage() {
         logs.push("\n--------------------");
         logs.push(
             examViolated
-                ? "❌ Exam Invalidated — Score not counted"
-                : `Problem Score: ${passed} / ${selected.testCases.length}`
+                ? "❌ Violation Detected — Attempt Disqualified"
+                : `Final Verification: ${passed} / ${selected.testCases.length} Test Blocks Passed`
         );
 
         setOutput(logs.join("\n"));

@@ -12,6 +12,10 @@ type User = {
     resume_path?: string;
     role: string;
     year?: string;
+    is_premium?: number;
+    plan_id?: number;
+    resume_score?: number;
+    resume_feedback?: string;
 };
 
 type AuthContextType = {
@@ -79,7 +83,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.setItem('user_session', JSON.stringify(userData));
     };
 
-    const logout = () => {
+    const logout = async () => {
+        try {
+            // Inform backend to clear global state
+            await fetch('http://localhost:5000/api/auth/logout', { method: 'POST' });
+        } catch (e) {
+            console.error("Backend logout failed:", e);
+        }
+
         setUser(null);
         localStorage.removeItem('user_session');
         localStorage.removeItem('admin_session');

@@ -12,6 +12,7 @@ import Editor from "@monaco-editor/react";
 function HomeContent() {
   const { user, logout, loading: authLoading } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const router = useRouter();
 
   const [stage, setStage] = useState<'landing' | 'upload' | 'systemCheck' | 'verification' | 'calibration' | 'instructions' | 'interview' | 'code' | 'report' | 'results'>('landing');
   const [reportData, setReportData] = useState<any>(null);
@@ -34,6 +35,11 @@ function HomeContent() {
     const setupStages = ['upload', 'verification', 'calibration', 'instructions'];
 
     if (startParam === 'true' && user) {
+      // STRICT GATING: Redirect to pricing if user has no plan
+      if (!user.plan_id) {
+        router.push('/pricing');
+        return;
+      }
       if (stage === 'landing') setStage('upload');
     } else if (!startParam) {
       // If user navigates back to base URL without 'start', return to landing from any setup stage
@@ -41,7 +47,7 @@ function HomeContent() {
         setStage('landing');
       }
     }
-  }, [searchParams, user, stage]);
+  }, [searchParams, user, stage, router]);
 
 
 
@@ -183,6 +189,16 @@ function HomeContent() {
 
   const interviewStartTimeRef = useRef<number | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [currentTime, setCurrentTime] = useState<string>('');
+
+  useEffect(() => {
+    const update = () => {
+      setCurrentTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    };
+    update();
+    const t = setInterval(update, 1000);
+    return () => clearInterval(t);
+  }, []);
 
   // Refs for State in Callbacks
   const questionRef = useRef('');
@@ -197,8 +213,27 @@ function HomeContent() {
   const [verifying, setVerifying] = useState(false);
   const [verifyFailCount, setVerifyFailCount] = useState(0);
   const [frequencyData, setFrequencyData] = useState<number[]>(new Array(16).fill(0));
+  const [silenceCountdown, setSilenceCountdown] = useState<number | null>(null);
+  const [isSilenced, setIsSilenced] = useState(false);
+  const lastSpeechTimeRef = useRef<number>(Date.now());
 
-  const router = useRouter();
+  useEffect(() => {
+    let t: NodeJS.Timeout;
+    if (silenceCountdown !== null && silenceCountdown > 0) {
+      t = setInterval(() => {
+        setSilenceCountdown(prev => (prev !== null && prev > 0) ? prev - 1 : 0);
+      }, 1000);
+    } else if (silenceCountdown === 0) {
+      // Stop recording automatically when timer hits zero
+      if (recognitionRef.current && isListening) {
+        console.log("⏲️ Timer reached 0. Stopping recording.");
+        try { recognitionRef.current.stop(); } catch (e) { }
+        setIsListening(false);
+      }
+    }
+    return () => clearInterval(t);
+  }, [silenceCountdown, isListening]);
+
   const recognitionRef = useRef<any>(null);
   const recognitionInstanceRef = useRef<any>(null);
   const isStartingRef = useRef(false);
@@ -265,7 +300,7 @@ function HomeContent() {
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (stage === 'interview') {
+    if (stage === 'interview' || stage === 'code') {
       if (!interviewStartTimeRef.current) interviewStartTimeRef.current = Date.now();
       interval = setInterval(() => {
         setElapsedTime(Math.floor((Date.now() - (interviewStartTimeRef.current || Date.now())) / 1000));
@@ -304,18 +339,13 @@ function HomeContent() {
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const resetSilenceTimer = () => {
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    setSilenceCountdown(null);
+    setIsSilenced(false);
+    
     if (stage !== 'interview' || isSpeakingRef.current) return;
 
-    // Start 15s timer for auto-submit
-    silenceTimerRef.current = setTimeout(() => {
-      const { transcript, interimTranscript, isSpeakingRef, handleSubmitAnswer, stage: latestStage } = latestFnRef.current;
-      const currentAns = (transcript.trim() + " " + interimTranscript.trim()).trim();
-      // Lowered threshold to 3 characters for quiet/short affirmative answers
-      if (currentAns.length >= 3 && !isSpeakingRef.current && latestStage === 'interview') {
-        console.log("⏱️ Auto-submitting after silence...");
-        handleSubmitAnswer();
-      }
-    }, 15000); // 15s is more natural than 30s
+    // Use a persistent effect for the countdown instead of a simple timeout
+    // the actual trigger happens in the audioLevel loop
   };
 
   const handleInactivity = async () => {
@@ -393,12 +423,22 @@ function HomeContent() {
         const currentLevel = average * 4.0;
         setAudioLevel(currentLevel);
 
-        // AGENT SYNC: Pause movement when user speaks (Energy > 14)
-        if (agentVideoRef.current && !isSpeakingRef.current) {
-          if (currentLevel > 14) {
-            if (!agentVideoRef.current.paused) agentVideoRef.current.pause();
+        // SILENCE DETECTION FOR 30S TIMER
+        if (stage === 'interview' && !isSpeakingRef.current) {
+          if (currentLevel > 15) {
+            lastSpeechTimeRef.current = Date.now();
+            if (isSilenced) {
+              console.log("🗣️ Speech resumed - resetting timer");
+              setIsSilenced(false);
+              setSilenceCountdown(null);
+            }
           } else {
-            if (agentVideoRef.current.paused) agentVideoRef.current.play().catch(() => { });
+            const silenceDuration = Date.now() - lastSpeechTimeRef.current;
+            if (silenceDuration > 2000 && !isSilenced) { // 2s silence
+              console.log("⏸️ Silence detected - starting 30s countdown");
+              setIsSilenced(true);
+              setSilenceCountdown(30);
+            }
           }
         }
 
@@ -492,6 +532,24 @@ function HomeContent() {
   const streamRef = useRef<MediaStream | null>(null);
   const [currentStream, setCurrentStream] = useState<MediaStream | null>(null);
 
+  const syncCameraToElement = (el: HTMLVideoElement | null) => {
+    if (!el) return;
+    const s = streamRef.current || (window as any).__cameraStream;
+    if (!s) return;
+
+    if (el.srcObject !== s) {
+      el.srcObject = s;
+      console.log("🎥 Camera synced to element:", el.id || "unnamed");
+    }
+    if (el.paused) {
+      el.play().catch(e => {
+        if (e.name !== "AbortError" && e.name !== "NotAllowedError") {
+          console.warn("🎥 Video play delayed/failed:", e.name);
+        }
+      });
+    }
+  };
+
   useEffect(() => {
     // Keep camera active from the moment they start the flow (upload stage) until the end
     const isCameraNeeded = ['upload', 'verification', 'calibration', 'instructions', 'interview', 'code'].includes(stage);
@@ -507,11 +565,8 @@ function HomeContent() {
           console.log("♻️ Reusing existing camera stream");
           const stream = streamRef.current!;
           setCurrentStream(stream);
-          const syncEl = (el: HTMLVideoElement | null) => {
-            if (el && el.srcObject !== stream) { el.srcObject = stream; el.play().catch(() => { }); }
-          };
-          syncEl(videoRef.current);
-          syncEl(verificationVideoRef.current);
+          syncCameraToElement(videoRef.current);
+          syncCameraToElement(verificationVideoRef.current);
           return;
         }
 
@@ -523,27 +578,24 @@ function HomeContent() {
             return;
           }
 
-          // Try HD first, fallback to basic if device rejects constraints
+          // Standardized constraints for reliability and speed
           let stream: MediaStream;
           try {
             stream = await navigator.mediaDevices.getUserMedia({
-              video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+              video: { 
+                width: { ideal: 640, min: 480 }, 
+                height: { ideal: 480, min: 360 }, 
+                facingMode: "user" 
+              },
               audio: {
-                echoCancellation: false,
-                noiseSuppression: false,
+                echoCancellation: true,
+                noiseSuppression: true,
                 autoGainControl: true,
-                // Enhanced Chrome-specific constraints for maximum sensitivity
-                googAutoGainControl: true,
-                googNoiseSuppression: false,
-                googHighpassFilter: false,
-                googEchoCancellation: true,
-                googAutoGainControl2: true,
-                channelCount: 1,
                 sampleRate: 48000
-              } as any
+              }
             });
           } catch {
-            console.warn("⚠️ HD camera failed — retrying with basic constraints");
+            console.warn("⚠️ Balanced camera failed — retrying with basic constraints");
             stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
           }
 
@@ -552,15 +604,14 @@ function HomeContent() {
           // Global backup — survives React re-renders and stage transitions
           (window as any).__cameraStream = stream;
 
-          const attachStream = (el: HTMLVideoElement | null) => {
-            if (!el) return;
-            el.srcObject = stream;
-            el.play().catch(e => { if (e.name !== 'AbortError') console.warn("Video play:", e.name); });
-          };
-          attachStream(videoRef.current);
-          attachStream(verificationVideoRef.current);
-          // Re-sync after render settles
-          setTimeout(() => { attachStream(videoRef.current); attachStream(verificationVideoRef.current); }, 700);
+          // Auto-sync current visible elements
+          syncCameraToElement(videoRef.current);
+          syncCameraToElement(verificationVideoRef.current);
+          // Re-sync after render settles for edge cases
+          setTimeout(() => { 
+            syncCameraToElement(videoRef.current); 
+            syncCameraToElement(verificationVideoRef.current); 
+          }, 700);
 
           // Audio Visualizer
           try {
@@ -603,38 +654,28 @@ function HomeContent() {
 
     init();
 
-    // CAMERA WATCHDOG: Ensures tracks stay live
+    // --- CAMERA WATCHDOG & RECOVERY ---
+    // Aggressive health check ensures tracks are live and elements are playing
     const cameraWatchdog = setInterval(() => {
       if (isCameraNeeded) {
-        const s = streamRef.current || currentStream || (window as any).__cameraStream;
-        if (!s || s.getTracks().some((t: MediaStreamTrack) => t.readyState === 'ended')) {
-          console.warn("📸 Camera watchdog detected inactive stream. Restarting...");
+        const s = streamRef.current || (window as any).__cameraStream;
+        const tracksDead = !s || s.getTracks().some((t: MediaStreamTrack) => t.readyState === 'ended');
+        
+        if (tracksDead) {
+          console.warn("📸 Watchdog: Stream dead. Auto-repairing...");
           init();
+        } else {
+          // Hardware is fine, ensure UI is actually rendering
+          syncCameraToElement(videoRef.current);
+          syncCameraToElement(verificationVideoRef.current);
         }
       }
-    }, 8000);
+    }, 3000);
 
     return () => clearInterval(cameraWatchdog);
   }, [stage]);
 
-  // ROBUST CAMERA SYNC: Ensures the video element is always playing the latest stream
-  useEffect(() => {
-    const video = videoRef.current;
-    const vVideo = verificationVideoRef.current;
-
-    if (currentStream) {
-      if (video && video.srcObject !== currentStream) {
-        console.log("🔗 Syncing main video element with stream");
-        video.srcObject = currentStream;
-        video.play().catch(() => {});
-      }
-      if (vVideo && vVideo.srcObject !== currentStream) {
-        console.log("🔗 Syncing verification video element with stream");
-        vVideo.srcObject = currentStream;
-        vVideo.play().catch(() => {});
-      }
-    }
-  }, [currentStream, stage]);
+  // Legady ROBUST CAMERA SYNC removed (it's now part of the Watchdog and ref-callbacks)
 
   const restartCamera = async () => {
     console.log("🔄 Force-restarting camera hardware...");
@@ -722,11 +763,13 @@ function HomeContent() {
         };
 
         recognition.onresult = (event: any) => {
-          // 0. Update activity heartbeat
+          // 0. HARD GUARD: Ignore incoming audio if Agent is speaking
+          if (isSpeakingRef.current) return;
+          
           lastResultTimeRef.current = Date.now();
 
           // 1. Extract RESULTS: Cumulative for interim to ensure zero misses
-          let currentFinalChunks = [];
+          const currentFinalChunks = [];
           let currentInterim = '';
 
           for (let i = 0; i < event.results.length; ++i) {
@@ -857,6 +900,8 @@ function HomeContent() {
     if (showFullscreenWarnRef.current || showTabSwitchWarnRef.current) return;
     if (fetchingQuestion || isTranscribing) return; // Busy lock
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    setIsSilenced(false);
+    setSilenceCountdown(null);
 
     if (typeof window !== 'undefined') {
       window.speechSynthesis.cancel();
@@ -1063,7 +1108,7 @@ function HomeContent() {
 
     let passed = 0;
     const testCases = currentProblem.test_cases || currentProblem.testCases || [];
-    let logs: string[] = [];
+    const logs: string[] = [];
 
     for (let i = 0; i < testCases.length; i++) {
       const tc = testCases[i];
@@ -1237,11 +1282,15 @@ function HomeContent() {
 
         fetch("http://localhost:5000/proctor/event", {
           method: "POST", headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: "FULLSCREEN_EXIT", message: `User exited full screen mode (Attempt ${fullscreenWarnCountRef.current})`, severity: "MEDIUM" })
+          body: JSON.stringify({ 
+            type: "FULLSCREEN_EXIT", 
+            message: `User exited full screen mode (Attempt ${fullscreenWarnCountRef.current})`, 
+            severity: fullscreenWarnCountRef.current >= 3 ? "CRITICAL" : "MEDIUM" 
+          })
         });
 
-        if (fullscreenWarnCountRef.current > 3) {
-          handleTermination("Multiple (more than 3) fullscreen violations detected. Terminating interview for security.");
+        if (fullscreenWarnCountRef.current > 2) {
+          handleTermination("Security Violation: Multiple (3) fullscreen violations detected. Terminating interview.");
         } else {
           setShowFullscreenWarn(true);
           showFullscreenWarnRef.current = true;
@@ -1271,7 +1320,11 @@ function HomeContent() {
         tabSwitchCountRef.current += 1;
         fetch("http://localhost:5000/proctor/event", {
           method: "POST", headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: "TAB_SWITCH", message: `Tab switch detected (Attempt ${tabSwitchCountRef.current})`, severity: tabSwitchCountRef.current >= 5 ? "CRITICAL" : "MEDIUM" })
+          body: JSON.stringify({ 
+            type: "TAB_SWITCH", 
+            message: `Tab switch detected (Attempt ${tabSwitchCountRef.current})`, 
+            severity: tabSwitchCountRef.current >= 3 ? "CRITICAL" : "MEDIUM" 
+          })
         });
         if (tabSwitchCountRef.current >= 3) {
           handleTermination("Security violation: Maximum tab switches exceeded. Terminating interview.");
@@ -1519,8 +1572,8 @@ function HomeContent() {
     setWav2lipVideoUrl(null);
     */
 
-    setIsSpeaking(false);
-    isSpeakingRef.current = false;
+    setIsSpeaking(true);
+    isSpeakingRef.current = true;
 
     // 3. RAPID-FIRE / REDUNDANT DEFERRALS
     const activeProctoringStages = ['verification', 'calibration', 'instructions', 'interview', 'code'];
@@ -1547,201 +1600,121 @@ function HomeContent() {
       if (myId !== globalSpeechTokenRef.current) return;
       if (showFullscreenWarnRef.current || showTabSwitchWarnRef.current) return;
 
-      const ttsUrl = `http://localhost:5000/api/generate_video`; // Request actual lip-sync
-
-      // Helper: stop any running animation loop
-      const stopLipSync = () => {
-        if (lipSyncRafRef.current) {
-          cancelAnimationFrame(lipSyncRafRef.current);
-          lipSyncRafRef.current = null;
-        }
-        // Reset bars to flat
-        lipSyncBarsRef.current.forEach(bar => {
-          if (bar) bar.style.height = '3px';
-        });
-      };
-
-      // Helper: start Web Audio API lip-sync loop
-      const startLipSync = (audioEl: HTMLAudioElement) => {
-        try {
-          const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-          const analyser = audioCtx.createAnalyser();
-          analyser.fftSize = 64; // Small = fast, 32 frequency bins
-          analyser.smoothingTimeConstant = 0.6;
-          const source = audioCtx.createMediaElementSource(audioEl);
-          source.connect(analyser);
-          analyser.connect(audioCtx.destination);
-          const bufferLen = analyser.frequencyBinCount; // 32
-          const dataArray = new Uint8Array(bufferLen);
-
-          const NUM_BARS = 7;
-          const binStep = Math.floor(bufferLen / NUM_BARS);
-          const MAX_HEIGHT = 20; // max bar height px
-          const MIN_HEIGHT = 3;  // min bar height px
-
-          const loop = () => {
-            lipSyncRafRef.current = requestAnimationFrame(loop);
-            analyser.getByteFrequencyData(dataArray);
-            
-            let totalAmplitude = 0;
-            lipSyncBarsRef.current.forEach((bar, i) => {
-              if (!bar) return;
-              const binStart = i * binStep;
-              let sum = 0;
-              for (let b = binStart; b < binStart + binStep && b < bufferLen; b++) {
-                sum += dataArray[b];
-              }
-              const avg = sum / binStep;
-              totalAmplitude += avg;
-              const height = MIN_HEIGHT + (avg / 255) * (MAX_HEIGHT - MIN_HEIGHT);
-              bar.style.height = `${height}px`;
-            });
-
-            // Dynamic Video Sync: Adjust agent video playback speed based on audio energy
-            if (agentVideoRef.current) {
-              const normalizedAmp = totalAmplitude / (NUM_BARS * 255);
-              // mapping 0-1 to 0.9-1.2 playback rate for "speaking" feel (previously 0.8-1.5)
-              agentVideoRef.current.playbackRate = 0.9 + (normalizedAmp * 0.3);
-            }
-          };
-
-          // Resume AudioContext (may be suspended on first user gesture)
-          audioCtx.resume().then(() => {
-            loop();
-          });
-        } catch (e) {
-          console.warn('Web Audio API not available:', e);
-          // Fallback: just animate bars with CSS keyframes
-          lipSyncBarsRef.current.forEach((bar, i) => {
-            if (!bar) return;
-            bar.style.animation = `lipsync ${0.12 + i * 0.04}s ease-in-out infinite alternate`;
-          });
-        }
-      };
-
+      console.log("🔊 Fetching OpenAI TTS for:", text.slice(0, 50));
+      
       try {
-        console.log('🔊 Fetching TTS audio...');
-        const resp = await fetch(ttsUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: text, lip_sync: true })
+        const response = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
         });
-        if (!resp.ok) throw new Error(`TTS fetch failed: ${resp.status}`);
-        
-        const contentType = resp.headers.get("content-type");
 
-        let audioSrcUrl: string | null = null;
-        let isBlobUrl = false;
-
-        if (contentType && contentType.includes("application/json")) {
-           const data = await resp.json();
-           if (data.audio_url) {
-             audioSrcUrl = data.audio_url;
-           } else {
-             throw new Error("JSON response but audio_url is missing");
-           }
-        } else {
-          // AUDIO Fallback Strategy (Web Audio CSS sync)
-          const blob = await resp.blob();
-          console.log(`🔊 Audio blob received: ${blob.size} bytes, type=${blob.type}`);
-          audioSrcUrl = URL.createObjectURL(blob);
-          isBlobUrl = true;
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP error ${response.status}`);
         }
 
-        const audio = new Audio();
-        audio.crossOrigin = "anonymous";
-        audio.volume = 1.0;
+        const blob = await response.blob();
+        const audioUrl = URL.createObjectURL(blob);
+        
+        if (myId !== globalSpeechTokenRef.current) return;
+
+        const audio = new Audio(audioUrl);
         audioRef.current = audio;
-
-        audio.onplay = () => {
-          if (myId !== globalSpeechTokenRef.current) { audio.pause(); return; }
-          setIsSpeaking(true);
-          isSpeakingRef.current = true;
-          startLipSync(audio);
-        };
-
+        
+        // Trigger speaking animation
+        startLipSync(audio);
+        
         audio.onended = () => {
-          if (myId !== globalSpeechTokenRef.current) return;
+          stopLipSync();
           setIsSpeaking(false);
           isSpeakingRef.current = false;
-          stopLipSync();
-          if (agentVideoRef.current) agentVideoRef.current.playbackRate = 1.0; // Reset speed
-          if (isBlobUrl && audioSrcUrl) URL.revokeObjectURL(audioSrcUrl);
           if (onComplete) onComplete();
           if (stage === 'interview') {
             safeStartRecognition();
             latestFnRef.current?.resetInactivityTimer?.();
           }
         };
-
+        
         audio.onerror = (e) => {
-          const err = audio.error;
-          console.warn('Audio element error:', err?.code, err?.message, e);
+          console.warn("⚠️ Audio Playback Error:", e);
           stopLipSync();
-          if (isBlobUrl && audioSrcUrl) URL.revokeObjectURL(audioSrcUrl);
           setIsSpeaking(false);
-          isSpeakingRef.current = false;
-          // Fall back to browser speech synthesis
-          try {
-            const synth = window.speechSynthesis;
-            const utt = new SpeechSynthesisUtterance(text);
-            utt.onstart = () => {
-              setIsSpeaking(true);
-              isSpeakingRef.current = true;
-              lipSyncBarsRef.current.forEach((bar, i) => {
-                if (!bar) return;
-                bar.style.animation = `lipsync ${0.12 + i * 0.04}s ease-in-out infinite alternate`;
-              });
-            };
-            utt.onend = () => {
-              setIsSpeaking(false);
-              isSpeakingRef.current = false;
-              stopLipSync();
-              if (onComplete) onComplete();
-              if (stage === 'interview') { safeStartRecognition(); latestFnRef.current?.resetInactivityTimer?.(); }
-            };
-            synth.speak(utt);
-          } catch (synthErr) {
-            if (onComplete) onComplete();
-          }
+          if (onComplete) onComplete();
         };
 
-        // Wait for audio to be ready, THEN play
-        audio.oncanplaythrough = () => {
-          console.log('🔊 Audio canplaythrough — calling play()');
-          audio.play().catch((playErr) => {
-            console.warn('🔊 Audio play() rejected:', playErr);
-            if (playErr.name === 'NotAllowedError') setAudioBlocked(true);
-            audio.onerror?.(new Event('error'));
-          });
-        };
-
-        // Set src AFTER attaching all event handlers
-        console.log('🔊 Setting audio src to URL, calling load()');
-        if (audioSrcUrl) {
-          audio.src = audioSrcUrl;
-          audio.load(); // explicitly start loading
-        }
-
-      } catch (e) {
-        console.error('TTS playback failed:', e);
-        // Fallback to browser synth
+        await audio.play();
+      } catch (err: any) {
+        console.warn("⚠️ TTS fetch failed (using local fallback):", err.message);
+        // Browser Speech Synthesis Fallback
         try {
-          const synth = window.speechSynthesis;
           const utt = new SpeechSynthesisUtterance(text);
           utt.onstart = () => { setIsSpeaking(true); isSpeakingRef.current = true; };
-          utt.onend = () => {
-            setIsSpeaking(false); isSpeakingRef.current = false;
+          utt.onend = () => { 
+            setTimeout(() => { setIsSpeaking(false); isSpeakingRef.current = false; }, 1000);
             if (onComplete) onComplete();
           };
-          synth.speak(utt);
-        } catch (synthErr) {
+          window.speechSynthesis.speak(utt);
+        } catch (e) {
+          setIsSpeaking(false);
           if (onComplete) onComplete();
         }
       }
     };
 
-    // Call backend TTS — Web Audio API drives real-time lip-sync bars
+    // Helper: stop any running animation loop
+    const stopLipSync = () => {
+      if (lipSyncRafRef.current) {
+        cancelAnimationFrame(lipSyncRafRef.current);
+        lipSyncRafRef.current = null;
+      }
+      // Reset bars to flat
+      lipSyncBarsRef.current.forEach(bar => {
+        if (bar) bar.style.height = '3px';
+      });
+      if (agentVideoRef.current) agentVideoRef.current.playbackRate = 1.0;
+    };
+
+    // Helper: start Web Audio API lip-sync loop
+    const startLipSync = (audioEl: HTMLAudioElement) => {
+      try {
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 64;
+        analyser.smoothingTimeConstant = 0.6;
+        const source = audioCtx.createMediaElementSource(audioEl);
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        const bufferLen = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLen);
+
+        const binStep = Math.floor(bufferLen / 7);
+        const loop = () => {
+          lipSyncRafRef.current = requestAnimationFrame(loop);
+          analyser.getByteFrequencyData(dataArray);
+          let totalAmplitude = 0;
+          lipSyncBarsRef.current.forEach((bar, i) => {
+            if (!bar) return;
+            const binStart = i * binStep;
+            let sum = 0;
+            for (let b = binStart; b < binStart + binStep && b < bufferLen; b++) sum += dataArray[b];
+            const avg = sum / binStep;
+            totalAmplitude += avg;
+            const height = 3 + (avg / 255) * 17;
+            bar.style.height = `${height}px`;
+          });
+          if (agentVideoRef.current) {
+            agentVideoRef.current.playbackRate = 0.9 + (totalAmplitude / (7 * 255) * 0.3);
+          }
+        };
+        audioCtx.resume().then(() => loop());
+      } catch (e) {
+        lipSyncBarsRef.current.forEach((bar, i) => {
+          if (bar) bar.style.animation = `lipsync ${0.12 + i * 0.04}s infinite alternate`;
+        });
+      }
+    };
+
     playFallback();
   };
 
@@ -1796,12 +1769,12 @@ function HomeContent() {
         //  if fullscreen isn't already active. So we pre-activate it here.)
         enterFullScreen();
 
+        // MANDATORY Identity Verification for all candidates
         speak(data.message || "Resume verified. Now, please verify your identity.", () => {
-          // Ensure stage change happens after speech completes
-          setStage('verification');
-        });
-
-        // Fallback: force stage change after 3s in case onComplete never fires (e.g., TTS fails silently)
+           setStage('verification');
+        }, true);
+        
+        // Safety fallback to ensure stage transition
         setTimeout(() => setStage('verification'), 3000);
 
       } else {
@@ -1819,47 +1792,7 @@ function HomeContent() {
   };
 
   // --- IDENTITY VERIFICATION ---
-
-  useEffect(() => {
-    if (stage !== 'verification') return;
-
-    // Poll every 150ms until the video element is mounted AND stream is attached
-    const interval = setInterval(() => {
-      // Try ref first, then query DOM by id as a fallback
-      const el = verificationVideoRef.current ||
-        (document.getElementById('verification-video') as HTMLVideoElement | null);
-
-      if (!el) return; // element not mounted yet, keep polling
-
-      // Update ref if found via DOM
-      if (!verificationVideoRef.current && el) {
-        (verificationVideoRef as any).current = el;
-      }
-
-      // Check all possible sources for the stream
-      const s = streamRef.current || currentStream || (window as any).__cameraStream;
-      if (!s) return;
-
-      // Sync state if we found a stream in refs/window but not state
-      if (!currentStream && s) setCurrentStream(s);
-
-      // Ensure stream tracks are enabled
-      s.getTracks().forEach((t: MediaStreamTrack) => { if (!t.enabled) t.enabled = true; });
-
-      if (el.srcObject !== s) {
-        el.srcObject = s;
-        console.log('✅ Stream attached to verification video (poll)');
-      }
-      el.play().catch(() => { });
-
-      // Stop polling once video is playing and size is available
-      if (el.readyState >= 2 && el.videoWidth > 0) {
-        clearInterval(interval);
-      }
-    }, 150);
-
-    return () => clearInterval(interval);
-  }, [stage, currentStream]);
+  // Legacy polling removed in favor of robust ref-callbacks
 
 
   const captureAndVerify = async () => {
@@ -1869,9 +1802,11 @@ function HomeContent() {
       return;
     }
 
-    // Warn but don't block if face not yet detected by proctoring engine
+    // STRICT face identification enforcement
     if (!proctorStatus.face) {
-      setVerifyStatus("⚠️ Face not clearly detected — attempting high-accuracy match anyway...");
+      setVerifyStatus("🔴 Please position your face clearly in the camera frame to proceed.");
+      speak("Your face is not visible. Please position yourself clearly in front of the camera.");
+      return; // HARD BLOCK
     }
 
     setVerifying(true);
@@ -2065,6 +2000,7 @@ function HomeContent() {
             <div className="flex items-center gap-6 lg:gap-10">
               <div className="hidden lg:flex gap-10">
                 <Link href="/features" className={`text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} hover:text-indigo-600 uppercase tracking-[0.2em] transition-colors`}>Features</Link>
+                <Link href="/pricing" className={`text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} hover:text-indigo-600 uppercase tracking-[0.2em] transition-colors`}>Pricing</Link>
                 <Link href="/about" className={`text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} hover:text-indigo-600 uppercase tracking-[0.2em] transition-colors`}>About</Link>
                 <button 
                   onClick={() => {
@@ -2141,7 +2077,7 @@ function HomeContent() {
                     onClick={() => {
                       if (user) {
                         enterFullScreen();
-                        setStage('upload');
+                        router.push('/?start=true');
                       } else {
                         router.push('/login');
                       }
@@ -2153,10 +2089,10 @@ function HomeContent() {
                   <button
                     className={`${styles.btnSecondary} cursor-pointer`}
                     onClick={() => {
-                      router.push('/features');
+                      router.push('/pricing');
                     }}
                   >
-                    Learn More
+                    View Plans
                   </button>
                 </div>
               </div>
@@ -2247,7 +2183,7 @@ function HomeContent() {
                     onClick={() => {
                       if (user) {
                         enterFullScreen();
-                        setStage('upload');
+                        router.push('/?start=true');
                       } else {
                         router.push('/login');
                       }
@@ -2269,7 +2205,7 @@ function HomeContent() {
                     onClick={() => {
                       if (user) {
                         enterFullScreen();
-                        setStage('upload');
+                        router.push('/?start=true');
                       } else {
                         router.push('/login');
                       }
@@ -2291,7 +2227,7 @@ function HomeContent() {
                     onClick={() => {
                       if (user) {
                         enterFullScreen();
-                        setStage('upload');
+                        router.push('/?start=true');
                       } else {
                         router.push('/login');
                       }
@@ -2313,7 +2249,7 @@ function HomeContent() {
                     onClick={() => {
                       if (user) {
                         enterFullScreen();
-                        setStage('upload');
+                        router.push('/?start=true');
                       } else {
                         router.push('/login');
                       }
@@ -2325,7 +2261,7 @@ function HomeContent() {
                     </div>
                     <div className={styles.stepContent}>
                       <h3 className={styles.stepTitle}>Expert Feedback</h3>
-                      <p className={styles.stepText}>Complete the round to receive an instant report. Fix your weak points and try again until you're perfect.</p>
+                      <p className={styles.stepText}>Complete the round to receive an instant report. Fix your weak points and try again until you&apos;re perfect.</p>
                     </div>
                   </div>
                 </div>
@@ -2472,11 +2408,6 @@ function HomeContent() {
                 </div>
                 
                 <div className="pt-8 border-t border-[var(--border)] flex flex-col md:flex-row items-center justify-between gap-6 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
-                  <div>&copy; {new Date().getFullYear()} AI Interviewer Engine. All Rights Reserved.</div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    System Status: Operational
-                  </div>
                 </div>
               </div>
             </footer>
@@ -2488,16 +2419,30 @@ function HomeContent() {
       {
         stage === 'code' && (
           <main className="h-screen flex flex-col lg:flex-row bg-[#0f172a] text-white">
-            <div className="w-full lg:w-96 bg-[#1e293b] border-b lg:border-r border-slate-700 p-4 lg:p-6 flex flex-col gap-4 justify-between overflow-y-auto max-h-[30vh] lg:max-h-full">
+            <div className="w-full lg:w-96 bg-[#1e293b] border-b lg:border-r border-slate-700 p-4 lg:p-6 flex flex-col gap-6 justify-between overflow-y-auto max-h-[30vh] lg:max-h-full">
               <div>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="px-3 py-1 bg-indigo-600 rounded-lg text-xs font-black uppercase tracking-widest">Coding Round</div>
                   <h2 className="text-xl font-bold text-slate-200">Problem {currentCodingIdx + 1} of {codingProblems.length}</h2>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-xs font-mono text-slate-400">Time: {formatTime(elapsedTime)}</div>
-                  <div className="h-2 w-32 bg-slate-700 rounded-full overflow-hidden">
-                    <div className="h-full bg-indigo-500 transition-all duration-500" style={{ width: `${((currentCodingIdx + 1) / codingProblems.length) * 100}%` }}></div>
+                
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">
+                    <span>Session Progress</span>
+                    <span>{Math.round(((currentCodingIdx + 1) / codingProblems.length) * 100)}%</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden mb-4">
+                    <div className="h-full bg-indigo-500 transition-all duration-500 shadow-[0_0_10px_rgba(79,70,229,0.5)]" style={{ width: `${((currentCodingIdx + 1) / codingProblems.length) * 100}%` }}></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
+                      <span className="text-[8px] font-black text-slate-500 uppercase block mb-1">Elapsed</span>
+                      <span className="text-sm font-black text-indigo-400 font-mono tracking-tighter">{formatTime(elapsedTime)}</span>
+                    </div>
+                    <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
+                      <span className="text-[8px] font-black text-slate-500 uppercase block mb-1">Clock</span>
+                      <span className="text-sm font-black text-slate-300 font-mono tracking-tighter">{currentTime}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2621,14 +2566,10 @@ function HomeContent() {
                     </div>
 
                     <video
+                      id="main-video"
                       ref={(el) => {
                         (videoRef as any).current = el;
-                        if (el && streamRef.current && el.srcObject !== streamRef.current) {
-                          el.srcObject = streamRef.current;
-                          el.play().catch((e) => {
-                            if (e.name !== 'AbortError' && e.name !== 'NotAllowedError') console.error("Video play failed:", e);
-                          });
-                        }
+                        syncCameraToElement(el);
                       }}
                       autoPlay muted playsInline className="absolute inset-0 w-full h-full object-cover transform scale-x-[-1] opacity-100"
                     />
@@ -2649,7 +2590,6 @@ function HomeContent() {
           </main>
         )
       }
-
 
       {/* STAGE: VERIFICATION */}
       {
@@ -2708,9 +2648,11 @@ function HomeContent() {
                 <div className="relative w-full aspect-square md:aspect-[4/5] max-h-[60vh] bg-black rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white/20 ring-4 ring-black/5 group">
                   <video
                     id="verification-video"
-                    ref={verificationVideoRef}
+                    ref={(el) => {
+                      (verificationVideoRef as any).current = el;
+                      syncCameraToElement(el);
+                    }}
                     autoPlay playsInline muted
-                    onCanPlay={(e) => (e.target as HTMLVideoElement).play().catch(() => { })}
                     className="w-full h-full object-cover transform scale-x-[-1]"
                   />
 
@@ -2748,7 +2690,7 @@ function HomeContent() {
                 {/* Main Action Button */}
                 <button
                   onClick={captureAndVerify}
-                  disabled={verifying}
+                  disabled={verifying || !proctorStatus.face}
                   className="mt-8 w-full max-w-sm py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-xl hover:shadow-2xl hover:shadow-blue-500/40 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3 group relative overflow-hidden"
                 >
                   <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
@@ -3095,7 +3037,7 @@ function HomeContent() {
       {/* STAGE: INTERVIEW (Professional Video Call Redesign) */}
       {
         stage === 'interview' && (
-          <main className="h-screen bg-[#fafbfc] flex flex-col p-4 md:p-6 lg:p-10 overflow-hidden font-sans relative">
+          <main className="h-screen bg-[#fafbfc] flex flex-col p-4 md:p-6 lg:p-10 overflow-hidden relative">
 
             {/* AUDIO BLOCKED HELPER */}
             {audioBlocked && (
@@ -3175,6 +3117,44 @@ function HomeContent() {
                         <span className="text-[10px] font-black uppercase tracking-[0.2em]">Speaking</span>
                       </div>
                     </div>
+
+                    {/* SILENCE COUNTDOWN OVERLAY */}
+                    {isSilenced && silenceCountdown !== null && (
+                      <div className="absolute top-0 right-0 bottom-0 left-0 z-[100] flex flex-col items-end justify-end p-10 pointer-events-none animate-in fade-in duration-500">
+                        {/* Background dimming layer - keeping it subtler for 'aside' view */}
+                        <div className="absolute inset-0 bg-slate-950/20 backdrop-blur-[1px] pointer-events-none"></div>
+                        
+                        <div className="relative z-[101] pointer-events-auto flex flex-col items-end">
+                          <div className={`text-6xl font-black italic mb-4 drop-shadow-2xl transition-colors duration-300 ${silenceCountdown <= 5 ? 'text-red-500 scale-110' : 'text-white'}`}>
+                            {silenceCountdown}
+                            <span className="text-xl ml-2 uppercase tracking-widest not-italic">sec</span>
+                          </div>
+                          
+                          <div className="flex gap-4">
+                            <button 
+                              onClick={() => {
+                                setSilenceCountdown(30);
+                                lastSpeechTimeRef.current = Date.now();
+                                if (!isListening) safeStartRecognition();
+                              }}
+                              className="px-6 py-3 bg-white/10 hover:bg-white text-white hover:text-slate-900 border-2 border-white/20 rounded-xl font-black uppercase text-xs tracking-widest transition-all active:scale-95 group"
+                            >
+                              Extend 30s
+                            </button>
+                            <button 
+                              onClick={handleSubmitAnswer}
+                              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-2xl shadow-indigo-600/30 transition-all active:scale-95"
+                            >
+                              Next Question
+                            </button>
+                          </div>
+                          
+                          <div className="mt-6 px-4 py-1 bg-white/5 rounded-full border border-white/10 text-[9px] font-black uppercase tracking-[0.3em] text-white/60 animate-pulse">
+                            Silence Detected — Recording Paused
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -3215,15 +3195,12 @@ function HomeContent() {
                     </div>
 
                     <video
+                      id="main-video"
                       ref={(el) => {
                         (videoRef as any).current = el;
-                        if (el && (currentStream || streamRef.current)) {
-                          const s = currentStream || streamRef.current;
-                          if (el.srcObject !== s) el.srcObject = s!;
-                        }
+                        syncCameraToElement(el);
                       }}
                       autoPlay muted playsInline
-                      onCanPlay={(e) => (e.target as HTMLVideoElement).play().catch(() => { })}
                       className="absolute inset-0 w-full h-full object-cover transform scale-x-[-1] opacity-100"
                     />
                   </div>
@@ -3315,10 +3292,14 @@ function HomeContent() {
                     <span className="text-2xl font-black text-indigo-600 font-mono tracking-tighter">{formatTime(elapsedTime)}</span>
                   </div>
                   <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm text-center">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Local Time</span>
+                    <span className="text-2xl font-black text-slate-700 font-mono tracking-tighter">{currentTime}</span>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm text-center">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Status</span>
                     <div className="inline-block px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[9px] font-black uppercase tracking-widest">Round 1</div>
                   </div>
-                </div>
 
                 {/* Transcript Card */}
                 <div className="bg-white flex flex-col gap-4 flex-1 min-h-[350px] rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden group">

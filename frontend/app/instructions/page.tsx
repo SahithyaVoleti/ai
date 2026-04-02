@@ -8,10 +8,12 @@ import {
     Smartphone, ExternalLink, Timer, Info
 } from 'lucide-react';
 import { useTheme } from '../theme-context';
+import { useAuth } from '../auth-context';
 
 export default function InstructionsPage() {
     const router = useRouter();
     const { theme, toggleTheme } = useTheme();
+    const { user } = useAuth();
 
     const sections = [
         {
@@ -69,6 +71,17 @@ export default function InstructionsPage() {
                         >
                             {theme === 'dark' ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} />}
                         </button>
+
+                        {/* Functional Name Button */}
+                        {user && (
+                            <button
+                                onClick={() => router.push('/dashboard')}
+                                className={`px-5 py-2.5 rounded-2xl ${theme === 'dark' ? 'bg-indigo-500/10 text-white hover:bg-indigo-500/20 border-indigo-500/30' : 'bg-white text-slate-900 border-slate-200 hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/5'} border text-[13px] font-black tracking-tight transition-all active:scale-95 cursor-pointer flex items-center gap-2`}
+                            >
+                                <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
+                                {user.name.split(' ')[0]}
+                            </button>
+                        )}
                     </div>
                 </div>
             </nav>
@@ -183,7 +196,7 @@ export default function InstructionsPage() {
                             <a href="/contact" className="hover:text-indigo-600 transition-colors">Contact</a>
                         </div>
                         <div className="text-xs font-medium text-[var(--text-muted)]">
-                            &copy; {new Date().getFullYear()} AI Interviewer. Master your future.
+                            &copy; AI Interviewer. Master your future.
                         </div>
                     </div>
                 </div>

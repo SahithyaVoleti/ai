@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, CheckCircle, ArrowRight, AlertCircle, Sun, Moon, ChevronRight } from 'lucide-react';
+import { Mail, Lock, CheckCircle, ArrowRight, AlertCircle, Sun, Moon, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import { useTheme } from '../theme-context';
 
 export default function ForgotPassword() {
@@ -12,6 +12,7 @@ export default function ForgotPassword() {
     const [email, setEmail] = useState('');
     const [otp, setOtp] = useState('');
     const [newPassword, setNewPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -176,15 +177,22 @@ export default function ForgotPassword() {
                             <div>
                                 <label className="block text-sm font-medium text-[var(--foreground)] mb-2 opacity-80">New Password</label>
                                 <div className="relative">
-                                    <Lock className="absolute left-3 top-3.5 text-[var(--text-muted)]" size={20} />
+                                    <Lock className="absolute left-3 top-3.5 text-[var(--text-muted)] z-20 pointer-events-none" size={20} />
                                     <input
-                                        type="password"
+                                        type={showPassword ? "text" : "password"}
                                         required
                                         value={newPassword}
                                         onChange={(e) => setNewPassword(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-3 bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-[var(--card-bg)] transition-all outline-none"
+                                        className="w-full pl-10 pr-12 py-3 bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-[var(--card-bg)] transition-all outline-none relative z-10"
                                         placeholder="Min. 6 characters"
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition-colors focus:outline-none z-30 w-10 h-10 flex items-center justify-center p-0"
+                                    >
+                                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                    </button>
                                 </div>
                             </div>
                             {error && <p className="text-red-500 text-sm">{error}</p>}

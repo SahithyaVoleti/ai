@@ -46,14 +46,14 @@ def get_db_connection():
             print(f"⚠️ PostgreSQL URL Connection Failed: {e}. Falling back to Local SQLite.")
     
     # 3. Final Fallback to SQLite (Development/Offline Mode)
-    # Always look for DB in the project root (parent of backend folder)
+    # Prefer DB in the backend directory where it was initialized
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.dirname(current_dir)
-    db_path = os.path.join(project_root, DB_NAME)
+    db_path = os.path.join(current_dir, DB_NAME)
     
-    # If project_root is basically the same as current_dir (root install), fallback to current
-    if not os.path.exists(project_root) or "backend" not in current_dir:
-        db_path = os.path.join(os.getcwd(), DB_NAME)
+    # If not in backend, check project root as fallback
+    if not os.path.exists(db_path):
+        project_root = os.path.dirname(current_dir)
+        db_path = os.path.join(project_root, DB_NAME)
         
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
@@ -61,11 +61,14 @@ def get_db_connection():
 
 
 def init_db(app):
+    """Initializes the database and underlying services likes bcrypt."""
+    # Initialize Bcrypt with the app context
     bcrypt.init_app(app)
+    
     conn, db_type = get_db_connection()
     c = conn.cursor()
     
-    print(f"🔌 Initializing Database ({db_type})...")
+    print(f"[DB] Initializing Database ({db_type})...")
 
     if db_type == 'postgres':
         # PostgreSQL Schema
@@ -119,7 +122,9 @@ def init_db(app):
             "ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'candidate'",
             "ALTER TABLE users ADD COLUMN year TEXT",
             "ALTER TABLE users ADD COLUMN register_no TEXT",
-            "ALTER TABLE users ADD COLUMN branch TEXT"
+            "ALTER TABLE users ADD COLUMN branch TEXT",
+            "ALTER TABLE users ADD COLUMN resume_score REAL",
+            "ALTER TABLE users ADD COLUMN plan_id TEXT DEFAULT 'free'"
         ]
         for mig in migrations:
             try:
@@ -140,7 +145,7 @@ def init_db(app):
     
     conn.commit()
     conn.close()
-    print(f"✅ Database initialized: {db_type}")
+    print(f"[OK] Database initialized: {db_type}")
 
 def create_user(name, email, phone, password, photo=None, college_name=None, role='candidate', year=None, register_no=None, branch=None):
     conn, db_type = get_db_connection()
@@ -178,31 +183,52 @@ def authenticate_user(identifier, password):
     else:
         c = conn.cursor()
         
-    query = "SELECT id, name, email, phone, password, resume_path, photo, college_name, role, year FROM users WHERE email=? OR phone=?"
+    query = "SELECT id, name, email, phone, password, resume_path, resume_score, photo, college_name, role, year FROM users WHERE email=? OR phone=?"
     if db_type == 'postgres':
         query = query.replace('?', '%s')
 
     c.execute(query, (identifier, identifier))
-    user = c.fetchone()
+    row = c.fetchone()
     conn.close()
     
-    # Access by key is safer now
-    if user:
-        # Check password (handle dict vs Row access)
-        stored_pw = user['password']
-        if bcrypt.check_password_hash(stored_pw, password):
+    if row:
+        # Convert to a standard dictionary to support .get() and .keys() everywhere
+        user = dict(row)
+        
+        # Check password
+        stored_pw = user.get('password')
+        if stored_pw and bcrypt.check_password_hash(stored_pw, password):
              return {
-                 "id": user['id'],
-                 "name": user['name'],
-                 "email": user['email'],
-                 "phone": user['phone'],
-                 "resume_path": user['resume_path'],
-                 "photo": user['photo'],
-                 "college_name": user['college_name'],
-                 "role": user['role'] if 'role' in user.keys() else 'candidate',
-                 "year": user['year'] if 'year' in user.keys() else 'N/A'
+                 "id": user.get('id'),
+                 "name": user.get('name'),
+                 "email": user.get('email'),
+                 "phone": user.get('phone'),
+                 "resume_path": user.get('resume_path'),
+                 "photo": user.get('photo'),
+                 "college_name": user.get('college_name'),
+                 "role": user.get('role', 'candidate'),
+                 "year": user.get('year', 'N/A'),
+                 "resume_score": user.get('resume_score'),
+                 "plan_id": user.get('plan_id', 'free')
              }
     return None
+
+def update_user_plan(user_id, plan_id):
+    conn, db_type = get_db_connection()
+    c = conn.cursor()
+    try:
+        query = "UPDATE users SET plan_id=? WHERE id=?"
+        params = (plan_id, user_id)
+        if db_type == 'postgres':
+            query = query.replace('?', '%s')
+        c.execute(query, params)
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Update Plan Error: {e}")
+        return False
+    finally:
+        conn.close()
 
 def update_user_profile(user_id, name, email, phone, college_name, year, photo=None, resume_path=None, register_no=None, branch=None):
     conn, db_type = get_db_connection()
@@ -246,7 +272,7 @@ def get_user_by_id(user_id):
     else:
         c = conn.cursor()
 
-    query = "SELECT id, name, email, phone, resume_path, photo, college_name, role, year, register_no, branch FROM users WHERE id=?"
+    query = "SELECT id, name, email, phone, resume_path, resume_score, photo, college_name, role, year, register_no, branch FROM users WHERE id=?"
     if db_type == 'postgres':
         query = query.replace('?', '%s')
 
@@ -261,6 +287,7 @@ def get_user_by_id(user_id):
              "email": user['email'],
              "phone": user['phone'],
              "resume_path": user['resume_path'],
+             "resume_score": user.get('resume_score'),
              "photo": user['photo'],
              "college_name": user['college_name'],
              "role": user['role'] if 'role' in user.keys() else 'candidate',
@@ -289,6 +316,16 @@ def update_resume_path(user_id, path):
     if db_type == 'postgres':
         query = query.replace('?', '%s')
     c.execute(query, (path, user_id))
+    conn.commit()
+    conn.close()
+
+def update_resume_score(user_id, score):
+    conn, db_type = get_db_connection()
+    c = conn.cursor()
+    query = "UPDATE users SET resume_score = ? WHERE id = ?"
+    if db_type == 'postgres':
+        query = query.replace('?', '%s')
+    c.execute(query, (float(score), user_id))
     conn.commit()
     conn.close()
 

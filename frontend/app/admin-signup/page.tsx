@@ -232,10 +232,25 @@ export default function AdminSignup() {
                             <div className="space-y-1.5">
                                 <label className={`text-[11px] font-bold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'} ml-1 uppercase tracking-wider`}>Password</label>
                                 <div className="relative group">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors pointer-events-none z-20">
                                         <Lock size={16} />
                                     </div>
-                                    <input name="password" type="password" required value={formData.password} onChange={handleChange} placeholder="••••••••" className={`w-full ${theme === 'dark' ? 'bg-slate-800/50 border-white/5 text-white' : 'bg-[#F9FAFB] border-slate-200 text-slate-900 focus:bg-white'} border-2 rounded-2xl py-3.5 pl-11 pr-4 text-[13px] outline-none transition-all focus:border-indigo-500 font-medium`} />
+                                    <input
+                                        name="password"
+                                        type={showPassword ? "text" : "password"}
+                                        required
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        placeholder="••••••••"
+                                        className={`w-full ${theme === 'dark' ? 'bg-slate-800/50 border-white/5 text-white' : 'bg-[#F9FAFB] border-slate-200 text-slate-900 focus:bg-white'} border-2 rounded-2xl py-3.5 pl-11 pr-12 text-[13px] outline-none transition-all focus:border-indigo-500 font-medium relative z-10`}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-500 transition-colors focus:outline-none z-30 w-10 h-10 flex items-center justify-center p-0"
+                                    >
+                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
                                 </div>
                             </div>
                         </div>

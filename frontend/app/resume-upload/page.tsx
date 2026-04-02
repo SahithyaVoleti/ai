@@ -29,18 +29,22 @@ export default function ResumeUpload() {
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const [warning, setWarning] = useState('');
+
+    const handleSubmit = async (e?: React.FormEvent, bypass: boolean = false) => {
+        if (e) e.preventDefault();
         if (!file || !user) return;
 
         setIsUploading(true);
         setError('');
         setSuccess('');
+        setWarning('');
 
         const formData = new FormData();
         formData.append('resume', file);
         formData.append('name', user.name);
         formData.append('user_id', String(user.id));
+        if (bypass) formData.append('bypass_name_check', 'true');
 
         try {
             const res = await fetch('http://localhost:5000/api/upload_resume', {
@@ -50,17 +54,25 @@ export default function ResumeUpload() {
             const data = await res.json();
 
             if (res.ok && data.status === 'success') {
-                setSuccess('Resume verified successfully! Redirecting to Dashboard...');
+                setSuccess('Resume verified! Analyzing performance...');
+                
+                // Trigger automatic ATS analysis
+                await fetch('http://localhost:5000/api/analyze-resume', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: user.id })
+                });
+
                 setTimeout(() => {
-                    window.location.href = '/dashboard'; // Force full reload to be sure
-                }, 1000);
+                    window.location.href = '/dashboard';
+                }, 1500);
+            } else if (data.status === 'warning') {
+                setWarning(data.message || 'Name mismatch detected. Is this your resume?');
             } else {
-                console.error("Upload Error:", data);
-                setError(data.message || 'Verification failed. Please ensure the name on your resume matches your profile.');
+                setError(data.message || 'Verification failed. Please try again.');
             }
         } catch (err) {
-            console.error(err);
-            setError('Network error. Ensure the backend server is running.');
+            setError('Network error. Backend might be offline.');
         } finally {
             setIsUploading(false);
         }
@@ -146,6 +158,25 @@ export default function ResumeUpload() {
                             </div>
                         </div>
 
+                        {warning && (
+                            <div className="p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-xl space-y-3 animate-fadeIn">
+                                <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 text-sm font-semibold">
+                                    <AlertCircle size={18} />
+                                    Name Mismatch Detected
+                                </div>
+                                <p className="text-xs text-amber-600 dark:text-amber-300">
+                                    The name on your resume doesn't perfectly match "{user.name}". Proceed only if you're sure it's yours.
+                                </p>
+                                <button 
+                                    type="button"
+                                    onClick={() => handleSubmit(undefined, true)}
+                                    className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg transition-colors"
+                                >
+                                    Confirm & Continue anyway
+                                </button>
+                            </div>
+                        )}
+
                         {error && (
                             <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2 animate-shake">
                                 <AlertCircle size={16} />
@@ -176,9 +207,16 @@ export default function ResumeUpload() {
                                 <>Verify & Continue</>
                             )}
                         </button>
+                        
+                        <p className="mt-4 text-[10px] text-slate-400 text-center leading-relaxed">
+                            By clicking continue, you agree to our <b>Terms & Conditions</b>. 
+                            Your resume data is processed for analysis and then <b>permanently deleted</b> from our servers globally. 
+                            All scores and career insights are <b>AI-generated predictions</b> and should be used as a supplementary tool.
+                        </p>
                     </form>
                 </div>
             </div>
         </div>
     );
 }
+

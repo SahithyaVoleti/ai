@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../auth-context';
 import { useRouter } from 'next/navigation';
-import { Search, Bell, User as UserIcon, Play, Filter, Calendar, LayoutDashboard, Settings, LogOut, Sun, Moon, BarChart, BarChart3, Camera, Upload, Download, X, Smartphone, School, FileText, Shield, PieChart as PieChartIcon, Activity, Award, CheckCircle, Star, TrendingUp, Flame, Lock, Zap, ArrowRight, Home, ArrowLeft } from 'lucide-react';
+import { Search, Bell, User as UserIcon, Play, Filter, Calendar, LayoutDashboard, Settings, LogOut, Sun, Moon, BarChart, BarChart3, Camera, Upload, Download, X, Smartphone, School, FileText, Shield, PieChart as PieChartIcon, Activity, Award, CheckCircle, Star, TrendingUp, Flame, Lock, Zap, ArrowRight, Home, ArrowLeft, FileSearch, CheckCircle2, AlertCircle, ExternalLink, Brain, Layout, MessageSquare, Check, ChevronRight, Loader, CreditCard } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, AreaChart, Area, XAxis, YAxis, CartesianGrid, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import { useRef } from 'react';
 import Link from 'next/link';
@@ -38,6 +38,12 @@ export default function Dashboard() {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [isPaying, setIsPaying] = useState(false);
+    const [paymentSuccess, setPaymentSuccess] = useState(false);
+    const [isAtsModalOpen, setIsAtsModalOpen] = useState(false);
+    const [atsAnalysis, setAtsAnalysis] = useState<any>(null);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     useEffect(() => {
         if (!authLoading && !user) {
@@ -56,6 +62,7 @@ export default function Dashboard() {
             const data = await res.json();
             if (data.status === 'success') {
                 setInterviews(data.interviews);
+                if (data.user) updateUser(data.user);
             }
         } catch (e) {
             console.error(e);
@@ -140,9 +147,27 @@ export default function Dashboard() {
             else setSkillsData(chartData);
         };
 
+        const calculateDailyTrend = () => {
+            const daily: Record<string, { sum: number; count: number }> = {};
+            interviews.forEach(inv => {
+                if (!inv.date) return;
+                const d = new Date(inv.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                if (!daily[d]) daily[d] = { sum: 0, count: 0 };
+                daily[d].sum += (inv.overall_score || 0);
+                daily[d].count += 1;
+            });
+            return Object.keys(daily).map(d => ({
+                date: d,
+                score: Math.round(daily[d].sum / daily[d].count)
+            }));
+        };
+
         setHeatmap(generateGrid());
         calculateSkills();
+        setTrendData(calculateDailyTrend());
     }, [interviews]);
+
+    const [trendData, setTrendData] = useState<any[]>([]);
 
     // --- UI HELPERS ---
     const getIntensityClass = (level: number) => {
@@ -158,36 +183,57 @@ export default function Dashboard() {
     const averageScore = interviews.length > 0
         ? interviews.reduce((acc, curr) => acc + (curr.overall_score || 0), 0) / interviews.length
         : 0;
-
-    const PerformanceTrendLine = () => {
-        if (interviews.length < 1) return <div className="h-40 flex items-center justify-center text-[var(--text-muted)] italic">Complete more interviews to see your performance trend!</div>;
-        const data = sortedInterviews.slice(-10).map(i => ({
-            date: new Date(i.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-            score: i.overall_score || 0
-        }));
-        if (data.length === 1) {
-            return (
-                <div className="h-40 flex flex-col items-center justify-center text-[var(--text-muted)]">
-                    <div className="text-4xl font-black text-blue-500 mb-2">{data[0].score.toFixed(0)}%</div>
-                    <div className="text-xs uppercase tracking-widest font-bold">First Attempt Score</div>
-                </div>
-            );
-        }
+    const PerformanceTrendLine = (dataToUse?: any[]) => {
+        const data = dataToUse || trendData;
+        if (!data || data.length === 0) return <div className="h-40 flex items-center justify-center text-[var(--text-muted)] italic">Complete more interviews to see your performance trend!</div>;
+        
         return (
             <div className="w-full h-full relative">
                 <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={data} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                    <AreaChart data={data} margin={{ top: 30, right: 30, left: 0, bottom: 0 }}>
                         <defs>
                             <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
                                 <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                             </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
-                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 'bold' }} dy={10} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 'bold' }} domain={[0, 100]} />
-                        <RechartsTooltip contentStyle={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border)', borderRadius: '12px', color: 'var(--foreground)' }} />
-                        <Area type="monotone" dataKey="score" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorScore)" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.3} />
+                        <XAxis 
+                            dataKey="date" 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 'bold' }} 
+                            dy={10} 
+                        />
+                        <YAxis 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 'bold' }} 
+                            domain={[0, 100]} 
+                            ticks={[0, 25, 50, 75, 100]}
+                        />
+                        <RechartsTooltip 
+                             cursor={{ stroke: '#3b82f6', strokeWidth: 2, strokeDasharray: '5 5' }}
+                             contentStyle={{ 
+                                 backgroundColor: 'var(--card-bg)', 
+                                 borderColor: 'var(--border)', 
+                                 borderRadius: '16px', 
+                                 boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+                                 padding: '12px 16px',
+                                 border: '1px solid rgba(255,255,255,0.1)'
+                             }}
+                             labelStyle={{ fontWeight: 'black', marginBottom: '4px', color: '#3b82f6', textTransform: 'uppercase', fontSize: '10px' }}
+                             itemStyle={{ fontWeight: 'bold', fontSize: '14px', color: 'var(--foreground)' }}
+                        />
+                        <Area 
+                            type="monotone" 
+                            dataKey="score" 
+                            stroke="#3b82f6" 
+                            strokeWidth={4} 
+                            fillOpacity={1} 
+                            fill="url(#colorScore)" 
+                            animationDuration={1500}
+                        />
                     </AreaChart>
                 </ResponsiveContainer>
             </div>
@@ -217,14 +263,20 @@ export default function Dashboard() {
 
         return (
             <div className="flex flex-col gap-2 overflow-x-auto min-w-full pb-2">
-                <div className="flex relative h-4 ml-7 min-w-[1150px]">
+                <div className="flex relative h-4 ml-12 min-w-[1150px]">
                     {monthLabels.map((m, idx) => (
                         <div key={idx} className="absolute text-[11px] font-black text-[var(--text-muted)] uppercase" style={{ left: `${m.index * 22}px` }}>{m.label}</div>
                     ))}
                 </div>
-                <div className="flex gap-3 min-w-[1150px]">
-                    <div className="flex flex-col justify-between h-[148px] w-6 text-[10px] font-bold text-[var(--text-muted)] text-right leading-none py-1">
-                        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                <div className="flex gap-4 min-w-[1150px]">
+                    <div className="flex flex-col justify-between h-[148px] w-8 text-[10px] font-black text-[var(--text-muted)] text-right leading-none py-1.5 shrink-0 translate-y-[-2px]">
+                        <span>Sun</span>
+                        <span className="opacity-0">Mon</span>
+                        <span>Tue</span>
+                        <span className="opacity-0">Wed</span>
+                        <span>Thu</span>
+                        <span className="opacity-0">Fri</span>
+                        <span>Sat</span>
                     </div>
                     <div className="flex gap-1.5">
                         {visibleData.map((week, wIdx) => (
@@ -272,12 +324,67 @@ export default function Dashboard() {
         } catch (err) { setMessage('❌ Connection error'); } finally { setSaving(false); }
     };
 
+    const handleSimulatePayment = async () => {
+        setIsPaying(true);
+        // Simulate progress
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        try {
+            const res = await fetch('http://localhost:5000/api/user/pay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user?.id, plan_id: 4 }) // Default to Diamond for dashboard upgrade
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                if (user) updateUser({ ...user, plan_id: 4, is_premium: 1 });
+                setPaymentSuccess(true);
+                // Wait to show success state
+                setTimeout(() => {
+                    setIsPaymentModalOpen(false);
+                    setPaymentSuccess(false);
+                    fetchInterviews();
+                }, 2000);
+            } else {
+                alert("❌ Payment failed: " + data.message);
+                setIsPaying(false);
+            }
+        } catch (err) {
+            alert("❌ Connection error");
+            setIsPaying(false);
+        }
+    };
+
     const startCamera = async () => {
         setIsCapturing(true);
+        console.log("🎥 [DASHBOARD] Initializing camera...");
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            if (videoRef.current) videoRef.current.srcObject = stream;
-        } catch (err) { setIsCapturing(false); }
+            let stream: MediaStream;
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" }
+                });
+            } catch {
+                console.warn("HD camera failed, retrying basic...");
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            }
+            
+            // Global backup to ensure it survives re-renders
+            (window as any).__cameraStream = stream;
+
+            // Wait a tick for React to mount the video element
+            setTimeout(() => {
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                    videoRef.current.play().catch(() => {});
+                }
+            }, 100);
+
+        } catch (err) { 
+            console.error("Camera access failed:", err);
+            setIsCapturing(false); 
+            alert("⚠️ I couldn't access your camera. Please ensure it's connected and you've allowed access in browser settings.");
+        }
     };
 
     const capturePhoto = () => {
@@ -287,9 +394,15 @@ export default function Dashboard() {
         const ctx = canvas.getContext('2d');
         if (ctx) {
             ctx.drawImage(videoRef.current, 0, 0, 400, 400);
-            setProfileData({ ...profileData, photo: canvas.toDataURL('image/jpeg', 0.7) });
-            const stream = videoRef.current.srcObject as MediaStream;
-            stream.getTracks().forEach(t => t.stop());
+            const photoData = canvas.toDataURL('image/jpeg', 0.7);
+            setProfileData({ ...profileData, photo: photoData });
+            
+            // Stop hardware
+            const stream = (window as any).__cameraStream || (videoRef.current.srcObject as MediaStream);
+            if (stream) {
+                stream.getTracks().forEach((t: any) => t.stop());
+            }
+            (window as any).__cameraStream = null;
             setIsCapturing(false);
         }
     };
@@ -300,6 +413,26 @@ export default function Dashboard() {
             const reader = new FileReader();
             reader.onloadend = () => setProfileData({ ...profileData, photo: reader.result as string });
             reader.readAsDataURL(file);
+        }
+    };
+
+    const handleCheckAtsScore = async () => {
+        if (!user) return;
+        setIsAnalyzing(true);
+        try {
+            const res = await fetch(`http://localhost:5000/api/analyze_resume_ats?user_id=${user.id}`);
+            const data = await res.json();
+            if (data.status === 'success') {
+                setAtsAnalysis(data.report);
+                setIsAtsModalOpen(true);
+            } else {
+                alert(data.message || "Failed to analyze resume.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Connection error. Ensure backend is running.");
+        } finally {
+            setIsAnalyzing(false);
         }
     };
 
@@ -376,55 +509,103 @@ export default function Dashboard() {
                 <main className="flex-1 p-6 md:p-8 space-y-8 overflow-y-auto w-full max-w-[1400px] mx-auto">
                     {activeTab === 'Dashboard' && (
                         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            {/* Dashboard Content */}
-                            <div className="relative bg-slate-900 rounded-[2.5rem] p-8 md:p-12 text-white overflow-hidden">
-                                <div className="relative z-10 flex flex-col lg:flex-row justify-between lg:items-center gap-8">
-                                    <div className="max-w-xl">
-                                        <h1 className="text-3xl md:text-5xl font-black mb-3">Welcome, <span className="text-blue-400">{user.name}</span></h1>
-                                        <p className="opacity-80 text-sm md:text-lg font-medium">Ready to sharpen your skills with AI-powered mock interviews?</p>
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                {/* Dashboard Welcome Content */}
+                                <div className="lg:col-span-2 relative bg-slate-900 rounded-[2.5rem] p-8 md:p-12 text-white overflow-hidden shadow-2xl">
+                                    <div className="relative z-10 flex flex-col justify-between h-full gap-8">
+                                        <div className="max-w-xl">
+                                            <h1 className="text-3xl md:text-5xl font-black mb-3">Welcome, <span className="text-blue-400">{user.name}</span></h1>
+                                            <p className="opacity-80 text-sm md:text-lg font-medium">Ready to sharpen your skills with AI-powered mock interviews?</p>
+                                        </div>
+                                        <div className="flex gap-4">
+                                            <button onClick={() => { enterFullScreen(); router.push('/?start=true'); }} className="bg-blue-600 hover:bg-blue-700 px-8 py-5 rounded-2xl font-black text-xl flex items-center gap-4 transition-all hover:-translate-y-1 shadow-2xl border-none">
+                                                <Play size={20} fill="currentColor" /> Start Session
+                                            </button>
+                                        </div>
                                     </div>
-                                    <button onClick={() => { enterFullScreen(); router.push('/?start=true'); }} className="bg-blue-600 hover:bg-blue-700 px-8 py-5 rounded-2xl font-black text-xl flex items-center gap-4 transition-all hover:-translate-y-1 shadow-2xl border-none">
-                                        <Play size={20} fill="currentColor" /> Start Session
-                                    </button>
                                 </div>
+
+                                {/* PROMINENT RESUME ANALYZER (MOVED UP) */}
+                                <div className="bg-[var(--card-bg)] border-2 border-indigo-500/20 rounded-[2.5rem] p-8 shadow-2xl flex flex-col relative overflow-hidden group hover:border-indigo-500/40 transition-all">
+                                    <div className="flex justify-between items-start mb-6">
+                                        <h3 className="text-xl font-black flex items-center gap-3">
+                                            <FileSearch className="text-blue-500" /> Resume Score
+                                        </h3>
+                                        {user.plan_id === 4 ? (
+                                            <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded-full uppercase tracking-widest">Premium</span>
+                                        ) : (
+                                            <Lock className="text-[var(--text-muted)]" size={18} />
+                                        )}
+                                    </div>
+
+                                    {!user.plan_id || user.plan_id < 4 ? (
+                                        <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4 py-2">
+                                            <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500">
+                                                <Zap size={24} />
+                                            </div>
+                                            <p className="text-sm font-bold text-[var(--text-muted)]">Unlock AI Analysis to get your ATS Score</p>
+                                            <button 
+                                                onClick={() => setIsPaymentModalOpen(true)}
+                                                className="w-full py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg hover:bg-blue-700 transition-all"
+                                            >
+                                                Upgrade Now
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex-1 flex flex-col space-y-4">
+                                            <div className="p-5 bg-indigo-600/5 rounded-3xl border border-indigo-500/10 flex items-center gap-4">
+                                                <div className="text-4xl font-black italic text-blue-500 leading-none">{user.resume_score || 0}</div>
+                                                <div className="h-8 w-[1px] bg-indigo-500/20" />
+                                                <p className="text-[10px] font-black uppercase text-[var(--text-muted)] tracking-widest leading-tight">ATS INDEX<br/>/ 100</p>
+                                            </div>
+                                            
+                                            <button 
+                                                onClick={handleCheckAtsScore}
+                                                disabled={isAnalyzing}
+                                                className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                {isAnalyzing ? (
+                                                    <><Loader size={16} className="animate-spin" /> Analyzing...</>
+                                                ) : (
+                                                    <><Zap size={16} /> Check ATS Score</>
+                                                )}
+                                            </button>
+                                        </div>
+                                    )}
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
+                                </div>
+                            </div>
+
+                            {/* DASHBOARD BODY */}
+                            <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-[2.5rem] p-8 shadow-sm overflow-hidden relative group">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div>
+                                        <h3 className="text-xl font-black flex items-center gap-2 italic">
+                                            <TrendingUp className="text-blue-500" /> Performance Analytics
+                                        </h3>
+                                        <p className="text-[10px] font-black uppercase text-[var(--test-muted)] tracking-widest mt-1">Daily Score Progression</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <div className="px-3 py-1 bg-blue-500/10 text-blue-500 rounded-lg text-[9px] font-black uppercase tracking-widest border border-blue-500/20">Live Trends</div>
+                                    </div>
+                                </div>
+                                <div className="h-[300px] w-full">
+                                    {PerformanceTrendLine()}
+                                </div>
+                                <div className="absolute inset-0 bg-gradient-to-t from-blue-500/5 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 {[
                                     { label: 'Total Attempts', value: interviews.length, color: 'blue' },
                                     { label: 'Average Score', value: `${averageScore.toFixed(0)}%`, color: 'indigo' },
-                                    { label: 'Consistency', value: '3 Days', color: 'emerald' }
+                                    { label: 'Consistency', value: `${interviews.length > 0 ? 'Active' : 'N/A'}`, color: 'emerald' }
                                 ].map((stat, i) => (
-                                    <div key={i} className="bg-[var(--card-bg)] border border-[var(--border)] rounded-[2rem] p-8 shadow-sm">
+                                    <div key={i} className="bg-[var(--card-bg)] border border-[var(--border)] rounded-[2rem] p-8 shadow-sm hover:border-blue-500/30 transition-all">
                                         <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-2">{stat.label}</h4>
                                         <div className="text-3xl font-black text-[var(--foreground)]">{stat.value}</div>
                                     </div>
                                 ))}
-                            </div>
-
-                            {/* ACADEMIC DETAILS SECTION */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <div className="p-6 bg-blue-500/5 rounded-[2rem] border border-blue-500/10 flex items-center gap-5 transition-all hover:bg-blue-500/10">
-                                    <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg"><School size={24} /></div>
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-blue-600/60 transition-colors">University</p>
-                                        <p className="font-black text-sm truncate max-w-[180px]">{user?.college_name || 'Vignan University'}</p>
-                                    </div>
-                                </div>
-                                <div className="p-6 bg-indigo-500/5 rounded-[2rem] border border-indigo-500/10 flex items-center gap-5 transition-all hover:bg-indigo-500/10">
-                                    <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg"><Activity size={24} /></div>
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600/60 transition-colors">Course Year</p>
-                                        <p className="font-black text-sm">{user?.year || 'Not Set'}</p>
-                                    </div>
-                                </div>
-                                <div className="p-6 bg-emerald-500/5 rounded-[2rem] border border-emerald-500/10 flex items-center gap-5 transition-all hover:bg-emerald-500/10">
-                                    <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg"><Smartphone size={24} /></div>
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600/60 transition-colors">Contact Mobile</p>
-                                        <p className="font-black text-sm">{user?.phone || 'Not Set'}</p>
-                                    </div>
-                                </div>
                             </div>
 
                             <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-[2rem] shadow-sm overflow-hidden">
@@ -526,21 +707,11 @@ export default function Dashboard() {
                                         <button onClick={() => setIsProfileModalOpen(true)} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all">Edit Profile</button>
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-4">
                                         <div onClick={toggleTheme} className="p-6 bg-[var(--card-bg)] border border-[var(--border)] rounded-2xl flex items-center justify-between cursor-pointer hover:border-blue-500 transition-colors">
                                             <div className="flex items-center gap-4"><div className="p-3 bg-blue-500/10 text-blue-500 rounded-xl">{theme === 'dark' ? <Moon size={20} /> : <Sun size={20} />}</div><span className="font-bold">Dark Mode</span></div>
                                             <div className={`w-10 h-5 rounded-full relative transition-colors ${theme === 'dark' ? 'bg-blue-600' : 'bg-slate-300'}`}><div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${theme === 'dark' ? 'right-1' : 'left-1'}`} /></div>
                                         </div>
-                                        <div className="p-6 bg-[var(--card-bg)] border border-[var(--border)] rounded-2xl flex items-center justify-between opacity-50 cursor-not-allowed">
-                                            <div className="flex items-center gap-4"><div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl"><Bell size={20} /></div><span className="font-bold">Notifications</span></div>
-                                            <span className="text-[10px] font-black uppercase text-[var(--text-muted)] tracking-widest">SOON</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-8 bg-red-500/5 rounded-3xl border border-red-500/20 mt-10">
-                                        <h4 className="text-red-500 font-black mb-2 flex items-center gap-2 uppercase tracking-widest text-xs"><Shield size={16} /> Danger Zone</h4>
-                                        <p className="text-xs text-red-500/70 mb-6 font-medium">Deleting your account will purge all interview analytics, recordings, and reports forever.</p>
-                                        <button onClick={handleDeleteAccount} className="w-full py-4 bg-red-600/10 text-red-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all border border-red-600/20">Delete My Account Permanently</button>
                                     </div>
                                 </div>
                             </div>
@@ -592,6 +763,281 @@ export default function Dashboard() {
                                 </div>
                                 <div className="flex gap-4 pt-6"><button type="button" onClick={() => setIsProfileModalOpen(false)} className="flex-1 py-4 font-black uppercase tracking-widest text-sm">Cancel</button><button type="submit" disabled={saving} className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-blue-500/20 hover:bg-blue-700 disabled:opacity-50">{saving ? 'Saving...' : 'Save Changes'}</button></div>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            {/* PAYMENT MODAL */}
+            {isPaymentModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-xl animate-in fade-in duration-300" onClick={() => !isPaying && setIsPaymentModalOpen(false)} />
+                    <div className="bg-[var(--card-bg)] border border-[var(--border)] w-full max-w-lg rounded-[2.5rem] shadow-2xl relative z-10 overflow-hidden animate-in zoom-in slide-in-from-bottom-8 duration-500">
+                        {/* Header */}
+                        <div className="p-8 border-b border-[var(--border)] bg-[var(--nav-bg)]/50 flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/20">
+                                    <CreditCard size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-black italic">Secure Upgrade</h2>
+                                    <p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest leading-none mt-1">Simulated Transaction</p>
+                                </div>
+                            </div>
+                            {!isPaying && (
+                                <button onClick={() => setIsPaymentModalOpen(false)} className="p-2 hover:bg-[var(--background)] rounded-xl transition-colors">
+                                    <X size={20} className="text-[var(--text-muted)]" />
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="p-8 space-y-8">
+                            {paymentSuccess ? (
+                                <div className="py-12 flex flex-col items-center text-center space-y-6 animate-in zoom-in duration-500">
+                                    <div className="w-24 h-24 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-500">
+                                        <CheckCircle size={64} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-black italic">Upgrade Successful!</h3>
+                                        <p className="text-[var(--text-muted)] font-medium mt-2">Premium features are now unlocked.</p>
+                                    </div>
+                                    <p className="text-[10px] font-black uppercase text-blue-500 tracking-widest animate-pulse">Updating your dashboard...</p>
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Summary */}
+                                    <div className="p-6 bg-blue-500/5 rounded-3xl border border-blue-500/10 flex justify-between items-center">
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase text-[var(--text-muted)] tracking-widest mb-1">Target Upgrade</p>
+                                            <h4 className="text-lg font-black">Diamond Bundle</h4>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[10px] font-black uppercase text-[var(--text-muted)] tracking-widest mb-1">Amount Due</p>
+                                            <h4 className="text-2xl font-black text-blue-500 italic">₹500</h4>
+                                        </div>
+                                    </div>
+
+                                    {/* Card Details (Simulated) */}
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase text-[var(--text-muted)] tracking-widest ml-1">Card Information</label>
+                                            <div className="relative">
+                                                <input 
+                                                    type="text" 
+                                                    defaultValue="4242 4242 4242 4242" 
+                                                    disabled 
+                                                    className="w-full bg-[var(--background)] border border-[var(--border)] rounded-2xl px-12 py-4 text-sm font-mono text-[var(--text-muted)] outline-none" 
+                                                />
+                                                <CreditCard size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex gap-1">
+                                                    <div className="w-6 h-4 bg-orange-400 rounded-sm opacity-50" />
+                                                    <div className="w-6 h-4 bg-red-400 rounded-sm opacity-50" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase text-[var(--text-muted)] tracking-widest ml-1">Expiry</label>
+                                                <input type="text" defaultValue="12/28" disabled className="w-full bg-[var(--background)] border border-[var(--border)] rounded-2xl px-4 py-4 text-sm font-mono text-[var(--text-muted)]" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase text-[var(--text-muted)] tracking-widest ml-1">CVC</label>
+                                                <div className="relative">
+                                                    <input type="text" defaultValue="***" disabled className="w-full bg-[var(--background)] border border-[var(--border)] rounded-2xl px-4 py-4 text-sm font-mono text-[var(--text-muted)]" />
+                                                    <Lock size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Info */}
+                                    <div className="flex items-start gap-3 p-4 bg-indigo-500/5 rounded-2xl border border-indigo-500/10 text-indigo-400">
+                                        <Shield size={18} className="shrink-0" />
+                                        <p className="text-[10px] font-medium leading-relaxed uppercase tracking-wider">
+                                            This is a simulated secure transaction for demonstration purposes. No real funds will be charged.
+                                        </p>
+                                    </div>
+
+                                    {/* Action */}
+                                    <button 
+                                        onClick={handleSimulatePayment}
+                                        disabled={isPaying}
+                                        className={`
+                                            w-full py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transition-all relative overflow-hidden
+                                            ${isPaying ? 'bg-blue-600/50 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-2xl shadow-blue-500/20 active:scale-[0.98]'}
+                                        `}
+                                    >
+                                        {isPaying ? (
+                                            <div className="flex items-center justify-center gap-3">
+                                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                <span>Processing...</span>
+                                            </div>
+                                        ) : (
+                                            <span>Unlock Premium Access</span>
+                                        )}
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* ATS REPORT MODAL */}
+            {isAtsModalOpen && atsAnalysis && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="w-full max-w-5xl max-h-[90vh] bg-[var(--background)] border border-[var(--border)] rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+                        {/* Header */}
+                        <div className="p-8 border-b border-[var(--border)] bg-indigo-600 text-white flex justify-between items-center shrink-0">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
+                                    <Brain size={28} />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-black italic tracking-tight">ATS Intelligence Report</h3>
+                                    <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em]">{user.name}'s Analysis • v3.2 Protocol</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setIsAtsModalOpen(false)} className="p-3 hover:bg-white/10 rounded-full transition-all">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
+                            {/* Top Stats */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                {/* Score Circle */}
+                                <div className="lg:col-span-1 p-8 bg-[var(--card-bg)] border border-[var(--border)] rounded-[2.5rem] flex flex-col items-center justify-center text-center space-y-4">
+                                    <div className="relative w-40 h-40 flex items-center justify-center">
+                                        <svg className="w-full h-full -rotate-90">
+                                            <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-indigo-500/10" />
+                                            <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={440} strokeDashoffset={440 - (440 * atsAnalysis.score) / 100} className="text-indigo-500 transition-all duration-1000 ease-out" strokeLinecap="round" />
+                                        </svg>
+                                        <div className="absolute flex flex-col items-center">
+                                            <span className="text-5xl font-black italic">{atsAnalysis.score}</span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">ATS Index</span>
+                                        </div>
+                                    </div>
+                                    <div className="px-6 py-2 bg-indigo-500/10 text-indigo-500 text-[10px] font-black rounded-full uppercase tracking-widest">
+                                        {atsAnalysis.level} Level
+                                    </div>
+                                </div>
+
+                                {/* Field & Market */}
+                                <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="p-8 bg-blue-500/5 border border-blue-500/10 rounded-[2.5rem] flex flex-col justify-between">
+                                        <div className="space-y-2">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-blue-500/60">Strategic Field</p>
+                                            <h4 className="text-2xl font-black italic">{atsAnalysis.field}</h4>
+                                        </div>
+                                        <div className="mt-6 flex items-center gap-3 text-blue-500">
+                                            <div className="p-2 bg-blue-500/20 rounded-lg"><Layout size={18} /></div>
+                                            <p className="text-xs font-bold italic">High Global Demand</p>
+                                        </div>
+                                    </div>
+                                    <div className="p-8 bg-emerald-500/5 border border-emerald-500/10 rounded-[2.5rem] flex flex-col justify-between">
+                                        <div className="space-y-2">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500/60">AI Recommendation</p>
+                                            <p className="text-sm font-bold text-emerald-800/80 leading-relaxed italic">
+                                                "Your profile is {atsAnalysis.score > 70 ? 'strong' : 'improving'}. Focus on specific projects to reach 90+ Score."
+                                            </p>
+                                        </div>
+                                        <div className="mt-4 flex flex-wrap gap-2">
+                                            {atsAnalysis.recommended_skills.slice(0, 3).map((s: string) => (
+                                                <span key={s} className="px-3 py-1 bg-emerald-500/10 text-emerald-600 text-[9px] font-black rounded-full uppercase">{s}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Detailed Checklist */}
+                            <div className="space-y-6">
+                                <h4 className="text-sm font-black uppercase tracking-[0.3em] flex items-center gap-3">
+                                    <Search className="text-indigo-500" size={16} /> Scanning Checklist
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {atsAnalysis.checklist.map((item: any, idx: number) => (
+                                        <div key={idx} className={`p-5 rounded-2xl border transition-all flex items-center justify-between ${item.found ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-700' : 'bg-rose-500/5 border-rose-500/10 text-rose-700 opacity-60'}`}>
+                                            <div className="flex items-center gap-3">
+                                                {item.found ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+                                                <span className="text-[11px] font-black uppercase tracking-tight">{item.item}</span>
+                                            </div>
+                                            <span className="text-[11px] font-black">+{item.points}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Skill Boosters */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                                <div className="space-y-6">
+                                    <h4 className="text-sm font-black uppercase tracking-[0.3em] flex items-center gap-3">
+                                        <Zap className="text-yellow-500" size={16} /> Recommended Skill Boosters
+                                    </h4>
+                                    <div className="flex flex-wrap gap-3">
+                                        {atsAnalysis.recommended_skills.map((s: string) => (
+                                            <div key={s} className="group flex items-center gap-2 px-5 py-3 bg-[var(--card-bg)] border border-[var(--border)] rounded-2xl hover:border-indigo-500/40 transition-all cursor-pointer">
+                                                <span className="text-xs font-black italic">{s}</span>
+                                                <Check className="text-emerald-500 opacity-0 group-hover:opacity-100 transition-all" size={14} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <h4 className="text-sm font-black uppercase tracking-[0.3em] flex items-center gap-3">
+                                        <ExternalLink className="text-blue-500" size={16} /> Strategic Learning Paths
+                                    </h4>
+                                    <div className="space-y-4">
+                                        {atsAnalysis.courses.map((course: any, idx: number) => (
+                                            <a 
+                                                key={idx} 
+                                                href={course[1]} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="group flex items-center justify-between p-5 bg-blue-500/5 border border-blue-500/10 rounded-2xl hover:bg-blue-500/10 transition-all"
+                                            >
+                                                <span className="text-[11px] font-black italic text-blue-700">{course[0]}</span>
+                                                <ChevronRight className="text-blue-400 group-hover:translate-x-1 transition-all" size={18} />
+                                            </a>
+                                        ))}
+                                        {atsAnalysis.courses.length === 0 && (
+                                            <div className="p-8 text-center border-2 border-dashed border-[var(--border)] rounded-3xl text-[var(--text-muted)] italic text-xs font-bold">
+                                                No specific courses identified for this field. Focus on core technical skills.
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Videos Section */}
+                            <div className="pt-6 border-t border-[var(--border)]">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="space-y-3">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Writing Optimization</p>
+                                        <div className="aspect-video bg-black rounded-3xl overflow-hidden shadow-xl border border-[var(--border)]">
+                                            <iframe src={atsAnalysis.resume_video.replace('youtu.be/', 'youtube.com/embed/')} className="w-full h-full" allowFullScreen />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Behavioral Assessment Prep</p>
+                                        <div className="aspect-video bg-black rounded-3xl overflow-hidden shadow-xl border border-[var(--border)]">
+                                            <iframe src={atsAnalysis.interview_video.replace('youtu.be/', 'youtube.com/embed/')} className="w-full h-full" allowFullScreen />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-6 border-t border-[var(--border)] bg-[var(--nav-bg)] flex justify-center shrink-0">
+                            <button 
+                                onClick={() => setIsAtsModalOpen(false)}
+                                className="px-10 py-4 bg-indigo-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 hover:bg-indigo-700 transition-all active:scale-95"
+                            >
+                                Acknowledge Insights
+                            </button>
                         </div>
                     </div>
                 </div>

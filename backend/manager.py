@@ -13,6 +13,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from xml.sax.saxutils import escape as xml_escape
+import resume_analyzer # Import for ATS recommendations
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
@@ -28,7 +29,7 @@ class InterviewManager:
         
         # Check if the key is missing or is the default placeholder 
         if not self.api_key or "your_groq_api_key_here" in self.api_key:
-            print("⚠️ Warning: GROQ_API_KEY is missing or invalid. Running in Offline/Demo Mode.")
+            print("[WARN] Warning: GROQ_API_KEY is missing or invalid. Running in Offline/Demo Mode.")
             self.client = None
         else:
             try:
@@ -52,6 +53,8 @@ class InterviewManager:
         self.start_time = datetime.datetime.now() # Approximate start
         self.session_id = str(int(time.time())) # Unique session for evidence isolation
         self.resume_path = None # Path to original resume PDF for auto-deletion
+        self.resume_score = None # New: ATS Score from analysis
+        self.resume_analysis_results = None # Full results from ATS engine
         
         self.icebreaker_stage = 'start'
         self.icebreaker_count = 0 
@@ -575,7 +578,7 @@ class InterviewManager:
         ai_improvements = ai_data.get('improvements', [])
         ai_next_steps = ai_data.get('next_steps', [])
 
-        doc = SimpleDocTemplate(filename, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.5*inch)
+        doc = SimpleDocTemplate(filename, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.5*inch, leftMargin=0.4*inch, rightMargin=0.4*inch)
         styles = getSampleStyleSheet()
         story = []
         
@@ -667,6 +670,7 @@ class InterviewManager:
             [safe_para("Coding Correct:", label_style), safe_para(f"{sum(1 for s in self.submitted_solutions if s.get('status') == 'Correct')}/{len(self.submitted_solutions)}", bold_text_style)],
             [safe_para("Assessment Status:", label_style), safe_para(status_text, ParagraphStyle('Status', parent=bold_text_style, textColor=status_color, fontSize=11))],
             [safe_para("Overall Performance Score:", label_style), safe_para(f"{overall_score_raw:.1f}/10", bold_text_style)],
+            [safe_para("Resume ATS Score:", label_style), safe_para(f"{self.resume_score}/100" if self.resume_score is not None else "Not Analyzed", bold_text_style)],
         ]
         
         id_table = Table(identity_data, colWidths=[2.5*inch, 2.5*inch, 2.4*inch])
@@ -1268,6 +1272,48 @@ class InterviewManager:
         story.append(rec_table)
         story.append(Spacer(1, 0.2*inch))
 
+        # --- LEARNING & GROWTH ROADMAP (New Personalized Section) ---
+        if self.resume_analysis_results:
+             story.append(safe_para("LEARNING & GROWTH ROADMAP", heading_style))
+             story.append(Spacer(1, 0.1*inch))
+             
+             ats = self.resume_analysis_results
+             field = ats.get('field', 'General Technology')
+             reco_skills = ats.get('recommended_skills', [])[:5]
+             courses = ats.get('courses', [])[:4]
+             
+             roadmap_data = [
+                 [safe_para(f"<b>Detected Specialization:</b> {field}", normal_style, allow_xml=True)],
+                 [Spacer(1, 0.05*inch)],
+                 [safe_para("<b>Recommended Skills to Acquire:</b>", subheading_style, allow_xml=True)],
+                 [safe_para(", ".join(reco_skills) if reco_skills else "Continue professional development.", normal_style)]
+             ]
+             
+             if courses:
+                  roadmap_data.append([Spacer(1, 0.1*inch)])
+                  roadmap_data.append([safe_para("<b>Suggested Learning Resources:</b>", subheading_style, allow_xml=True)])
+                  for c_name, c_url in courses:
+                       roadmap_data.append([safe_para(f"• <a href='{c_url}' color='blue'>{c_name}</a>", normal_style, allow_xml=True)])
+
+             # --- RESUME OPTIMIZATION AUDIT (New) ---
+             checklist = ats.get('checklist', [])
+             missing_items = [item.get('item') for item in checklist if not item.get('found')]
+             
+             if missing_items:
+                  roadmap_data.append([Spacer(1, 0.15*inch)])
+                  roadmap_data.append([safe_para("<b>Resume Improvements & Corrections:</b>", subheading_style, allow_xml=True)])
+                  for item in missing_items[:4]: # Top 4 missing ones
+                       roadmap_data.append([safe_para(f"• Add section: <b>{item}</b> to improve your ATS score.", normal_style, allow_xml=True)])
+
+             roadmap_table = Table(roadmap_data, colWidths=[7.2*inch])
+             roadmap_table.setStyle(TableStyle([
+                 ('BOX', (0,0), (-1,-1), 1, colors.HexColor('#3498db')), # Blue border for Growth section
+                 ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#EBF5FB')), # Light blue background
+                 ('PADDING', (0,0), (-1,-1), 12),
+             ]))
+             story.append(roadmap_table)
+             story.append(Spacer(1, 0.3*inch))
+
         # 6a. INTERVIEW RUBRIC (User Requested Format)
         story.append(safe_para("INTERVIEW RUBRIC ASSESSMENT", heading_style))
         story.append(Spacer(1, 0.1*inch))
@@ -1293,6 +1339,19 @@ class InterviewManager:
             rubric_data.append([f, f"{s:.1f}/10", n])
             total_category_scores.append(s)
             
+        # Add Resume Analysis Factor (Always show)
+        r_score_val = self.sf(self.resume_score) / 10 if self.resume_score is not None else 0
+        rubric_data.append(["Resume Analysis", f"{r_score_val:.1f}/10", "ATS Background Match"])
+        total_category_scores.append(r_score_val)
+             
+        # Add Coding Factor
+        if self.submitted_solutions:
+             passed_total = sum(s.get('test_cases_passed', 0) for s in self.submitted_solutions)
+             total_cases = sum(s.get('total_test_cases', 1) for s in self.submitted_solutions)
+             c_score = (passed_total / total_cases) * 10
+             rubric_data.append(["Coding Performance", f"{c_score:.1f}/10", "Logic & Test Case Score"])
+             total_category_scores.append(c_score)
+
         # Add Average Row
         avg_rubric = sum(total_category_scores) / len(total_category_scores) if total_category_scores else 0
         rubric_data.append(["AVERAGE SCORE", f"{avg_rubric:.1f}/10", ""])
@@ -1382,9 +1441,9 @@ class InterviewManager:
                  elif 'voice' in display_text.lower(): just = "Third Party Assist"
                  
                  p_data.append([
-                     display_text,
+                     safe_para(display_text, ParagraphStyle('WrapViol', parent=normal_style, fontSize=9)),
                      sev,
-                     just,
+                     safe_para(just, ParagraphStyle('WrapJust', parent=normal_style, fontSize=9)),
                      str(count)
                  ])
              
@@ -1392,17 +1451,18 @@ class InterviewManager:
              custom_order = {'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3}
              p_data[1:] = sorted(p_data[1:], key=lambda x: custom_order.get(x[1], 4))
  
-             p_table = Table(p_data, colWidths=[2.8*inch, 1.2*inch, 2.2*inch, 0.8*inch])
+             p_table = Table(p_data, colWidths=[3.2*inch, 0.9*inch, 2.3*inch, 0.7*inch])
              p_table.setStyle(TableStyle([
                  ('GRID', (0,0), (-1,-1), 0.5, colors.white),
                  ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#C0392B')), # Red Header for Proctoring
                  ('TEXTCOLOR', (0,0), (-1,0), colors.white),
                  ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
                  ('ALIGN', (0,0), (2,-1), 'LEFT'),
+                 ('VALIGN', (0,0), (-1,-1), 'TOP'),
                  ('ALIGN', (3,0), (-1,-1), 'CENTER'), 
                  ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#FDEDEC'), colors.white]),
                  ('BOX', (0,0), (-1,-1), 0.8, colors.HexColor('#C0392B')),
-                 ('PADDING', (0,0), (-1,-1), 8),
+                 ('PADDING', (0,0), (-1,-1), 6),
              ]))
              story.append(p_table)
         else:
@@ -1538,7 +1598,7 @@ class InterviewManager:
             
             return True
         except Exception as e:
-            print(f"❌ PDF Build Error: {e}")
+            print(f"[ERROR] PDF Build Error: {e}")
             return False
 
     def is_valid_resume(self, text):
@@ -1696,8 +1756,15 @@ class InterviewManager:
             self.core_subjects = data.get('core_subjects', [])
             self.internships_mentioned = data.get('internships', [])
             self.experience_level = data.get('experience_level', 'Intermediate')
-        except:
-            pass
+            
+            # Step 2: Call rule-based ATS engine for recommendations
+            detected_skills = self.skills_mentioned + self.technologies_mentioned
+            ats_res = resume_analyzer.analyze_resume_ats(self.resume_text, detected_skills)
+            self.resume_analysis_results = ats_res
+            self.resume_score = ats_res.get('score', self.resume_score)
+        except Exception as e:
+             print(f"Resume Analysis Sync Error: {e}")
+             pass
         if not hasattr(self, 'internships_mentioned'): self.internships_mentioned = []
         if not hasattr(self, 'asked_topics'): self.asked_topics = []
     def analyze_coding_submission(self, submission):

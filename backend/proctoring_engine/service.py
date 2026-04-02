@@ -12,7 +12,6 @@ try:
     import face_recognition
     has_face_rec = True
 except ImportError:
-    print("Warning: Face Recognition not installed. Identity check will fallback.")
     has_face_rec = False
 
 # Try importing YOLO, handle if missing
@@ -20,7 +19,6 @@ try:
     from ultralytics import YOLO
     has_yolo = True
 except ImportError:
-    print("Warning: Ultralytics YOLO not installed. Object detection disabled.")
     has_yolo = False
 
 has_mediapipe = False
@@ -29,13 +27,15 @@ try:
     from mediapipe.solutions import face_mesh
     has_mediapipe = True
 except (ImportError, AttributeError, ModuleNotFoundError):
-    print("Warning: MediaPipe not fully installed. Movement detection disabled.")
+    has_mediapipe = False
 
 try:
     from deepface import DeepFace
+    import tensorflow as tf
+    # Silence TensorFlow logs
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
     has_deepface = True
-except Exception as e:
-    print(f"Warning: DeepFace could not be loaded: {e}")
+except Exception:
     has_deepface = False
 
 class ProctoringService:
@@ -44,6 +44,7 @@ class ProctoringService:
         self.client = None
         if self.api_key:
             try:
+                from groq import Groq
                 self.client = Groq(api_key=self.api_key)
             except Exception as e:
                 print(f"Groq Init Error in Service: {e}")
@@ -67,32 +68,31 @@ class ProctoringService:
         self.active_profile_encoding = None
         self.active_profile_id = None
         
-        # Load YOLO Model
-        self.model = None
-        if has_yolo:
-            try:
-                # Use a small model for speed
-                self.model = YOLO("yolov8n.pt") 
-            except Exception as e:
-                print(f"Warning: YOLO Model load failed: {e}")
-
-        # Face Cascade for fallback face detection
+        # Initializing Engine Components (Silent)
         self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
         self.face_cascade_alt2 = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_alt2.xml')
         
-        # MediaPipe initialization (from user code)
+        # Load YOLO Model (Centralized)
+        self.model = None
+        if has_yolo:
+            try:
+                # Look for model in root OR models folder
+                model_paths = ["yolov8n.pt", os.path.join("backend", "models", "yolov8n.pt"), "models/yolov8n.pt"]
+                for p in model_paths:
+                    if os.path.exists(p):
+                        self.model = YOLO(p)
+                        break
+                if not self.model: self.model = YOLO("yolov8n.pt") 
+            except Exception: pass
+
+        # MediaPipe Mesh Initialization
         self.mp_face_mesh = None
         self.face_mesh = None
         if has_mediapipe:
             self.mp_face_mesh = face_mesh
-            self.face_mesh = self.mp_face_mesh.FaceMesh(
-                max_num_faces=4, 
-                min_detection_confidence=0.3, # Lowered for better sensitivity
-                min_tracking_confidence=0.3,
-                refine_landmarks=True
-            )
+            self.face_mesh = self.mp_face_mesh.FaceMesh(max_num_faces=4, min_detection_confidence=0.3, min_tracking_confidence=0.3, refine_landmarks=True)
             
-        self.initial_nose = None
+        print(f"✨ Proctoring Engine: READY (Biometrics: {'ON' if (has_deepface or has_face_rec) else 'FALLBACK'}, Object Detection: {'ON' if has_yolo else 'OFF'})")
         
         # EYE LANDMARKS INDICES (MediaPipe Face Mesh)
         self.LEFT_EYE = [33, 160, 158, 133, 153, 144] # 33: Inner corner, 133: Outer corner
@@ -328,8 +328,8 @@ class ProctoringService:
 
             return True, "Quality OK", False
         except Exception as e:
-            # For identity verification, we must assume quality is bad if we can't analyze it
-            return False, 1.0, "Quality Analysis Failure", False
+            # Consistent return of (bool, str, bool)
+            return False, f"Quality Analysis Failure: {str(e)}", False
 
     def compare_profiles(self, profile_frame, live_frame):
         """
@@ -387,24 +387,26 @@ class ProctoringService:
 
         # STAGE 2: DeepFace (Optimized Biometric Match)
         if has_deepface:
-            # PERFORMANCE: We only try the fastest/most robust combinations to avoid UI timeout
-            # mediapipe and opencv are significantly faster than retinaface on CPU
-            backends = ['mediapipe', 'opencv']
-            models = ["Facenet512", "VGG-Face"] # Facenet512 is extremely robust
-            
-            for model in models:
-                for backend in backends:
-                    try:
-                        print(f"DEBUG: Biometric Scan ({model} - {backend})...")
-                        result = DeepFace.verify(profile_frame, live_frame, model_name=model, 
-                                               detector_backend=backend, enforce_detection=False)
-                        dist = result.get('distance', 1.0)
-                        threshold = result.get('threshold', 0.4)
-                        
-                        if dist < (threshold * 1.05): # Allow 5% margin for lighting
-                            print(f"✅ Fast Biometric Match: {model}/{backend} (dist: {dist:.4f})")
-                            return True, dist, "Identity Verified (Biometric Match)", False
-                    except: continue
+            # PERFORMANCE: Prioritize Facenet512 for accuracy
+            # Use 'opencv' backend for speed on standard CPU
+            try:
+                print(f"DEBUG: Biometric Scan (Facenet512 - opencv)...")
+                result = DeepFace.verify(profile_frame, live_frame, 
+                                       model_name="Facenet512", # Gold standard for 1:1 match
+                                       detector_backend='opencv', 
+                                       enforce_detection=False,
+                                       distance_metric='cosine')
+                dist = result.get('distance', 1.0)
+                threshold = result.get('threshold', 0.4)
+                
+                # STRICT: 0.4 cosine distance is a high-confidence match
+                if dist < threshold:
+                    print(f"✅ DeepFace Biometric Match: (dist: {dist:.4f})")
+                    return True, dist, "Identity Verified (DeepFace)", False
+                else:
+                    print(f"DEBUG: DeepFace Mismatch: (dist: {dist:.4f} > th: {threshold})")
+            except Exception as e:
+                print(f"DeepFace Stage Error: {e}")
 
 
         # STAGE 2.5: Vision AI Fallback (Llama 3.2 Vision)
@@ -469,9 +471,10 @@ class ProctoringService:
         # Ratios (Normalized by eye distance to be scale invariant)
         if eye_dist < 0.001: return None
         return {
-            "nc_ratio": nose_chin / eye_dist,
-            "mw_ratio": mouth_width / eye_dist,
-            "fw_ratio": face_width / eye_dist
+            "eye_dist": eye_dist,
+            # EYE-CENTRIC STRUCTURAL ID: Ratios within the orbital region
+            "eye_to_brow_ratio": np.linalg.norm(np.array([lm[33].x, lm[33].y]) - np.array([lm[70].x, lm[70].y])) / eye_dist,
+            "inter_ocular_ratio": eye_dist # Absolute eye-distance is scale-normalized later
         }
 
     def _compare_landmarks(self, img1, img2):
@@ -483,15 +486,17 @@ class ProctoringService:
             print("Warning: Could not extract landmarks from one of the frames.")
             return False, 0.0
             
-        # Calculate deviation
+        # Calculate deviation (EYE-CENTRIC ONLY as requested: "eyes enough")
+        # Focusing on inter-ocular and orbital bone structure
         diffs = [
-            abs(r1["nc_ratio"] - r2["nc_ratio"]) / r1["nc_ratio"],
-            abs(r1["mw_ratio"] - r2["mw_ratio"]) / r1["mw_ratio"],
-            abs(r1["fw_ratio"] - r2["fw_ratio"]) / r1["fw_ratio"]
+            abs(r1["eye_to_brow_ratio"] - r2["eye_to_brow_ratio"]) / r1["eye_to_brow_ratio"]
         ]
         
+        # Primary check: Inter-ocular distance consistency
+        # Normalized by facial bounding box size in a real world, 
+        # but here we use the ratio of eye-to-brow segment as the primary biometric.
         avg_diff = sum(diffs) / len(diffs)
-        print(f"DEBUG: Face Marking Deviation: {avg_diff:.4f}")
+        print(f"DEBUG: Eye-Centric Marking Deviation: {avg_diff:.4f}")
         
         # Threshold: 0.20 (Strict checking to prevent different people matching)
         # Human face ratios between different people typically deviate by more than 20-30%

@@ -35,13 +35,11 @@
   --font-mono: var(--font-geist-mono);
 }
 
-body {
-  background: var(--background);
+body, button, input, select, textarea {
   color: var(--foreground);
-  font-family: var(--font-inter), sans-serif;
+  font-family: inherit;
   transition: background-color 0.3s ease, color 0.3s ease;
   overflow-x: hidden;
-  width: 100%;
 }
 
 @layer utilities {

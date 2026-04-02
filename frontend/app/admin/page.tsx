@@ -20,7 +20,9 @@ import {
     Video,
     Settings,
     Trash2,
-    FileText
+    FileText,
+    Eye,
+    EyeOff
 } from 'lucide-react';
 import { useTheme } from '../theme-context';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
@@ -46,6 +48,7 @@ export default function AdminDashboard() {
 
     // Settings State
     const [adminPassword, setAdminPassword] = useState('');
+    const [showAdminPassword, setShowAdminPassword] = useState(false);
     const [maintenanceMode, setMaintenanceMode] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
 
@@ -770,13 +773,22 @@ export default function AdminDashboard() {
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">New Password API</label>
-                                    <input
-                                        type="password"
-                                        placeholder="Enter new password to update"
-                                        value={adminPassword}
-                                        onChange={(e) => setAdminPassword(e.target.value)}
-                                        className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-colors shadow-inner"
-                                    />
+                                    <div className="relative group">
+                                        <input
+                                            type={showAdminPassword ? "text" : "password"}
+                                            placeholder="Enter new password to update"
+                                            value={adminPassword}
+                                            onChange={(e) => setAdminPassword(e.target.value)}
+                                            className="w-full bg-[var(--background)] border border-[var(--border)] rounded-xl pl-4 pr-12 py-3 outline-none focus:border-indigo-500 transition-colors shadow-inner relative z-10"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowAdminPassword(!showAdminPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-indigo-500 transition-colors focus:outline-none z-30 w-10 h-10 flex items-center justify-center p-0"
+                                        >
+                                            {showAdminPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="pt-4 flex justify-end">
                                     <button

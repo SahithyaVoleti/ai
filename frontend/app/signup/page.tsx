@@ -106,6 +106,7 @@ export default function Signup() {
     // Added 'phone', 'year' and 'college_name' to state
     const [userData, setUserData] = useState({ name: '', email: '', phone: '', year: '', college_name: '', role: 'Student', password: '', photo: '' });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     // Photo Capture States
     const [cameraActive, setCameraActive] = useState(false);
@@ -517,7 +518,7 @@ export default function Signup() {
     const getInputType = () => {
         if (chatStep === 2) return "email";
         if (chatStep === 3) return "tel";
-        if (chatStep === 6) return "password";
+        if (chatStep === 6) return showPassword ? "text" : "password";
         return "text";
     };
 
@@ -861,23 +862,34 @@ export default function Signup() {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="relative flex items-center">
-                                        <input
-                                            ref={inputRef}
-                                            type={getInputType()}
-                                            value={inputValue}
-                                            onChange={(e) => setInputValue(e.target.value)}
-                                            placeholder={getPlaceholder()}
-                                            disabled={isTyping || chatStep > 6}
-                                            autoComplete={chatStep === 6 ? "new-password" : "off"}
-                                            className="w-full bg-[var(--card-bg)] border border-[var(--border)] text-[var(--foreground)] placeholder-[var(--text-muted)] text-lg px-6 py-4 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-[var(--background)] transition-all shadow-inner"
-                                            autoFocus
-                                        />
+                                    <div className="relative flex items-center gap-2">
+                                        <div className="relative flex-1 group">
+                                            <input
+                                                ref={inputRef}
+                                                type={getInputType()}
+                                                value={inputValue}
+                                                onChange={(e) => setInputValue(e.target.value)}
+                                                placeholder={getPlaceholder()}
+                                                disabled={isTyping || chatStep > 6}
+                                                autoComplete={chatStep === 6 ? "new-password" : "off"}
+                                                className={`w-full bg-[var(--card-bg)] border border-[var(--border)] text-[var(--foreground)] placeholder-[var(--text-muted)] text-lg px-6 py-4 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:bg-[var(--background)] transition-all shadow-inner relative z-10 ${chatStep === 6 ? 'pr-14' : ''}`}
+                                                autoFocus
+                                            />
+                                            {chatStep === 6 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition-colors focus:outline-none z-30 w-10 h-10 flex items-center justify-center"
+                                                >
+                                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                                </button>
+                                            )}
+                                        </div>
                                         <button
                                             type="submit"
                                             disabled={!inputValue.trim() || isTyping || chatStep > 6}
                                             className={`
-                        absolute right-2 p-3 rounded-xl transition-all duration-200
+                        p-3 rounded-xl transition-all duration-200
                         ${!inputValue.trim() ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md transform hover:scale-105'}
                         `}
                                         >

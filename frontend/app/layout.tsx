@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans, Arvo } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./auth-context";
 import { ThemeProvider } from "./theme-context";
@@ -11,6 +11,12 @@ const inter = Inter({
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
+  subsets: ["latin"],
+});
+
+const arvo = Arvo({
+  variable: "--font-arvo",
+  weight: ["400", "700"],
   subsets: ["latin"],
 });
 
@@ -27,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${plusJakarta.variable} antialiased font-sans`}
+        className={`${inter.variable} ${plusJakarta.variable} ${arvo.variable} antialiased`}
       >
         <ThemeProvider>
           <AuthProvider>
