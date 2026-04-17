@@ -719,7 +719,19 @@ function HomeContent() {
       }
     }, 3000);
 
-    return () => clearInterval(cameraWatchdog);
+    return () => {
+      clearInterval(cameraWatchdog);
+      // HARD CLEANUP: Stop all tracks on unmount or stage change if camera not needed
+      if (!['upload', 'verification', 'calibration', 'instructions', 'interview', 'code'].includes(stage)) {
+        const s = streamRef.current || (window as any).__cameraStream;
+        if (s) {
+          console.log("🛑 Global Cleanup: Stopping camera tracks");
+          s.getTracks().forEach((t: MediaStreamTrack) => t.stop());
+          streamRef.current = null;
+          (window as any).__cameraStream = null;
+        }
+      }
+    };
   }, [stage]);
 
   // Legady ROBUST CAMERA SYNC removed (it's now part of the Watchdog and ref-callbacks)
@@ -1301,6 +1313,7 @@ function HomeContent() {
             setInterviewId(data.interview_id);
           }
           setStage("results");
+          fetch("http://localhost:5000/proctor/stop", { method: "POST" }).catch(() => {});
         }
       } catch (e) { console.error("Error finishing interview:", e); }
 
@@ -1335,12 +1348,12 @@ function HomeContent() {
     const monitoringStages = ['verification', 'calibration', 'instructions', 'interview', 'code'];
     const userPlan = Number(user?.plan_id || 0);
 
-    // GATING: Only run proctoring if plan is Elite or Ultimate (Plan 3+)
-    if (!monitoringStages.includes(stage) || userPlan < 3) return;
+    // GATING: Show warnings for all plans, but only terminate for Plan 3+ (Proctor Elite)
+    if (!monitoringStages.includes(stage)) return;
 
     const check = () => {
-      // Re-verify plan inside check for safety
-      if (!monitoringStages.includes(stage) || userPlan < 3) return;
+      // Re-verify stage inside check for safety
+      if (!monitoringStages.includes(stage)) return;
       const isExited = !document.fullscreenElement;
       const isHidden = document.visibilityState === 'hidden';
 
@@ -1359,7 +1372,7 @@ function HomeContent() {
           })
         });
 
-        if (fullscreenWarnCountRef.current > 2) {
+        if (userPlan >= 3 && fullscreenWarnCountRef.current > 2) {
           handleTermination("Security Violation: Multiple (3) fullscreen violations detected. Terminating interview.");
         } else {
           setShowFullscreenWarn(true);
@@ -1396,7 +1409,7 @@ function HomeContent() {
             severity: tabSwitchCountRef.current >= 3 ? "CRITICAL" : "MEDIUM"
           })
         });
-        if (tabSwitchCountRef.current >= 3) {
+        if (userPlan >= 3 && tabSwitchCountRef.current >= 3) {
           handleTermination("Security violation: Maximum tab switches exceeded. Terminating interview.");
         } else {
           setShowTabSwitchWarn(true);
@@ -1471,9 +1484,22 @@ function HomeContent() {
     document.addEventListener('fullscreenchange', handleFsChange);
     document.addEventListener('visibilitychange', check);
 
+    const unlockAudio = () => {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      if (audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume().then(() => {
+          console.log("🔊 Audio Context Unlocked via user interaction");
+        });
+      }
+    };
+    window.addEventListener('click', unlockAudio);
+
     return () => {
       document.removeEventListener('fullscreenchange', handleFsChange);
       document.removeEventListener('visibilitychange', check);
+      window.removeEventListener('click', unlockAudio);
     };
   }, [stage, showFullscreenWarn, question]); // Added question to ensure re-prompt has latest if needed
 
@@ -1549,25 +1575,37 @@ function HomeContent() {
 
         // Optimize: Only update state if something changed
         setProctorStatus(prev => {
-          if (prev.face === data.face_detected && prev.warning === warning) return prev;
-          return { face: data.face_detected, warning: warning };
+          // SMOOTHING: Only mark face as undetected if it fails for multiple frames.
+          // This prevents flickering red warnings during verification.
+          const isFaceDetected = data.face_detected;
+          
+          if (!isFaceDetected) {
+            noFaceRef.current += 1;
+          } else {
+            noFaceRef.current = 0;
+          }
+
+          // Require 4 consecutive failures (~2 seconds) before showing 'No Face'
+          const smoothFaceDetected = noFaceRef.current < 4;
+
+          if (prev.face === smoothFaceDetected && prev.warning === warning) return prev;
+          return { face: smoothFaceDetected, warning: warning };
         });
 
         // Only terminate in active stages. 
         // Verification stage handles its own failures in captureAndVerify.
         const activeProctoringStages = ['calibration', 'instructions', 'interview', 'code'];
         if (activeProctoringStages.includes(stage) && data.should_terminate) {
-          // Use the reason from backend if available, otherwise generic
           const reason = data.termination_reason || "Security Violation Detected. Interview Terminated.";
           handleTermination(reason);
           return;
         }
+
         if (warning.toLowerCase().includes("movement") || warning.toLowerCase().includes("down") || warning.toLowerCase().includes("stay in frame")) {
           lookingDownRef.current += 1;
           const now = Date.now();
           if (lookingDownRef.current > 8 && (now - lastVocalWarningRef.current > 15000)) {
             setFeedback("⚠️ " + warning);
-            // Vocal nudge from Atlas
             if (stage === 'interview') {
                speak(warning === "⚠️ Please stay in frame!" ? "Please stay within the camera view so I can continue the evaluation." : "Please maintain your focus on the interview screen.");
             }
@@ -1577,7 +1615,7 @@ function HomeContent() {
         } else {
           lookingDownRef.current = 0;
         }
-        if (!data.face_detected) noFaceRef.current += 1; else noFaceRef.current = 0;
+
         setShowNoFaceWarn(noFaceRef.current > 20);
       } catch (e) { }
     };
@@ -1719,6 +1757,9 @@ function HomeContent() {
           if (onComplete) onComplete();
         };
 
+        if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+          await audioContextRef.current.resume();
+        }
         await audio.play();
       } catch (err: any) {
         console.warn("⚠️ TTS fetch failed (using local fallback):", err.message);
@@ -1927,13 +1968,6 @@ function HomeContent() {
       return;
     }
 
-    // STRICT face identification enforcement
-    if (!proctorStatus.face) {
-      setVerifyStatus("🔴 Please position your face clearly in the camera frame to proceed.");
-      speak("Your face is not visible. Please position yourself clearly in front of the camera.");
-      return; // HARD BLOCK
-    }
-
     setVerifying(true);
     setVerifyStatus("Capturing biometric data...");
 
@@ -2039,6 +2073,7 @@ function HomeContent() {
         // 3. Professional Closing
         speak("Thank you for your time. The interview session is now concluded. Your performance report is being finalized.", () => {
           setStage('results');
+          fetch("http://localhost:5000/proctor/stop", { method: "POST" }).catch(() => {});
           if (document.fullscreenElement) {
             document.exitFullscreen().catch(() => { });
           }
@@ -2048,6 +2083,7 @@ function HomeContent() {
         // Fallback for stage change
         setTimeout(() => {
           setStage('results');
+          fetch("http://localhost:5000/proctor/stop", { method: "POST" }).catch(() => {});
           if (document.fullscreenElement) {
             document.exitFullscreen().catch(() => { });
           }
@@ -2161,7 +2197,16 @@ function HomeContent() {
                 ) : (
                   <div className="flex items-center gap-4">
                     <button onClick={() => router.push('/login')} className={`text-[11px] font-black ${theme === 'dark' ? 'text-slate-300' : 'text-slate-900'} hover:text-slate-950 uppercase tracking-widest px-2 transition-colors`}>Login</button>
-                    <button onClick={() => router.push('/signup')} className="px-7 py-3.5 bg-white text-slate-900 border border-slate-200 rounded-[18px] text-[11px] font-black shadow-soft hover:bg-slate-50 hover:-translate-y-0.5 transition-all active:scale-95 uppercase tracking-widest">Enroll Now</button>
+                    <button 
+                      onClick={() => router.push('/signup')} 
+                      className={`px-7 py-3.5 rounded-[18px] text-[11px] font-black shadow-soft hover:-translate-y-0.5 transition-all active:scale-95 uppercase tracking-widest ${
+                        theme === 'dark' 
+                          ? 'bg-blue-600 text-white border border-blue-500 hover:bg-blue-700' 
+                          : 'bg-white text-slate-900 border border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      Enroll Now
+                    </button>
                   </div>
                 )}
               </div>
@@ -2174,7 +2219,12 @@ function HomeContent() {
       {/* STAGE: LANDING */}
       {
         stage === 'landing' && (
-          <>
+          <div className="relative overflow-hidden">
+            {/* Background Animations */}
+            <div className={styles.bgOrb + " " + styles.orb1}></div>
+            <div className={styles.bgOrb + " " + styles.orb2}></div>
+            <div className={styles.bgOrb + " " + styles.orb3}></div>
+
             <main className={styles.heroSection}>
               <div className={styles.heroContent}>
 
@@ -2564,7 +2614,16 @@ function HomeContent() {
                   <div className="relative z-10">
                     <h2 className="text-3xl md:text-5xl font-black text-white mb-6 tracking-tight">Ready to Land Your Dream Job?</h2>
                     <p className="text-lg text-blue-100 font-medium max-w-xl mx-auto mb-10 leading-relaxed">Join thousands of candidates who transformed their interview anxiety into offer letters.</p>
-                    <button onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); router.push('/signup'); }} className="px-10 py-5 bg-white text-blue-600 rounded-xl text-sm font-bold uppercase tracking-wider shadow-lg hover:-translate-y-1 hover:shadow-xl hover:bg-blue-50 transition-all duration-300">Enroll Now. It's Free.</button>
+                    <button 
+                      onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); router.push('/signup'); }} 
+                      className={`px-10 py-5 rounded-xl text-sm font-bold uppercase tracking-wider shadow-lg hover:-translate-y-1 hover:shadow-xl transition-all duration-300 ${
+                        theme === 'dark'
+                          ? 'bg-white text-blue-700 hover:bg-blue-50' 
+                          : 'bg-white text-blue-600 hover:bg-blue-50'
+                      }`}
+                    >
+                      Enroll Now. It's Free.
+                    </button>
                   </div>
                 </div>
               </div>
@@ -2613,7 +2672,7 @@ function HomeContent() {
                 </div>
               </div>
             </footer>
-          </>
+          </div>
         )
       }
 
@@ -2892,7 +2951,7 @@ function HomeContent() {
                 {/* Main Action Button */}
                 <button
                   onClick={captureAndVerify}
-                  disabled={verifying || !proctorStatus.face}
+                  disabled={verifying}
                   className="mt-8 w-full max-w-sm py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-xl hover:shadow-2xl hover:shadow-blue-500/40 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3 group relative overflow-hidden"
                 >
                   <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
@@ -2923,14 +2982,14 @@ function HomeContent() {
       {/* STAGE: CALIBRATION */}
       {
         stage === 'calibration' && (
-          <main className="h-screen flex items-center justify-center p-8 bg-[var(--background)] relative">
+          <main className="min-h-screen flex items-center justify-center p-4 md:p-8 bg-[var(--background)] relative">
             {/* Back Button */}
-            <div className="absolute top-24 left-8 z-50">
+            <div className="absolute top-24 left-4 md:left-8 z-50">
               <button onClick={() => setStage('verification')} className={`flex items-center gap-2 ${theme === 'dark' ? 'text-white hover:text-indigo-400' : 'text-slate-600 hover:text-indigo-600'} transition-colors font-bold text-sm bg-transparent border-none cursor-pointer group`}>
                 <ChevronRight size={18} className="rotate-180 group-hover:-translate-x-1 transition-transform" /> Back
               </button>
             </div>
-            <div className="w-full max-w-3xl bg-[var(--card-bg)] p-12 rounded-[3rem] border border-[var(--border)] shadow-2xl text-center">
+            <div className="w-full max-w-3xl bg-[var(--card-bg)] p-6 md:p-12 rounded-[2.5rem] md:rounded-[3.3rem] border border-[var(--border)] shadow-2xl text-center">
               <div className="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner ring-4 ring-indigo-50">
                 <Shield size={40} className="animate-pulse" />
               </div>
@@ -3004,7 +3063,7 @@ function HomeContent() {
       {/* STAGE: INSTRUCTIONS */}
       {
         stage === 'instructions' && (
-          <main className="h-screen flex items-center justify-center p-4 md:p-8 bg-[var(--background)] relative">
+          <main className="min-h-screen flex items-center justify-center p-4 md:p-8 bg-[var(--background)] relative">
             {/* Back Button */}
             <div className="absolute top-24 left-8 z-50">
               <button onClick={() => setStage('calibration')} className={`flex items-center gap-2 ${theme === 'dark' ? 'text-white hover:text-indigo-400' : 'text-slate-600 hover:text-indigo-600'} transition-colors font-bold text-sm bg-transparent border-none cursor-pointer group`}>
@@ -3384,7 +3443,7 @@ function HomeContent() {
                 </div>
 
                 {/* Top Row UI */}
-                <div className="absolute top-10 left-10 right-10 flex justify-between items-start z-30 pointer-events-none">
+                <div className="absolute top-4 left-4 right-4 md:top-10 md:left-10 md:right-10 flex justify-between items-start z-30 pointer-events-none">
 
                   {/* Left: Security & Diagnostics */}
                   <div className="flex-1 flex flex-col gap-3">
@@ -3663,8 +3722,8 @@ function HomeContent() {
       {/* STAGE: RESULTS */}
       {
         stage === 'results' && (
-          <main className="h-screen flex items-center justify-center p-8 bg-[var(--background)]">
-            <div className="w-full max-w-2xl bg-[var(--card-bg)] p-12 rounded-[3.5rem] border border-[var(--border)] shadow-[0_30px_100px_rgba(0,0,0,0.2)] text-center relative overflow-hidden">
+          <main className="min-h-screen flex items-center justify-center p-4 md:p-8 bg-[var(--background)]">
+            <div className="w-full max-w-2xl bg-[var(--card-bg)] p-6 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] border border-[var(--border)] shadow-[0_30px_100px_rgba(0,0,0,0.2)] text-center relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-indigo-600 to-purple-600"></div>
 
               <div className="w-20 h-20 bg-green-500/10 text-green-500 rounded-3xl flex items-center justify-center mx-auto mb-8 relative">
@@ -3709,11 +3768,11 @@ function HomeContent() {
         )
       }
 
-      {/* STAGE: REPORT */}
+      {/* STAGE: REPORT (TERMINATED) */}
       {
         stage === 'report' && (
-          <main className="h-screen flex items-center justify-center p-8">
-            <div className="w-full max-w-2xl text-center bg-[var(--card-bg)] p-16 rounded-[3rem] border-8 border-red-500/20 shadow-2xl relative overflow-hidden">
+          <main className="min-h-screen flex items-center justify-center p-4 md:p-8">
+            <div className="w-full max-w-2xl text-center bg-[var(--card-bg)] p-6 md:p-16 rounded-[2.5rem] md:rounded-[3.6rem] border-8 border-red-500/20 shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-4 bg-red-500"></div>
               <div className="w-24 h-24 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-8">
                 <Shield size={48} />

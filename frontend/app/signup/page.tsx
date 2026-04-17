@@ -685,7 +685,7 @@ export default function Signup() {
     // 1. Landing View — Choose signup method
     if (!hasStarted) {
         return (
-            <div className={`min-h-screen transition-colors duration-500 ${theme === 'dark' ? 'bg-[#0A0D14]' : 'bg-[#F8FAFC]'} flex flex-col items-center justify-center p-6 lg:p-12 relative overflow-hidden font-sans`}>
+            <div className={`min-h-screen transition-colors duration-500 ${theme === 'dark' ? 'bg-[#0A0D14]' : 'bg-[#F8FAFC]'} flex flex-col items-center justify-center py-16 px-6 lg:px-12 relative overflow-y-auto font-sans`}>
                 {/* Background orbs */}
                 <div className={`absolute top-[-10%] left-[-10%] w-[600px] h-[600px] ${theme === 'dark' ? 'bg-indigo-500/10' : 'bg-indigo-500/5'} rounded-full blur-[120px] pointer-events-none`} />
                 <div className={`absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] ${theme === 'dark' ? 'bg-purple-500/10' : 'bg-purple-500/5'} rounded-full blur-[120px] pointer-events-none`} />
@@ -796,8 +796,8 @@ export default function Signup() {
                 </div>
 
                 {/* Footer Link */}
-                <div className="absolute bottom-12 left-0 right-0 text-center z-10">
-                    <p className={`${theme === 'dark' ? 'text-slate-600' : 'text-slate-400'} text-sm font-semibold uppercase tracking-widest`}>
+                <div className="mt-12 text-center z-10">
+                    <p className={`${theme === 'dark' ? 'text-slate-600' : 'text-slate-400'} text-[11px] font-black uppercase tracking-[0.2em]`}>
                         Already have an account?{' '}
                         <Link href="/login" className="text-indigo-500 font-black hover:text-indigo-400 hover:underline transition-colors ml-1">
                             Sign in →

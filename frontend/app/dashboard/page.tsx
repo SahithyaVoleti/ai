@@ -50,6 +50,7 @@ export default function Dashboard() {
     const [drillSearch, setDrillSearch] = useState('');
     const [activeDrillTab, setActiveDrillTab] = useState<'case_study' | 'behavioral' | 'projects' | 'self_intro'>('case_study');
     const [isDrillsLoading, setIsDrillsLoading] = useState(false);
+    const [videoToPlay, setVideoToPlay] = useState<string | null>(null);
 
     // --- RESUME BUILDER STATE ---
     const [userResumes, setUserResumes] = useState<any[]>([]);
@@ -89,8 +90,10 @@ export default function Dashboard() {
     }, [user, authLoading, router]);
 
     const fetchUserResumes = async () => {
+        if (!user?.id) return;
         try {
-            const res = await fetch("/api/resume");
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const res = await fetch(`${baseUrl}/api/resume?user_id=${user.id}`);
             const data = await res.json();
             if (Array.isArray(data)) {
                 setUserResumes(data);
@@ -118,24 +121,30 @@ export default function Dashboard() {
     };
 
     const handleSaveResume = async () => {
+        if (!user?.id) return;
         setIsSavingResume(true);
         try {
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
             const isUpdate = !!resumeForm.id;
-            const url = isUpdate ? `/api/resume?id=${resumeForm.id}` : "/api/resume";
+            const url = isUpdate ? `${baseUrl}/api/resume?id=${resumeForm.id}&user_id=${user.id}` : `${baseUrl}/api/resume`;
             const method = isUpdate ? "PUT" : "POST";
 
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(resumeForm),
+                body: JSON.stringify({ ...resumeForm, user_id: user.id }),
             });
 
             if (res.ok) {
                 await fetchUserResumes();
                 resetResumeForm();
+            } else {
+                const err = await res.json();
+                alert("Error saving: " + (err.error || err.message || "Unknown error"));
             }
         } catch (e) {
             console.error("Save Error:", e);
+            alert("Connection error to backend.");
         } finally {
             setIsSavingResume(false);
         }
@@ -159,12 +168,70 @@ export default function Dashboard() {
     };
 
     const handleDeleteResume = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this resume?")) return;
+        if (!user?.id || !confirm("Are you sure you want to delete this resume?")) return;
         try {
-            await fetch(`/api/resume?id=${id}`, { method: "DELETE" });
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            await fetch(`${baseUrl}/api/resume?id=${id}&user_id=${user.id}`, { method: "DELETE" });
             fetchUserResumes();
         } catch (e) {
             console.error("Delete Error:", e);
+        }
+    };
+
+    const handleDownloadPdf = async () => {
+        if (!user?.id) return;
+        try {
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+            const res = await fetch(`${baseUrl}/api/resume/builder`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    user_id: user.id,
+                    resume_data: {
+                        personal_info: {
+                            name: resumeForm.name,
+                            email: resumeForm.email,
+                            phone: resumeForm.phone,
+                            location: resumeForm.linkedin // Using linkedin as location field for now or placeholder
+                        },
+                        summary: resumeForm.summary,
+                        experience: resumeForm.experience.map(e => ({
+                            title: e.role,
+                            company: e.company,
+                            period: e.duration,
+                            responsibilities: [e.desc]
+                        })),
+                        education: resumeForm.education.map(edu => ({
+                            degree: edu.degree,
+                            institution: edu.school,
+                            year: edu.year,
+                            cgpa: (edu as any).grade || "N/A"
+                        })),
+                        skills: resumeForm.skills,
+                        projects: resumeForm.projects.map(p => ({
+                            title: p.name,
+                            tech: (p as any).tech || "",
+                            description: p.desc
+                        }))
+                    }
+                })
+            });
+
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Resume_${resumeForm.name.replace(/\s+/g, '_')}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } else {
+                alert("Failed to generate PDF. Check backend.");
+            }
+        } catch (e) {
+            console.error("PDF Generation Error:", e);
+            alert("Connection error.");
         }
     };
 
@@ -836,7 +903,21 @@ export default function Dashboard() {
         const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
-            reader.onloadend = () => setProfileData({ ...profileData, photo: reader.result as string });
+            reader.onloadend = async () => {
+                const photoSrc = reader.result as string;
+                setProfileData({ ...profileData, photo: photoSrc });
+                
+                // Auto-save photo logic to make it active instantly
+                try {
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/user/profile/update`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: user?.id, ...profileData, photo: photoSrc })
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') updateUser(data.user);
+                } catch (err) { console.error("Auto-save photo fail", err); }
+            };
             reader.readAsDataURL(file);
         }
     };
@@ -941,14 +1022,16 @@ export default function Dashboard() {
                                 className={`
                                     w-full flex items-center p-4 rounded-2xl transition-all duration-300 relative group
                                     ${activeTab === item.name
-                                        ? 'bg-slate-100 text-slate-900 shadow-sm border border-slate-100'
-                                        : item.isBypass ? 'text-amber-600 hover:bg-amber-50 border border-amber-100 mt-4' : 'text-slate-400 hover:text-slate-900 hover:bg-white'}
+                                        ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20 border-blue-500 active-tab-scale'
+                                        : item.isBypass ? 'text-amber-600 hover:bg-amber-50 border border-amber-100 mt-4' : 'text-slate-400 hover:text-slate-900 hover:bg-blue-50'}
                                     ${!isSidebarOpen && 'justify-center'}
                                 `}
                             >
-                                {activeTab === item.name && <div className="absolute left-0 w-1 h-6 bg-white dark:bg-white rounded-full translate-x-1" />}
-                                <item.icon size={20} className="shrink-0" />
-                                {isSidebarOpen && <span className="text-sm font-semibold tracking-tight ml-3">{item.name}</span>}
+                                {activeTab === item.name && (
+                                    <div className="absolute right-0 w-1 h-6 bg-white/40 rounded-full -translate-x-2" />
+                                )}
+                                <item.icon size={20} className={`shrink-0 ${activeTab === item.name ? 'text-white' : 'group-hover:text-blue-600 transition-colors'}`} />
+                                {isSidebarOpen && <span className="text-sm font-bold tracking-tight ml-3">{item.name}</span>}
                             </button>
                         ))}
                     </nav>
@@ -1061,7 +1144,7 @@ export default function Dashboard() {
                             className="flex items-center gap-3 p-1.5 bg-white dark:bg-white border border-slate-100 dark:border-slate-100 rounded-2xl hover:border-slate-300 dark:hover:border-white/20 transition-all cursor-pointer shadow-soft group"
                             onClick={() => setIsProfileOpen(!isProfileOpen)}
                         >
-                            <div className="w-10 h-10 rounded-xl bg-white dark:bg-white/5 border border-slate-100 dark:border-slate-100 flex items-center justify-center text-xs font-bold text-slate-900 dark:text-slate-900 group-hover:bg-slate-100 dark:group-hover:bg-white/10 transition-all">{userInitial}</div>
+                            <div className="w-10 h-10 rounded-xl bg-white dark:bg-white/5 border border-slate-100 dark:border-slate-100 flex items-center justify-center text-xs font-bold text-slate-900 dark:text-slate-900 group-hover:bg-slate-100 dark:group-hover:bg-white/10 transition-all overflow-hidden">{user?.photo ? <img src={user.photo} className="w-full h-full object-cover" /> : userInitial}</div>
                             <span className="text-sm font-bold text-slate-700 dark:text-slate-500 pr-3 hidden md:block">{user.name.split(' ')[0]}</span>
                         </div>
                         {isProfileOpen && (
@@ -1282,7 +1365,7 @@ export default function Dashboard() {
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <div className="px-3 py-1 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-slate-900 text-[10px] font-black rounded-full uppercase tracking-wider">
-                                                    Score: {res.atsScore}%
+                                                    Score: {res.ats_score || 0}%
                                                 </div>
                                             </div>
                                         </div>
@@ -1333,7 +1416,7 @@ export default function Dashboard() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <button onClick={() => window.print()} className="px-6 py-4 bg-white dark:bg-white border border-slate-100 dark:border-slate-100 text-slate-900 dark:text-slate-900 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-white dark:hover:bg-slate-700 transition-all flex items-center gap-2">
+                                    <button onClick={handleDownloadPdf} className="px-6 py-4 bg-white dark:bg-white border border-slate-100 dark:border-slate-100 text-slate-900 dark:text-slate-900 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-white dark:hover:bg-slate-700 transition-all flex items-center gap-2">
                                         <Download size={14} /> PDF
                                     </button>
                                     <button onClick={handleSaveResume} className="px-8 py-4 bg-white text-slate-900 border border-slate-200 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-white shadow-soft transition-all flex items-center gap-2">
@@ -1605,14 +1688,27 @@ export default function Dashboard() {
                             <div className="flex flex-col md:flex-row justify-between items-center gap-8 bg-white dark:bg-white 
                                 border border-slate-100 dark:border-slate-100 rounded-[3rem] p-10 md:p-14 
                                 text-slate-900 dark:text-slate-900 shadow-soft dark:shadow-none relative overflow-hidden group">
-                                <div className="relative space-y-4 text-center md:text-left z-10">
-                                    <div className="flex items-center gap-3 justify-center md:justify-start mb-2">
-                                        <span className="px-4 py-1.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest bg-slate-900 text-white flex items-center gap-1.5 shadow-lg shadow-slate-200">
-                                            <span>💳</span> {user.interviews_remaining || 0} Credits Available
-                                        </span>
+                                <div className="relative flex flex-col md:flex-row items-center gap-8 text-center md:text-left z-10">
+                                    <div className="relative group/photo w-24 h-24 md:w-32 md:h-32 shrink-0 rounded-full bg-slate-50 border-[6px] border-white flex justify-center items-center shadow-xl overflow-hidden cursor-pointer transition-transform hover:scale-105 duration-500">
+                                        {user?.photo ? (
+                                            <img src={user.photo} className="w-full h-full object-cover" alt="Profile" />
+                                        ) : (
+                                            <span className="text-4xl font-black text-blue-600">{userInitial}</span>
+                                        )}
+                                        <div className="absolute inset-0 bg-blue-900/60 opacity-0 group-hover/photo:opacity-100 flex items-center justify-center transition-all backdrop-blur-[2px]">
+                                            <Camera size={26} className="text-white drop-shadow-md" />
+                                        </div>
+                                        <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" onChange={handlePhotoUpload} title="Change Profile Photo" />
                                     </div>
-                                    <h1 className="text-4xl md:text-6xl font-black tracking-tighter leading-tight text-slate-900 dark:text-slate-900">Welcome back,<br />{user.name.split(' ')[0]}!</h1>
-                                    <p className="text-slate-500 dark:text-slate-400 text-lg md:text-xl font-medium max-w-lg">Ready to master your next interview? Your performance trend is up 12% this week.</p>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3 justify-center md:justify-start mb-2">
+                                            <span className="px-4 py-1.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest bg-slate-900 text-white flex items-center gap-1.5 shadow-lg shadow-slate-200">
+                                                <span>💳</span> {user.interviews_remaining || 0} Credits Available
+                                            </span>
+                                        </div>
+                                        <h1 className="text-4xl md:text-6xl font-black tracking-tighter leading-tight text-slate-900 dark:text-slate-900">Welcome back,<br />{user.name.split(' ')[0]}!</h1>
+                                        <p className="text-slate-500 dark:text-slate-400 text-lg md:text-xl font-medium max-w-lg">Ready to master your next interview? Your performance trend is up 12% this week.</p>
+                                    </div>
                                 </div>
                                 <button onClick={() => { enterFullScreen(); router.push('/?start=true'); }} className="relative z-10 bg-white text-slate-900 hover:bg-white hover:text-slate-900 border border-slate-200 px-10 py-5 rounded-[2rem] font-bold text-sm tracking-tight flex items-center gap-4 transition-all shadow-soft group/btn translate-x-1 hover:translate-x-0">
                                     Start Assessment <div className="p-1.5 bg-slate-100 dark:bg-white/20 rounded-full group-hover/btn:translate-x-1 transition-transform border border-slate-200/50 text-slate-600 dark:text-slate-900"><ArrowRight size={18} /></div>
@@ -1770,7 +1866,14 @@ export default function Dashboard() {
                                                             </div>
                                                         </td>
                                                         <td className="px-10 py-6 text-[11px] text-slate-500 font-bold uppercase tracking-tight">{new Date(inv.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                                                        <td className="px-10 py-6 text-right">
+                                                        <td className="px-10 py-6 text-right flex items-center justify-end gap-3">
+                                                            <button
+                                                                onClick={() => setVideoToPlay(`http://localhost:5000/api/video/stream/${inv.id}`)}
+                                                                className="p-3 bg-white border border-slate-100 text-blue-600 rounded-xl hover:bg-blue-50 transition-all shadow-soft group-hover/row:shadow-md"
+                                                                title="View Recording"
+                                                            >
+                                                                <Video size={18} />
+                                                            </button>
                                                             <button
                                                                 onClick={() => window.location.href = `http://localhost:5000/api/download_report?id=${inv.id}&plan_id=${user.plan_id}`}
                                                                 className="p-3 bg-white border border-slate-100 text-slate-900 rounded-xl hover:bg-white hover:text-slate-900 transition-all shadow-soft group-hover/row:shadow-md"
@@ -1854,41 +1957,135 @@ export default function Dashboard() {
                     )}
 
                     {activeTab === 'Settings' && (
-                        <div className="max-w-4xl space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
-                            <div className="bg-white  border border-slate-100 dark:border-slate-100 rounded-[3rem] p-10 md:p-14 shadow-soft dark:shadow-none">
-                                <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-900 mb-10 border-b border-slate-50 dark:border-slate-100 pb-8">Account Settings</h2>
-                                <div className="space-y-12">
-                                    <div className="flex flex-col md:flex-row items-center justify-between gap-8 p-8 bg-white dark:bg-white rounded-[2.5rem] border border-slate-100 dark:border-slate-100">
-                                        <div className="flex items-center gap-6">
-                                            <div className="w-20 h-20 rounded-3xl bg-white border border-slate-200 text-slate-900 text-3xl font-bold shadow-soft">{userInitial}</div>
-                                            <div>
-                                                <p className="text-2xl font-bold text-slate-800 dark:text-slate-900 tracking-tight">{user.name}</p>
-                                                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{user.email}</p>
+                        <div className="max-w-5xl space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+                            {/* Profile Header Card */}
+                            <div className="p-12 md:p-16 bg-white border border-slate-100 rounded-[3.5rem] text-slate-900 shadow-2xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-80 h-80 bg-blue-50 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:scale-110 transition-transform duration-1000"></div>
+                                <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
+                                    <div className="relative group/photo">
+                                        <div className="w-32 h-32 md:w-44 md:h-44 rounded-[2.5rem] bg-white border-2 border-blue-100 flex items-center justify-center text-5xl font-black text-blue-600 shadow-2xl overflow-hidden transition-transform duration-700 group-hover/photo:rotate-3">
+                                            {profileData.photo ? (
+                                                <img src={profileData.photo} className="w-full h-full object-cover" alt="Profile" />
+                                            ) : userInitial}
+                                        </div>
+                                        <div className="absolute inset-0 bg-blue-600/10 opacity-0 group-hover/photo:opacity-100 flex items-center justify-center gap-3 rounded-[2.5rem] transition-all duration-300 backdrop-blur-sm">
+                                            <button type="button" onClick={startCamera} className="p-4 bg-white text-blue-600 border border-blue-100 rounded-2xl hover:bg-blue-50 transition-all shadow-xl active:scale-95"><Camera size={22} /></button>
+                                            <label className="p-4 bg-white text-blue-600 border border-blue-100 rounded-2xl hover:bg-blue-50 cursor-pointer transition-all shadow-xl active:scale-95">
+                                                <Upload size={22} />
+                                                <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} />
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div className="text-center md:text-left flex-1">
+                                        <div className="inline-block px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-4 border border-blue-100">Verified Identity</div>
+                                        <h1 className="text-4xl md:text-5xl font-black mb-3 tracking-tighter text-slate-900 transition-colors group-hover:text-blue-600">{user?.name || "Member Profile"}</h1>
+                                        <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                                            <div className="flex items-center gap-2 text-slate-500 font-bold text-sm bg-blue-50/30 px-5 py-2.5 rounded-2xl border border-blue-50/50">
+                                                <Mail size={16} className="text-blue-500" /> {user?.email}
+                                            </div>
+                                            <div className="flex items-center gap-2 text-slate-500 font-bold text-sm bg-blue-50/30 px-5 py-2.5 rounded-2xl border border-blue-50/50">
+                                                <Smartphone size={16} className="text-blue-500" /> {user?.phone || 'No contact set'}
                                             </div>
                                         </div>
-                                        <button onClick={() => setIsProfileModalOpen(true)} className="px-10 py-4 bg-white dark:bg-white text-slate-900 dark:text-slate-900 border border-slate-100 dark:border-slate-100 rounded-2xl font-bold text-xs uppercase tracking-widest shadow-soft dark:shadow-none hover:shadow-lg dark:hover:bg-slate-700 hover:border-slate-300 transition-all active:scale-95">Update Profile</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <form onSubmit={handleUpdateProfile} className="space-y-10">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                                    {/* 1. PERSONAL INFORMATION */}
+                                    <div className="bg-white border border-slate-100 rounded-[3rem] p-10 shadow-soft space-y-8 hover:border-blue-100 transition-colors">
+                                        <h3 className="text-xl font-bold flex items-center gap-4 text-slate-800">
+                                            <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><UserIcon size={20} /></div> Personal Identity
+                                        </h3>
+                                        <div className="space-y-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Full Name</label>
+                                                <input type="text" value={profileData.name} onChange={e => setProfileData({ ...profileData, name: e.target.value })} className="w-full bg-slate-50 border border-slate-50 rounded-2xl px-6 py-4.5 text-sm font-bold focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-400/5 outline-none transition-all shadow-inner" placeholder="Enter your full name" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Email Address</label>
+                                                <input type="email" value={profileData.email} onChange={e => setProfileData({ ...profileData, email: e.target.value })} className="w-full bg-slate-50 border border-slate-50 rounded-2xl px-6 py-4.5 text-sm font-bold focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-400/5 outline-none transition-all shadow-inner" placeholder="Your primary email" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Contact Number</label>
+                                                <input type="text" value={profileData.phone} onChange={e => setProfileData({ ...profileData, phone: e.target.value })} className="w-full bg-slate-50 border border-slate-50 rounded-2xl px-6 py-4.5 text-sm font-bold focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-400/5 outline-none transition-all shadow-inner" placeholder="Primary contact phone" />
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <div className="space-y-6">
-                                        <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-2">Preferences</h4>
-                                        <div onClick={toggleTheme} className="p-8 bg-white dark:bg-white border border-slate-100 dark:border-slate-100 rounded-[2rem] flex items-center justify-between cursor-pointer hover:border-slate-300 dark:hover:border-white/20 transition-all shadow-soft dark:shadow-none group">
-                                            <div className="flex items-center gap-5">
-                                                <div className="p-4 bg-white dark:bg-white/5 text-slate-400 rounded-2xl transition-colors group-hover:bg-white group-hover:text-slate-900 dark:group-hover:bg-white">{theme === 'dark' ? <Moon size={22} /> : <Sun size={22} />}</div>
-                                                <div>
-                                                    <span className="block font-bold text-slate-800 dark:text-slate-900">Interface Theme</span>
-                                                    <span className="text-xs font-medium text-slate-400 dark:text-slate-500">Switch between light and dark modes</span>
+                                    {/* 2. ACADEMIC & RESUME */}
+                                    <div className="bg-white border border-slate-100 rounded-[3rem] p-10 shadow-soft space-y-8 hover:border-blue-100 transition-colors">
+                                        <h3 className="text-xl font-bold flex items-center gap-4 text-slate-800">
+                                            <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><School size={20} /></div> Education & Files
+                                        </h3>
+                                        <div className="space-y-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">University / Institution</label>
+                                                <input type="text" value={profileData.college_name} onChange={e => setProfileData({ ...profileData, college_name: e.target.value })} className="w-full bg-slate-50 border border-slate-50 rounded-2xl px-6 py-4.5 text-sm font-bold focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-400/5 outline-none transition-all shadow-inner" placeholder="e.g. Stanford University" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Academic Year</label>
+                                                <div className="relative">
+                                                    <select value={profileData.year} onChange={e => setProfileData({ ...profileData, year: e.target.value })} className="w-full bg-slate-50 border border-slate-50 rounded-2xl px-6 py-4.5 text-sm font-bold focus:bg-white focus:border-blue-400 outline-none transition-all shadow-inner appearance-none cursor-pointer">
+                                                        <option value="1st Year">1st Year</option>
+                                                        <option value="2nd Year">2nd Year</option>
+                                                        <option value="3rd Year">3rd Year</option>
+                                                        <option value="4th Year">4th Year</option>
+                                                        <option value="Graduate">Graduate</option>
+                                                    </select>
+                                                    <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
                                                 </div>
                                             </div>
-                                            <div className={`w-12 h-6 rounded-full relative transition-all duration-300 ${theme === 'dark' ? 'bg-white' : 'bg-slate-200'}`}>
-                                                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 ${theme === 'dark' ? 'right-1' : 'left-1'}`} />
+                                            <div className="relative p-6 bg-blue-50/40 rounded-3xl border border-blue-100/50 flex items-center justify-between group/resume shadow-inner">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="p-3 bg-white text-blue-600 rounded-2xl shadow-sm border border-blue-50"><FileText size={20} /></div>
+                                                    <div>
+                                                        <p className="font-bold text-sm leading-none text-slate-900">Global Resume</p>
+                                                        <p className="text-blue-500 text-[9px] font-black uppercase mt-1 tracking-widest">Linked AI Knowledge</p>
+                                                    </div>
+                                                </div>
+                                                <label className="px-6 py-2.5 bg-blue-600 text-white border border-blue-500 rounded-xl font-bold text-[10px] cursor-pointer hover:bg-blue-700 hover:scale-105 transition-all uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-95">
+                                                    Update Protocol <input type="file" className="hidden" accept=".pdf" onChange={handleResumeChange} />
+                                                </label>
                                             </div>
                                         </div>
                                     </div>
+                                </div>
 
-                                    <div className="pt-6 flex flex-col sm:flex-row gap-4">
-                                        <button onClick={logout} className="flex items-center justify-center gap-3 px-8 py-4 text-slate-900 dark:text-slate-900 font-bold text-sm bg-slate-100 dark:bg-white rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"><LogOut size={18} /> Sign Out</button>
-                                        <button onClick={handleDeleteAccount} className="flex items-center justify-center gap-3 px-8 py-4 text-slate-900 dark:text-rose-500 font-bold text-sm bg-white dark:bg-rose-500/10 rounded-2xl hover:bg-white dark:hover:bg-rose-500/20 transition-all ml-auto"><ShieldAlert size={18} /> Delete Account Permanently</button>
+                                <div className="flex flex-col md:flex-row gap-6 pt-6">
+                                    <button type="submit" disabled={saving} className="flex-[2] py-6 bg-blue-600 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-blue-500/30 hover:bg-blue-700 hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50">
+                                        {saving ? 'Synchronizing Profile...' : 'Finalize & Update Identity'}
+                                    </button>
+                                    <button type="button" onClick={logout} className="flex-1 py-6 bg-slate-100 text-slate-600 rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs hover:bg-rose-50 hover:text-rose-600 transition-all flex items-center justify-center gap-3 active:scale-95">
+                                        <LogOut size={16} /> Sign Out Securely
+                                    </button>
+                                </div>
+                            </form>
+
+                            {/* PREFERENCES & SECURITY */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6">
+                                <div onClick={toggleTheme} className="p-10 bg-white border border-slate-100 rounded-[3rem] flex items-center justify-between cursor-pointer hover:border-blue-400 hover:shadow-2xl hover:shadow-blue-500/5 transition-all shadow-soft group">
+                                    <div className="flex items-center gap-5">
+                                        <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl transition-all group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white"><Sun size={24} /></div>
+                                        <div>
+                                            <span className="block font-black text-lg text-slate-900 tracking-tight">Interface Theme</span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Light / Dark Protocol</span>
+                                        </div>
                                     </div>
+                                    <div className={`w-14 h-7 rounded-full p-1 relative transition-all duration-300 ${theme === 'dark' ? 'bg-blue-600' : 'bg-slate-200'}`}>
+                                        <div className={`w-5 h-5 bg-white rounded-full transition-all duration-300 shadow-xl ${theme === 'dark' ? 'translate-x-[28px]' : 'translate-x-0'}`} />
+                                    </div>
+                                </div>
+                                <div onClick={handleDeleteAccount} className="p-10 bg-white border border-slate-100 rounded-[3rem] flex items-center justify-between cursor-pointer hover:border-rose-400 transition-all shadow-soft group">
+                                    <div className="flex items-center gap-5">
+                                        <div className="p-4 bg-rose-50 text-rose-500 rounded-2xl transition-all group-hover:scale-110"><ShieldAlert size={24} /></div>
+                                        <div>
+                                            <span className="block font-black text-lg text-rose-500 tracking-tight">Security Wipe</span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-rose-400">Permanent Termination</span>
+                                        </div>
+                                    </div>
+                                    <ArrowRight className="text-rose-400 group-hover:translate-x-1 transition-transform" size={24} />
                                 </div>
                             </div>
                         </div>
@@ -2344,6 +2541,35 @@ export default function Dashboard() {
                             >
                                 Practice Drill
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* VIDEO PLAYBACK MODAL */}
+            {videoToPlay && (
+                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 bg-slate-900/90 backdrop-blur-xl animate-in fade-in duration-500">
+                    <div className="w-full max-w-4xl bg-black rounded-[2rem] shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-500">
+                        {/* Header */}
+                        <div className="absolute top-0 inset-x-0 p-5 bg-gradient-to-b from-black/80 to-transparent flex justify-between items-center z-10">
+                            <div className="flex items-center gap-3 text-white">
+                                <Video size={24} className="text-blue-500" />
+                                <span className="font-bold tracking-widest text-sm uppercase">Assessment Recording</span>
+                            </div>
+                            <button onClick={() => setVideoToPlay(null)} className="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-all backdrop-blur-md">
+                                <X size={24} className="text-white" />
+                            </button>
+                        </div>
+                        {/* Video Element */}
+                        <div className="aspect-video w-full bg-black flex items-center justify-center">
+                            <video 
+                                src={videoToPlay} 
+                                controls 
+                                autoPlay 
+                                className="w-full h-full object-contain"
+                                crossOrigin="anonymous"
+                            >
+                                Your browser does not support the video tag.
+                            </video>
                         </div>
                     </div>
                 </div>

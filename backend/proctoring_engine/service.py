@@ -90,7 +90,7 @@ class ProctoringService:
         self.face_mesh = None
         if has_mediapipe:
             self.mp_face_mesh = face_mesh
-            self.face_mesh = self.mp_face_mesh.FaceMesh(max_num_faces=4, min_detection_confidence=0.3, min_tracking_confidence=0.3, refine_landmarks=True)
+            self.face_mesh = self.mp_face_mesh.FaceMesh(max_num_faces=4, min_detection_confidence=0.15, min_tracking_confidence=0.15, refine_landmarks=True)
             
         print(f"✨ Proctoring Engine: READY (Biometrics: {'ON' if (has_deepface or has_face_rec) else 'FALLBACK'}, Object Detection: {'ON' if has_yolo else 'OFF'})")
         
@@ -770,9 +770,9 @@ class ProctoringService:
                 gray = clahe.apply(gray)
                 
                 # Try alt2 first (often more robust to different lighting)
-                faces = self.face_cascade_alt2.detectMultiScale(gray, 1.1, 4, minSize=(30, 30))
+                faces = self.face_cascade_alt2.detectMultiScale(gray, 1.05, 3, minSize=(20, 20))
                 if len(faces) == 0:
-                    faces = self.face_cascade.detectMultiScale(gray, 1.1, 4, minSize=(30, 30))
+                    faces = self.face_cascade.detectMultiScale(gray, 1.05, 3, minSize=(20, 20))
                 
                 if len(faces) == 0:
                      if self.detect_head_silhouette(frame):

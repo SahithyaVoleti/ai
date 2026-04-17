@@ -8,7 +8,7 @@ import {
     LogOut, User as UserIcon, Mail, Phone, MapPin, Linkedin, Github, 
     Globe, Activity, Plus, Trash2, GraduationCap, Briefcase, BookOpen, 
     Code, Download, CheckCircle, ArrowLeft, Sparkles, X, Shield, Wrench, Clock,
-    Link as LinkIcon, ExternalLink, Hash, Calendar, FileText, Star
+    Link as LinkIcon, ExternalLink, Hash, Calendar, FileText, Star, Menu
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -103,27 +103,29 @@ export default function ResumeBuilderPage() {
     }, [user]);
 
     const fetchUserResumes = async () => {
+        if (!user?.id) return;
         try {
-            const res = await fetch("/api/resume");
+            const baseUrl = typeof window !== 'undefined' ? `http://${window.location.hostname}:5000` : 'http://localhost:5000';
+            const res = await fetch(`${baseUrl}/api/resume?user_id=${user.id}`);
             const data = await res.json();
             if (Array.isArray(data)) {
                 setUserResumes(data);
-                if (data.length > 0) {
-                   // Optional: Auto-load latest if needed
-                }
             }
-        } catch (e) { console.error("Fetch Error:", e); }
+        } catch (e: any) { console.warn("Fetch User Resumes Warning:", e?.message || e); }
     };
 
     const handleSaveResume = async () => {
+        if (!user?.id) return;
         setIsSavingResume(true);
         try {
-            const isUpdate = !!resumeForm.id;
-            const url = isUpdate ? `/api/resume?id=${resumeForm.id}` : "/api/resume";
+            const baseUrl = typeof window !== 'undefined' ? `http://${window.location.hostname}:5000` : 'http://localhost:5000';
+            const isUpdate = !!(resumeForm as any).id;
+            const url = isUpdate ? `${baseUrl}/api/resume?id=${(resumeForm as any).id}&user_id=${user.id}` : `${baseUrl}/api/resume`;
+            
             const res = await fetch(url, {
                 method: isUpdate ? "PUT" : "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(resumeForm),
+                body: JSON.stringify({ ...resumeForm, user_id: user.id }),
             });
 
             if (res.ok) {
@@ -132,9 +134,84 @@ export default function ResumeBuilderPage() {
                  const successMsg = "Resume Architect Synchronized Successfully!";
                  alert(successMsg);
                  speak(successMsg);
+                 fetchUserResumes();
+            } else {
+                 const err = await res.json();
+                 alert("Sync Error: " + (err.error || "Failed to save"));
             }
-        } catch (e) { console.error("Save Error:", e); }
+        } catch (e: any) { 
+            console.warn("Save Error:", e?.message || e);
+            alert("Connection error to architect server.");
+        }
         finally { setIsSavingResume(false); }
+    };
+
+    const handleDeleteResume = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!confirm("Are you sure you want to delete this resume architecture plan?")) return;
+        try {
+            const baseUrl = typeof window !== 'undefined' ? `http://${window.location.hostname}:5000` : 'http://localhost:5000';
+            await fetch(`${baseUrl}/api/resume?id=${id}&user_id=${user?.id}`, { method: 'DELETE' });
+            fetchUserResumes();
+            speak("Design element removed from archives.");
+        } catch (err: any) { console.warn("Delete Resume Warning:", err?.message || err); alert("Connection error while deleting."); }
+    };
+
+    const handleDownloadPdf = async () => {
+        if (!user?.id) return;
+        try {
+            const baseUrl = typeof window !== 'undefined' ? `http://${window.location.hostname}:5000` : 'http://localhost:5000';
+            const res = await fetch(`${baseUrl}/api/resume/builder`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    user_id: user.id,
+                    resume_data: {
+                        personal_info: {
+                            name: resumeForm.name,
+                            email: resumeForm.email,
+                            phone: resumeForm.phone,
+                            location: resumeForm.location
+                        },
+                        summary: resumeForm.summary,
+                        experience: resumeForm.experience.map(e => ({
+                            title: e.role,
+                            company: e.company,
+                            period: e.duration,
+                            responsibilities: [e.desc]
+                        })),
+                        education: resumeForm.education.map(edu => ({
+                            degree: edu.degree,
+                            institution: edu.school,
+                            year: edu.year,
+                            cgpa: edu.grade || "N/A"
+                        })),
+                        skills: resumeForm.skills.map(s => `${s.category}: ${s.list}`),
+                        projects: resumeForm.projects.map(p => ({
+                            title: p.name,
+                            tech: p.tech,
+                            description: p.desc
+                        }))
+                    }
+                })
+            });
+
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Resume_${resumeForm.name.replace(/\s+/g, '_')}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } else {
+                alert("Failed to generate PDF. Check backend.");
+            }
+        } catch (e) {
+            console.error("PDF Generation Error:", e);
+            alert("Connection error.");
+        }
     };
 
     const handlePrint = () => {
@@ -144,10 +221,21 @@ export default function ResumeBuilderPage() {
     if (!user) return null;
 
     return (
-        <div className="min-h-screen bg-[#fdfdfd] text-slate-900 font-inter flex flex-col md:flex-row overflow-hidden">
+        <div className="min-h-screen bg-[#fdfdfd] text-slate-900 font-inter flex flex-col md:flex-row h-screen overflow-hidden relative">
+            
+            {/* MOBILE MENU TOGGLE */}
+            <button 
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="md:hidden fixed top-6 right-6 z-[110] w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-all"
+            >
+                {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+
             {/* --- SIDEBAR --- */}
-            <aside className={`bg-white border-r border-slate-100 transition-all duration-500 flex flex-col z-[100] no-print ${isSidebarOpen ? 'w-80' : 'w-24'}`}>
-                <div className="p-8 flex items-center justify-between">
+            <aside className={`bg-white border-r border-slate-100 transition-all duration-500 overflow-hidden flex flex-col z-[100] no-print 
+                ${isSidebarOpen ? 'w-full md:w-80 translate-x-0' : 'w-0 md:w-24 -translate-x-full md:translate-x-0'} 
+                fixed md:relative inset-y-0 left-0 shadow-2xl md:shadow-none`}>
+                <div className="p-8 flex items-center justify-between shrink-0">
                     <Link href="/dashboard" className="flex items-center gap-4 group">
                         <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200 group-hover:rotate-6 transition-all duration-500">
                             <Zap size={24} fill="currentColor" />
@@ -170,8 +258,8 @@ export default function ResumeBuilderPage() {
                             href={item.path}
                             className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-bold text-sm transition-all duration-300 ${item.active ? 'bg-blue-600 text-white shadow-xl shadow-blue-200' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-900'}`}
                         >
-                            <item.icon size={20} />
-                            {isSidebarOpen && <span>{item.name}</span>}
+                            <item.icon size={20} className="shrink-0" />
+                            {(isSidebarOpen || (typeof window !== 'undefined' && window.innerWidth < 768)) && <span className="whitespace-nowrap">{item.name}</span>}
                         </Link>
                     ))}
                 </nav>
@@ -182,20 +270,25 @@ export default function ResumeBuilderPage() {
                 <div className="max-w-[1700px] mx-auto space-y-8">
                     
                     {/* TOP HEADER */}
-                    <div className="flex items-center justify-between mb-8 no-print">
-                        <div className="flex items-center gap-6">
-                            <button onClick={() => router.push('/dashboard')} className="p-4 bg-white border border-slate-100 text-slate-400 rounded-2xl hover:text-slate-900 transition-all shadow-soft group">
-                                <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 no-print">
+                        <div className="flex items-center gap-5">
+                            <button 
+                                onClick={() => router.push('/dashboard')} 
+                                className="group flex items-center justify-center w-12 h-12 bg-white border border-slate-100 text-slate-400 rounded-2xl hover:text-blue-600 hover:border-blue-100 transition-all shadow-sm hover:shadow-md"
+                                title="Return to Dashboard"
+                            >
+                                <ArrowLeft size={22} className="group-hover:-translate-x-1 transition-transform" />
                             </button>
+                            <div className="h-10 w-[1px] bg-slate-100 hidden md:block"></div> {/* Divider */}
                             <div>
-                                <h2 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
-                                    Resume Architect <Sparkles className="text-blue-500" size={24} />
-                                </h2>
-                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Direct Live Cloud Synchronization</p>
+                                <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                                    Resume Architect <Sparkles className="text-blue-500 animate-pulse" size={24} />
+                                </h1>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Direct Cloud Sync • v2.0</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <button onClick={handlePrint} className="px-6 py-4 bg-white border border-slate-100 text-slate-900 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2">
+                            <button onClick={handleDownloadPdf} className="px-6 py-4 bg-white border border-slate-100 text-slate-900 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2">
                                 <Download size={14} /> PDF Export
                             </button>
                             <button onClick={handleSaveResume} disabled={isSavingResume} className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all flex items-center gap-2 disabled:bg-slate-300">
@@ -204,10 +297,10 @@ export default function ResumeBuilderPage() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+                    <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start h-full pb-20">
                         
                         {/* --- FORM COLUMN (LEFT) --- */}
-                        <div className="xl:col-span-5 space-y-6 no-print max-h-[calc(100vh-200px)] overflow-y-auto pr-4 custom-scrollbar">
+                        <div className="xl:col-span-5 space-y-6 no-print md:max-h-full overflow-y-auto md:overflow-visible pr-0 md:pr-4 custom-scrollbar px-2 md:px-0">
                             
                             {/* 1. PERSONAL IDENTITY */}
                             <div className="bg-white border border-slate-100 rounded-[2rem] p-8 shadow-soft space-y-8">
@@ -232,11 +325,11 @@ export default function ResumeBuilderPage() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Full Name</label>
-                                        <input value={resumeForm.name} onChange={(e) => setResumeForm({ ...resumeForm, name: e.target.value })} className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:border-blue-400 outline-none font-bold text-sm" placeholder="Voleti Sahithya Lakshmi" />
+                                        <input value={resumeForm.name} onChange={(e) => setResumeForm({ ...resumeForm, name: e.target.value })} className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:border-blue-400 outline-none font-bold text-sm" placeholder="Your Full Name" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Email</label>
-                                        <input value={resumeForm.email} onChange={(e) => setResumeForm({ ...resumeForm, email: e.target.value })} className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:border-blue-400 outline-none font-bold text-sm" placeholder="sahithya@example.com" />
+                                        <input value={resumeForm.email} onChange={(e) => setResumeForm({ ...resumeForm, email: e.target.value })} className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:border-blue-400 outline-none font-bold text-sm" placeholder="name@domain.com" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Phone</label>
@@ -458,7 +551,7 @@ export default function ResumeBuilderPage() {
                         <div className="xl:col-span-7 group/preview print:block print:col-span-12 print:overflow-visible print:max-h-none">
                              <div className="sticky top-8 bg-white border-8 border-slate-900/5 rounded-[3rem] shadow-2xl p-4 min-h-[1100px] transform transition-transform group-hover/preview:scale-[1.005] duration-500 origin-top overflow-hidden preview-card print:border-0 print:shadow-none print:p-0 print:min-h-0 print:rounded-none">
                                  
-                                 <div className="bg-white p-12 md:p-16 text-slate-900 font-serif leading-snug mx-auto max-w-[850px] print:p-0 print:max-w-none">
+                                 <div className="bg-white p-6 md:p-16 text-slate-900 font-serif leading-snug mx-auto max-w-[850px] print:p-0 print:max-w-none">
                                      
                                      {/* 1. HEADER (CENTERED + PHOTO) */}
                                      {resumeForm.photo ? (
@@ -481,7 +574,7 @@ export default function ResumeBuilderPage() {
                                         </div>
                                      ) : (
                                         <div className="text-center mb-10 space-y-3">
-                                            <h1 className="text-4xl font-extrabold uppercase tracking-tight text-slate-950" style={{ fontVariantCaps: 'small-caps' }}>{resumeForm.name || "VOLETI SAHITHYA LAKSHMI"}</h1>
+                                            <h1 className="text-4xl font-extrabold uppercase tracking-tight text-slate-950" style={{ fontVariantCaps: 'small-caps' }}>{resumeForm.name || "YOUR FULL NAME"}</h1>
                                             <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[13px] font-medium text-slate-600">
                                                 {resumeForm.location && <span>{resumeForm.location}</span>}
                                                 {resumeForm.phone && <span>• {resumeForm.phone}</span>}
@@ -669,10 +762,7 @@ export default function ResumeBuilderPage() {
                                      )}
 
                                      {/* 10. CORE IDENTITY / FOOTER */}
-                                     <div className="pt-12 border-t border-slate-50 flex justify-between items-center opacity-30">
-                                         <span className="text-[10px] font-black tracking-widest uppercase">Verified Digital Protocol AA-{user.id}-V2</span>
-                                         <span className="text-[10px] font-black tracking-widest uppercase">AI Architect Optimized</span>
-                                     </div>
+                                     {/* CORE IDENTITY / FOOTER REMOVED AS PER USER REQUEST */}
                                  </div>
                              </div>
                         </div>

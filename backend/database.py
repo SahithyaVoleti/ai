@@ -117,6 +117,24 @@ def init_db(app):
             )
         ''')
 
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS resumes (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                name TEXT,
+                email TEXT,
+                phone TEXT,
+                linkedin TEXT,
+                portfolio TEXT,
+                summary TEXT,
+                skills JSONB,
+                experience JSONB,
+                education JSONB,
+                projects JSONB,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
         # PostgreSQL Migrations
         pg_migrations = [
             "ALTER TABLE users ADD COLUMN IF NOT EXISTS resume_score REAL",
@@ -208,17 +226,36 @@ def init_db(app):
                 pass 
 
         c.execute('''
-            CREATE TABLE IF NOT EXISTS interviews (
+            CREATE TABLE IF NOT EXISTS resumes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                overall_score REAL,
-                details JSON,
-                video_path TEXT,
-                status TEXT DEFAULT 'started',
-                FOREIGN KEY (user_id) REFERENCES users (id)
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                name TEXT,
+                email TEXT,
+                phone TEXT,
+                linkedin TEXT,
+                portfolio TEXT,
+                summary TEXT,
+                skills TEXT,
+                experience TEXT,
+                education TEXT,
+                projects TEXT,
+                ats_score REAL DEFAULT 0.0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+        
+        # Add ats_score migration for SQLite
+        try:
+            c.execute("ALTER TABLE resumes ADD COLUMN ats_score REAL DEFAULT 0.0")
+        except:
+            pass
+    
+    # Add ats_score migration for Postgres (global check)
+    if db_type == 'postgres':
+        try:
+            c.execute("ALTER TABLE resumes ADD COLUMN IF NOT EXISTS ats_score REAL DEFAULT 0.0")
+        except:
+            pass
     
     conn.commit()
     conn.close()
@@ -1086,3 +1123,100 @@ def consume_interview_credit(user_id):
         print(f"Error consuming credit: {e}")
         return False
     finally: conn.close()
+
+# ==============================================================================
+# 📄 RESUME BUILDER DATABASE OPERATIONS
+# ==============================================================================
+
+def save_resume(user_id, data, resume_id=None):
+    """Saves a new resume or updates an existing one."""
+    conn, db_type = get_db_connection()
+    c = conn.cursor()
+    try:
+        skills = json.dumps(data.get('skills', []))
+        exp = json.dumps(data.get('experience', []))
+        edu = json.dumps(data.get('education', []))
+        proj = json.dumps(data.get('projects', []))
+        score = data.get('ats_score', 0.0)
+        
+        if resume_id:
+            query = """UPDATE resumes SET name=?, email=?, phone=?, linkedin=?, portfolio=?, 
+                       summary=?, skills=?, experience=?, education=?, projects=?, ats_score=? 
+                       WHERE id=? AND user_id=?"""
+            params = (data.get('name'), data.get('email'), data.get('phone'), 
+                      data.get('linkedin'), data.get('portfolio'), data.get('summary'),
+                      skills, exp, edu, proj, score, resume_id, user_id)
+        else:
+            query = """INSERT INTO resumes (user_id, name, email, phone, linkedin, portfolio, 
+                       summary, skills, experience, education, projects, ats_score) 
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+            params = (user_id, data.get('name'), data.get('email'), data.get('phone'), 
+                      data.get('linkedin'), data.get('portfolio'), data.get('summary'),
+                      skills, exp, edu, proj, score)
+            
+        if db_type == 'postgres':
+            query = query.replace('?', '%s')
+            if not resume_id:
+                query += " RETURNING id"
+                c.execute(query, params)
+                res_id = c.fetchone()[0]
+            else:
+                c.execute(query, params)
+                res_id = resume_id
+        else:
+            c.execute(query, params)
+            res_id = resume_id if resume_id else c.lastrowid
+            
+        conn.commit()
+        return res_id
+    except Exception as e:
+        print(f"Error saving resume: {e}")
+        return None
+    finally:
+        conn.close()
+
+def get_user_resumes(user_id):
+    """Fetches all resumes for a specific user."""
+    conn, db_type = get_db_connection()
+    if db_type == 'postgres':
+        c = conn.cursor(cursor_factory=RealDictCursor)
+    else:
+        c = conn.cursor()
+        
+    query = "SELECT * FROM resumes WHERE user_id = ? ORDER BY created_at DESC"
+    if db_type == 'postgres':
+        query = query.replace('?', '%s')
+        
+    c.execute(query, (user_id,))
+    rows = c.fetchall()
+    conn.close()
+    
+    results = []
+    for r in rows:
+        row = dict(r)
+        # Parse JSON fields
+        for field in ['skills', 'experience', 'education', 'projects']:
+            if isinstance(row.get(field), str):
+                try:
+                    row[field] = json.loads(row[field])
+                except:
+                    row[field] = []
+        results.append(row)
+    return results
+
+def delete_resume(resume_id, user_id):
+    """Deletes a specific resume."""
+    conn, db_type = get_db_connection()
+    c = conn.cursor()
+    try:
+        query = "DELETE FROM resumes WHERE id = ? AND user_id = ?"
+        if db_type == 'postgres':
+            query = query.replace('?', '%s')
+        c.execute(query, (resume_id, user_id))
+        conn.commit()
+        return c.rowcount > 0
+    except Exception as e:
+        print(f"Error deleting resume: {e}")
+        return False
+    finally:
+        conn.close()

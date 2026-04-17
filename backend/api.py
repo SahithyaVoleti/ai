@@ -2262,12 +2262,87 @@ def build_resume():
         return send_file(
             pdf_buffer,
             as_attachment=True,
-            download_name=f"Resume_{resume_data['personal']['name'].replace(' ', '_')}.pdf",
+            download_name=f"Resume_{resume_data.get('personal_info', {}).get('name', 'Candidate').replace(' ', '_')}.pdf",
             mimetype='application/pdf'
         )
     except Exception as e:
         print(f"Resume building failed: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
+
+# ==============================================================================
+# 📄 RESUME BUILDER ENDPOINTS
+# ==============================================================================
+
+@app.route('/api/resume', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def manage_resumes():
+    try:
+        if request.method == 'GET':
+            user_id = request.args.get('user_id')
+            if not user_id:
+                return jsonify({"error": "User ID required"}), 400
+            resumes = database.get_user_resumes(user_id)
+            return jsonify(resumes)
+
+        elif request.method == 'POST':
+            data = request.json
+            user_id = data.get('user_id')
+            resume_data = data.get('resume_data')
+            resume_id = data.get('id')
+            
+            if not user_id or not resume_data:
+                return jsonify({"error": "User ID required"}), 400
+            
+            # Calculate ATS Score based on the built content
+            full_text = f"{resume_data.get('summary', '')} "
+            for exp in resume_data.get('experience', []):
+                full_text += f"{exp.get('role', '')} {exp.get('company', '')} {exp.get('desc', '')} "
+            for proj in resume_data.get('projects', []):
+                full_text += f"{proj.get('name', '')} {proj.get('desc', '')} "
+            for edu in resume_data.get('education', []):
+                full_text += f"{edu.get('degree', '')} {edu.get('school', '')} "
+            full_text += " ".join(resume_data.get('skills', []))
+            
+            analysis = resume_analyzer.analyze_resume_ats(full_text, resume_data.get('skills', []))
+            resume_data['ats_score'] = analysis['score']
+
+            # Save/Update builder data
+            new_id = database.save_resume(user_id, resume_data, resume_id)
+            
+            return jsonify({
+                "status": "success", 
+                "id": new_id, 
+                "message": "Resume saved successfully", 
+                "score": analysis['score']
+            })
+
+        elif request.method == 'PUT':
+            data = request.json
+            user_id = data.get('user_id')
+            resume_id = request.args.get('id') or data.get('id')
+            
+            if not user_id or not resume_id:
+                return jsonify({"error": "User ID and Resume ID required"}), 400
+                
+            res_id = database.save_resume(user_id, data, resume_id)
+            if res_id:
+                return jsonify({"status": "success", "id": res_id})
+            return jsonify({"status": "error", "message": "Failed to update resume"}), 500
+
+        elif request.method == 'DELETE':
+            user_id = request.args.get('user_id')
+            resume_id = request.args.get('id')
+            
+            if not user_id or not resume_id:
+                return jsonify({"error": "User ID and Resume ID required"}), 400
+                
+            success = database.delete_resume(resume_id, user_id)
+            if success:
+                return jsonify({"status": "success"})
+            return jsonify({"status": "error", "message": "Failed to delete resume"}), 500
+
+    except Exception as e:
+        print(f"Resume API Error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     start_flask_server()

@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { 
     ChevronLeft, Sparkles, Monitor, Mic, Shield, 
     BarChart, Brain, Terminal, Zap, Globe, 
-    Lock, Database, CheckCircle, ArrowRight, Sun, Moon, LogOut
+    Lock, Database, CheckCircle, ArrowRight, Sun, Moon, LogOut,
+    FileText, SearchCheck, Layout, Video
 } from 'lucide-react';
 import { useTheme } from '../theme-context';
 import { useAuth } from '../auth-context';
@@ -23,9 +24,21 @@ export default function FeaturesPage() {
             color: "blue"
         },
         {
+            title: "Resume Builder",
+            desc: "Build a high-intent, ATS-optimized resume in minutes with our intelligent document synthesizer. Export premium PDF formats tailored for Silicon Valley standards.",
+            icon: <FileText className="text-blue-600" />,
+            color: "blue"
+        },
+        {
             title: "Voice-First Interaction",
             desc: "Experience zero-latency voice interaction. The AI listens, processes your speech, and responds with natural articulation, simulating a real human conversation experience.",
             icon: <Mic className="text-blue-600" />,
+            color: "blue"
+        },
+        {
+            title: "Resume Score Analyzer",
+            desc: "Get instant feedback on your resume's marketability. Our ATS engine scores your skills, projects, and impact, providing actionable insights to reach the top 1% of applicants.",
+            icon: <SearchCheck className="text-blue-600" />,
             color: "blue"
         },
         {
@@ -44,6 +57,18 @@ export default function FeaturesPage() {
             title: "Technical Analytics",
             desc: "Receive a deep-dive analysis of your performance. We evaluate technical accuracy, communication clarity, confidence levels, and problem-solving efficiency.",
             icon: <BarChart className="text-blue-600" />,
+            color: "blue"
+        },
+        {
+            title: "Session Video Replay",
+            desc: "Review your performance like a pro. Every session is recorded with synchronized telemetry, allowing you to watch back and analyze your micro-expressions and speech patterns.",
+            icon: <Video className="text-blue-600" />,
+            color: "blue"
+        },
+        {
+            title: "Global Interview Modules",
+            desc: "Choose from hundreds of specialized modules covering System Design, HR, Technical Core, and more. Tailored for top-tier companies like Google, Meta, and Amazon.",
+            icon: <Globe className="text-blue-600" />,
             color: "blue"
         },
     ];

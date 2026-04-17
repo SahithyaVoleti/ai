@@ -76,37 +76,50 @@ def analyze_resume_ats(resume_text, detected_skills):
     recommended_skills = []
     suggested_courses = []
 
+    # Use detected_skills if provided, otherwise check raw text
+    if not detected_skills:
+        # Simple extraction from text based on keyword lists
+        detected_skills = []
+        all_keywords = DS_KEYWORDS + WEB_KEYWORDS + ANDROID_KEYWORDS + IOS_KEYWORDS + UIUX_KEYWORDS + CLOUD_KEYWORDS + DEVOPS_KEYWORDS + CYBER_KEYWORDS
+        text_lower = resume_text.lower()
+        for k in all_keywords:
+            if k.lower() in text_lower:
+                detected_skills.append(k)
+
     skills_lower = [s.lower() for s in detected_skills]
     
-    if any(k in skills_lower for k in CLOUD_KEYWORDS):
+    # Also check raw text for stronger detection
+    text_lower = resume_text.lower()
+    
+    if any(k in skills_lower for k in CLOUD_KEYWORDS) or any(k.lower() in text_lower for k in CLOUD_KEYWORDS):
         reco_field = "Cloud Engineering"
         recommended_skills = ['AWS/Azure/GCP','Terraform','Kubernetes','Cloud Security','Serverless Architecture','DevSecOps','Cloud Migration','IaC','Networking','Load Balancing']
-        suggested_courses = ds_course # Fallback to DS for now as specific cloud courses weren't in snippet
-    elif any(k in skills_lower for k in DEVOPS_KEYWORDS):
+        suggested_courses = ds_course
+    elif any(k in skills_lower for k in DEVOPS_KEYWORDS) or any(k.lower() in text_lower for k in DEVOPS_KEYWORDS):
         reco_field = "DevOps Engineering"
         recommended_skills = ['Jenkins','CI/CD Pipelines','Ansible','GitOps','Observability','Helm','Shell Scripting','Infrastructure Monitoring','Docker Swarm','Kubernetes Admin']
         suggested_courses = ds_course
-    elif any(k in skills_lower for k in CYBER_KEYWORDS):
+    elif any(k in skills_lower for k in CYBER_KEYWORDS) or any(k.lower() in text_lower for k in CYBER_KEYWORDS):
         reco_field = "Cyber Security"
         recommended_skills = ['Ethical Hacking','Network Security','SIEM','Vulnerability Mgmt','OWASP','Digital Forensics','Incident Response','Cryptographic Protocols']
         suggested_courses = ds_course
-    elif any(k in skills_lower for k in DS_KEYWORDS):
+    elif any(k in skills_lower for k in DS_KEYWORDS) or any(k.lower() in text_lower for k in DS_KEYWORDS):
         reco_field = "Data Science"
         recommended_skills = ['Data Visualization','Predictive Analysis','Statistical Modeling','Data Mining','Clustering & Classification','Data Analytics','Quantitative Analysis','Web Scraping','ML Algorithms','Keras','Pytorch','Probability','Scikit-learn','Tensorflow',"Flask",'Streamlit']
         suggested_courses = ds_course
-    elif any(k in skills_lower for k in WEB_KEYWORDS):
+    elif any(k in skills_lower for k in WEB_KEYWORDS) or any(k.lower() in text_lower for k in WEB_KEYWORDS):
         reco_field = "Web Development"
         recommended_skills = ['React','Django','Node JS','React JS','php','laravel','Magento','wordpress','Javascript','Angular JS','c#','Flask','SDK']
         suggested_courses = web_course
-    elif any(k in skills_lower for k in ANDROID_KEYWORDS):
+    elif any(k in skills_lower for k in ANDROID_KEYWORDS) or any(k.lower() in text_lower for k in ANDROID_KEYWORDS):
         reco_field = "Android Development"
         recommended_skills = ['Android','Android development','Flutter','Kotlin','XML','Java','Kivy','GIT','SDK','SQLite']
         suggested_courses = android_course
-    elif any(k in skills_lower for k in IOS_KEYWORDS):
+    elif any(k in skills_lower for k in IOS_KEYWORDS) or any(k.lower() in text_lower for k in IOS_KEYWORDS):
         reco_field = "IOS Development"
         recommended_skills = ['IOS','IOS Development','Swift','Cocoa','Cocoa Touch','Xcode','Objective-C','SQLite','Plist','StoreKit',"UI-Kit",'AV Foundation','Auto-Layout']
         suggested_courses = ios_course
-    elif any(k in skills_lower for k in UIUX_KEYWORDS):
+    elif any(k in skills_lower for k in UIUX_KEYWORDS) or any(k.lower() in text_lower for k in UIUX_KEYWORDS):
         reco_field = "UI-UX Development"
         recommended_skills = ['UI','User Experience','Adobe XD','Figma','Zeplin','Balsamiq','Prototyping','Wireframes','Storyframes','Adobe Photoshop','Editing','Illustrator','After Effects','Premier Pro','Indesign','Wireframe','Solid','Grasp','User Research']
         suggested_courses = uiux_course

@@ -35,15 +35,66 @@
     justify-content: space-between;
     align-items: center;
     text-align: left;
-    padding: 100px 4%;
+    padding: 120px 5%;
     position: relative;
     width: 100%;
-    max-width: 1600px;
+    max-width: 1800px; /* INCREASED from 1600px */
     margin: 0 auto;
-    gap: 60px;
-    background: var(--background);
-    min-height: 800px;
+    gap: 80px;
+    background: transparent; /* Changed to allow background animations to show */
+    min-height: 900px; /* INCREASED from 800px */
     overflow-x: visible;
+    z-index: 10;
+}
+
+/* Background Animation Elements */
+.bgOrb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px); /* INCREASED blur */
+    z-index: 0;
+    opacity: 0.18; /* INCREASED opacity */
+    pointer-events: none;
+    mix-blend-mode: multiply; /* Better color blending on light theme */
+}
+
+:global(.dark) .bgOrb {
+  mix-blend-mode: screen; /* Switch blending for dark theme */
+  opacity: 0.25;
+}
+
+.orb1 {
+    width: 600px;
+    height: 600px;
+    background: var(--primary);
+    top: -200px;
+    right: -100px;
+    animation: floatingOrb 25s ease-in-out infinite;
+}
+
+.orb2 {
+    width: 500px;
+    height: 500px;
+    background: #7c3aed; /* Purple-ish */
+    bottom: -100px;
+    left: -150px;
+    animation: floatingOrb 30s ease-in-out infinite reverse;
+}
+
+.orb3 {
+  width: 400px;
+  height: 400px;
+  background: #10b981; /* Green-ish */
+  top: 40%;
+  left: 30%;
+  animation: floatingOrb 20s ease-in-out infinite;
+  opacity: 0.1;
+}
+
+@keyframes floatingOrb {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(100px, 50px) scale(1.1); }
+    66% { transform: translate(-50px, 100px) scale(0.9); }
 }
 
 .heroContent {
@@ -409,8 +460,8 @@
 .benefitsGrid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 30px;
-    max-width: 1300px;
+    gap: 40px; /* INCREASED from 30px */
+    max-width: 1500px; /* INCREASED from 1300px */
     width: 100%;
 }
 
@@ -545,13 +596,13 @@
 }
 
 .instructionsContainer {
-    max-width: 1200px;
+    max-width: 1400px; /* INCREASED from 1200px */
     margin: 0 auto;
     position: relative;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 40px 0;
+    padding: 60px 0; /* INCREASED from 40px */
 }
 
 /* Connecting line with animation */

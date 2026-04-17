@@ -9,63 +9,66 @@ import { useTheme } from '../theme-context';
 const plans = [
     {
         id: 1,
-        name: "Mock Starter",
+        name: "Basic Mock",
         price: "150",
-        description: "Perfect for a quick interview simulation based on your resume.",
+        description: "Entry-level simulation for students starting their prep journey.",
         features: [
-            "Mock interview based on resume",
-            "1-page professional report",
-            "Core skill assessment",
-            "Instant feedback"
+            "AI-Resume Interview",
+            "Core Skill Analysis",
+            "1-Page Report",
+            "Instant Feedback"
         ],
         icon: Star,
-        color: "from-blue-100 to-blue-300",
+        color: "from-slate-400 to-slate-600",
+        accent: "bg-slate-400",
         popular: false
     },
     {
         id: 2,
-        name: "ATS Pro",
+        name: "ATS Professional",
         price: "250",
-        description: "Get detailed insights and see how you rank against ATS systems.",
+        description: "Advanced insights for candidates applying to top-tier tech firms.",
         features: [
-            "Everything in Starter",
-            "2-page detailed report",
-            "ATS Score calculation",
-            "Keyword optimization tips"
+            "Everything in Basic",
+            "ATS Score Optimizer",
+            "3-Page Deep Report",
+            "Keyword Targeter"
         ],
         icon: Zap,
-        color: "from-blue-500 to-blue-700",
+        color: "from-blue-500 to-indigo-600",
+        accent: "bg-blue-500",
         popular: true
     },
     {
         id: 3,
         name: "Proctor Elite",
         price: "450",
-        description: "Experience a real-world high-stakes interview environment.",
+        description: "The gold standard for high-stakes institutional mock sessions.",
         features: [
-            "Everything in ATS Pro",
-            "3-page comprehensive report",
-            "Identity Evidence capture",
-            "Proctoring violation logs"
+            "Everything in Pro",
+            "Proctoring Evidence",
+            "Identity Verification",
+            "Violation Timeline"
         ],
         icon: Shield,
-        color: "from-blue-600 to-blue-800",
+        color: "from-indigo-600 to-purple-600",
+        accent: "bg-indigo-600",
         popular: false
     },
     {
         id: 4,
-        name: "Ultimate Bundle",
+        name: "Ultimate Vault",
         price: "500",
-        credits: 10,
-        description: "The complete package for serious job seekers.",
+        description: "Unlimited power for serious career transitions and growth.",
         features: [
-            "Everything in Proctor Elite",
-            "Native Resume Analyzer",
-            "Full 5+ page report",
-            "Priority AI processing"
+            "Everything in Elite",
+            "Native Resume Builder",
+            "8-Page Master Report",
+            "Priority AI Pipeline"
         ],
         icon: Crown,
-        color: "from-slate-900 to-blue-900",
+        color: "from-slate-800 to-slate-950",
+        accent: "bg-slate-900",
         popular: false
     }
 ];
@@ -316,48 +319,54 @@ export default function Pricing() {
                 </div>
 
                 {/* Pricing Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20 px-2 lg:px-0">
                     {plans.map((plan, idx) => (
                         <div
                             key={plan.id}
                             className={`
-                                group relative flex flex-col p-8 rounded-[32px] transition-all duration-500 animate-fadeIn
+                                group relative flex flex-col p-8 rounded-[2.5rem] transition-all duration-700 animate-fadeIn
                                 ${theme === 'dark'
-                                    ? 'bg-[#141B26]/40 border-white/5 hover:bg-[#141B26]/60 hover:border-blue-500/30'
-                                    : 'bg-white border-slate-100 shadow-[0_20px_40px_rgba(0,0,0,0.03)] hover:shadow-[0_40px_80px_rgba(37,99,235,0.08)] hover:border-blue-200'}
-                                border backdrop-blur-md
-                                ${plan.popular ? 'scale-105 z-20 border-blue-600 ring-4 ring-blue-600/5 shadow-2xl shadow-blue-600/10' : 'scale-100 z-10'}
+                                    ? 'bg-[#0F172A]/40 border-white/5 hover:bg-[#0F172A]/80 hover:border-indigo-500/50'
+                                    : 'bg-white border-slate-100 shadow-[0_20px_40px_rgba(0,0,0,0.02)] hover:shadow-[0_40px_100px_rgba(0,0,0,0.08)] hover:border-blue-200'}
+                                border backdrop-blur-3xl overflow-hidden
+                                ${plan.popular ? 'scale-[1.03] lg:scale-[1.05] z-30 border-blue-500 ring-2 ring-blue-500/10' : 'scale-100 z-10'}
                             `}
                             style={{ animationDelay: `${idx * 150}ms` }}
                         >
+                            {/* Decorative Background Glow */}
+                            <div className={`absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br ${plan.color} opacity-0 group-hover:opacity-10 transition-opacity duration-1000 rounded-full blur-[60px]`} />
+
                             {plan.popular && (
-                                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-600 border border-blue-400 px-4 py-1.5 rounded-full shadow-xl shadow-blue-500/20 flex items-center gap-2">
-                                    <Sparkles size={14} className="text-white fill-white" />
-                                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Most Popular</span>
-                                </div>
+                                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-400 via-indigo-500 to-blue-400"></div>
                             )}
 
-                            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-8 shadow-lg shadow-${plan.color.split('-')[1]}/20 group-hover:scale-110 transition-transform duration-500`}>
-                                <plan.icon className="text-white" size={28} />
-                            </div>
-
-                            <div className="mb-8 text-left">
-                                <h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'} mb-2`}>{plan.name}</h3>
-                                <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-900'} font-bold leading-relaxed mb-6 italic opacity-80`}>{plan.description}</p>
-                                <div className="flex items-baseline gap-1">
-                                    <span className={`text-4xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>₹{plan.price}</span>
-                                    <span className={`text-sm ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'} font-bold`}>/session</span>
+                            <div className="flex justify-between items-start mb-8 relative z-10">
+                                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${plan.color} flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:rotate-6 transition-all duration-500`}>
+                                    <plan.icon className="text-white" size={28} />
                                 </div>
-                                {plan.popular && <div className="mt-2 text-[10px] font-black uppercase text-blue-600 tracking-wider">High Success Rate</div>}
+                                {plan.popular && (
+                                    <div className="bg-blue-600/10 text-blue-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-blue-600/20">
+                                        Best Choice
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="space-y-4 mb-10 flex-1">
+                            <div className="mb-8 text-left relative z-10">
+                                <h3 className={`text-2xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'} mb-2 tracking-tight`}>{plan.name}</h3>
+                                <p className={`text-[11px] ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} font-bold leading-relaxed mb-6 uppercase tracking-wider`}>{plan.description}</p>
+                                <div className="flex items-baseline gap-1.5">
+                                    <span className={`text-5xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'} tracking-tighter`}>₹{plan.price}</span>
+                                    <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'} font-black uppercase tracking-widest`}>/ credit</span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 mb-10 flex-1 relative z-10">
                                 {plan.features.map((feature, fidx) => (
-                                    <div key={fidx} className="flex items-start gap-3">
-                                        <div className={`mt-1 w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${theme === 'dark' ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
-                                            <Check size={12} strokeWidth={4} />
+                                    <div key={fidx} className="flex items-start gap-3 group/feat">
+                                        <div className={`mt-0.5 w-5 h-5 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover/feat:scale-110 ${theme === 'dark' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-blue-50 text-blue-600'}`}>
+                                            <Check size={10} strokeWidth={5} />
                                         </div>
-                                        <span className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-900'} text-left font-bold tracking-tight`}>{feature}</span>
+                                        <span className={`text-[13px] ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} text-left font-bold tracking-tight leading-snug`}>{feature}</span>
                                     </div>
                                 ))}
                             </div>
@@ -366,19 +375,19 @@ export default function Pricing() {
                                 onClick={() => handleSelectPlan(plan.id)}
                                 disabled={loadingPlan !== null}
                                 className={`
-                                    w-full py-4 rounded-2xl font-black text-sm transition-all duration-300 flex items-center justify-center gap-2
+                                    w-full py-4.5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 relative z-10
                                     ${plan.popular
-                                        ? 'bg-blue-600 text-white border border-blue-500 hover:bg-blue-700 shadow-xl shadow-blue-500/20 active:scale-[0.97]'
+                                        ? 'bg-blue-600 text-white shadow-[0_15px_30px_rgba(37,99,235,0.3)] hover:bg-blue-700 hover:-translate-y-0.5 active:scale-[0.97]'
                                         : theme === 'dark'
-                                            ? 'bg-white/5 text-white hover:bg-white/10 active:scale-[0.97]'
-                                            : 'bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white active:scale-[0.97]'
+                                            ? 'bg-white/5 text-white hover:bg-white/10 active:scale-[0.97] border border-white/5'
+                                            : 'bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.97] shadow-xl shadow-slate-900/10'
                                     }
                                 `}
                             >
                                 {loadingPlan === plan.id ? (
                                     <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                                 ) : (
-                                    <>Select Package <ArrowRight size={16} /></>
+                                    <>Secure Access <ArrowRight size={14} /></>
                                 )}
                             </button>
                         </div>
