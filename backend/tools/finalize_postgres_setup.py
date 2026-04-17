@@ -44,13 +44,14 @@ def setup_postgresql():
                 password TEXT NOT NULL,
                 photo TEXT, 
                 resume_path TEXT,
-                resume_score INTEGER,
-                plan_id TEXT,
+                resume_score REAL,
+                plan_id TEXT DEFAULT '1',
                 college_name TEXT,
                 role TEXT DEFAULT 'candidate',
                 year TEXT,
                 register_no TEXT,
                 branch TEXT,
+                interviews_remaining INTEGER DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
@@ -62,7 +63,10 @@ def setup_postgresql():
                 user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                 date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 overall_score REAL,
-                details JSONB
+                details JSONB,
+                video_path TEXT,
+                status TEXT DEFAULT 'started',
+                module_name TEXT
             )
         ''')
         

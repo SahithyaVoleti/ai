@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Lock, Mail, AlertCircle, RefreshCw, ChevronRight, Sparkles, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../auth-context';
@@ -15,10 +15,74 @@ export default function Login() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const globalSpeechTokenRef = useRef(0);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
+
+    const speak = (text: string) => {
+        if (typeof window === 'undefined') return;
+        const myId = ++globalSpeechTokenRef.current;
+        if (audioRef.current) {
+            try {
+                const oldAudio = audioRef.current;
+                audioRef.current = null;
+                oldAudio.onended = null;
+                oldAudio.pause();
+                oldAudio.src = "";
+            } catch (e) { }
+        }
+        try { window.speechSynthesis.cancel(); } catch (e) { }
+
+        setIsSpeaking(true);
+        const playFallback = async () => {
+            if (myId !== globalSpeechTokenRef.current) return;
+            try {
+                const response = await fetch("/api/tts", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text }),
+                });
+                if (!response.ok) throw new Error();
+                const blob = await response.blob();
+                const audioUrl = URL.createObjectURL(blob);
+                if (myId !== globalSpeechTokenRef.current) return;
+                const audio = new Audio(audioUrl);
+                audioRef.current = audio;
+                audio.onended = () => setIsSpeaking(false);
+                audio.onerror = () => browserFallback();
+                await audio.play();
+            } catch (err) { browserFallback(); }
+        };
+        const browserFallback = () => {
+            try {
+                const utt = new SpeechSynthesisUtterance(text);
+                const voices = window.speechSynthesis.getVoices();
+                const maleVoice = voices.find(v =>
+                    v.name.toLowerCase().includes('david') || v.name.toLowerCase().includes('james') ||
+                    v.name.toLowerCase().includes('google us english') ||
+                    (v.name.toLowerCase().includes('male') && !v.name.toLowerCase().includes('female'))
+                );
+                if (maleVoice) utt.voice = maleVoice;
+                utt.rate = 0.9;
+                utt.pitch = 0.85;
+                utt.onend = () => setIsSpeaking(false);
+                window.speechSynthesis.speak(utt);
+            } catch (e) { setIsSpeaking(false); }
+        };
+        playFallback();
+    };
+
+    useEffect(() => {
+        // Voice welcome on first meaningful interaction or slight delay
+        const timer = setTimeout(() => {
+            speak("Welcome back. Please provide your credentials to access the evaluation portal.");
+        }, 1500);
+        return () => clearTimeout(timer);
+    }, []);
 
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -45,7 +109,9 @@ export default function Login() {
                     }
                 }
             } else {
-                setError(data.message || 'Authentication failed.');
+                const msg = data.message || 'Authentication failed.';
+                setError(msg);
+                speak(msg);
             }
         } catch (err) {
             setError("Connection to interview node failed.");

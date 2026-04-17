@@ -17,6 +17,41 @@ export default function AdminLogin() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [resendTimer, setResendTimer] = useState(0);
+    const [isResending, setIsResending] = useState(false);
+
+    React.useEffect(() => {
+        let timer: any;
+        if (resendTimer > 0) {
+            timer = setInterval(() => {
+                setResendTimer(prev => prev - 1);
+            }, 1000);
+        }
+        return () => clearInterval(timer);
+    }, [resendTimer]);
+
+    const handleResendOtp = async (targetEmail: string) => {
+        if (resendTimer > 0 || isResending || !targetEmail) return;
+        setIsResending(true);
+        setError('');
+        try {
+            const res = await fetch('http://localhost:5000/api/auth/resend-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: targetEmail })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                setResendTimer(30);
+            } else {
+                setError(data.message || "Failed to resend code.");
+            }
+        } catch {
+            setError("Connection failure.");
+        } finally {
+            setIsResending(false);
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -331,6 +366,17 @@ export default function AdminLogin() {
                                     {loading ? <RefreshCw className="animate-spin" size={20} /> : 'Sync Profile'}
                                 </button>
 
+                                <div className="text-center mt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleResendOtp(emailForOtp)}
+                                        disabled={resendTimer > 0 || isResending}
+                                        className={`text-xs font-bold uppercase tracking-widest transition-all ${resendTimer > 0 ? 'text-slate-500 cursor-not-allowed' : 'text-indigo-500 hover:text-indigo-600'}`}
+                                    >
+                                        {resendTimer > 0 ? `Resend in ${resendTimer}s` : isResending ? 'Transmitting...' : 'Resend Security Code'}
+                                    </button>
+                                </div>
+
                                 <button type="button" onClick={() => setStep('login')} className="text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-500 transition-colors">
                                     ← Revise Access
                                 </button>
@@ -429,6 +475,17 @@ export default function AdminLogin() {
                                 <button type="button" onClick={() => setStep('forgot_email')} className="text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-500 transition-colors">
                                     ← Edit Email
                                 </button>
+
+                                <div className="text-center mt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleResendOtp(forgotEmail)}
+                                        disabled={resendTimer > 0 || isResending}
+                                        className={`text-xs font-bold uppercase tracking-widest transition-all ${resendTimer > 0 ? 'text-slate-500 cursor-not-allowed' : 'text-indigo-500 hover:text-indigo-600'}`}
+                                    >
+                                        {resendTimer > 0 ? `Resend in ${resendTimer}s` : isResending ? 'Transmitting...' : 'Resend Recovery Code'}
+                                    </button>
+                                </div>
                             </form>
                         </div>
                     ) : step === 'forgot_reset' ? (

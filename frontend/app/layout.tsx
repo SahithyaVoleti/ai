@@ -40,6 +40,9 @@ export default function RootLayout({
             {children}
           </AuthProvider>
         </ThemeProvider>
+        
+        {/* EXTERNAL SCRIPTS: Razorpay Checkout SDK */}
+        <script src="https://checkout.razorpay.com/v1/checkout.js" async={true}></script>
       </body>
     </html>
   );

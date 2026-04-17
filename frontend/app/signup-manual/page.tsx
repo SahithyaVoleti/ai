@@ -10,7 +10,7 @@ export default function SignupManual() {
     const router = useRouter();
     const { theme, toggleTheme } = useTheme();
     const [formData, setFormData] = useState({
-        name: '', email: '', phone: '', year: '', password: '', photo: ''
+        name: '', email: '', phone: '', year: '', branch: '', domain: '', password: '', photo: ''
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -177,30 +177,62 @@ export default function SignupManual() {
                         )}
 
                         {/* 📸 PHOTO CAPTURE */}
-                        <div className={`p-4 rounded-3xl ${theme === 'dark' ? 'bg-white/5 border-white/5' : 'bg-[#FAFBFF] border-blue-50'} border-2 flex items-center gap-5 mb-4 group hover:border-blue-100 transition-colors shadow-sm`}>
+                        <div className={`p-6 rounded-[2rem] ${theme === 'dark' ? 'bg-white/5 border-white/10' : 'bg-[#FAFBFF] border-blue-100'} border-2 flex flex-col items-center gap-6 mb-6 group hover:border-blue-400 transition-all shadow-xl relative overflow-hidden`}>
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-blue-500/10 transition-colors" />
+                            
                             <div className="relative">
                                 {capturedImage ? (
-                                    <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-blue-500 shadow-lg">
+                                    <div className="w-64 h-48 rounded-2xl overflow-hidden border-4 border-blue-500 shadow-2xl transform hover:scale-[1.02] transition-transform">
                                         <img src={capturedImage} className="w-full h-full object-cover transform scale-x-[-1]" />
                                     </div>
                                 ) : cameraActive ? (
-                                    <div className="w-16 h-16 bg-black rounded-xl overflow-hidden border border-blue-500 relative">
+                                    <div className="w-64 h-48 bg-black rounded-2xl overflow-hidden border-4 border-blue-500 shadow-2xl relative transform hover:scale-[1.02] transition-transform">
                                         <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover transform scale-x-[-1]" />
                                         <div className="absolute inset-x-0 top-0 h-1 bg-blue-500 animate-scan opacity-60" />
+                                        <div className="absolute inset-0 border-[1px] border-white/20 pointer-events-none" />
                                     </div>
                                 ) : (
-                                    <div className={`w-16 h-16 rounded-xl ${theme === 'dark' ? 'bg-white/5 border-slate-800' : 'bg-white border-slate-200'} border-2 border-dashed flex items-center justify-center group-hover:border-blue-400 transition-colors`}>
-                                        <Camera size={20} className="text-slate-300 group-hover:text-blue-400" />
+                                    <div className={`w-64 h-48 rounded-2xl ${theme === 'dark' ? 'bg-white/5 border-slate-800' : 'bg-white border-slate-200'} border-2 border-dashed flex flex-col items-center justify-center gap-3 group-hover:border-blue-400 transition-all group-hover:bg-blue-500/5`}>
+                                        <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-blue-500 group-hover:bg-white transition-all">
+                                            <Camera size={24} />
+                                        </div>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No Camera Active</span>
                                     </div>
                                 )}
                             </div>
-                            <div className="flex-1">
-                                <h4 className={`text-[10px] font-black uppercase tracking-[0.1em] ${theme === 'dark' ? 'text-blue-400' : 'text-blue-500'} mb-1`}>Photo Setup</h4>
-                                <div className="flex gap-2 items-center">
-                                    {!capturedImage && !cameraActive && <button type="button" onClick={startCamera} className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[9px] font-black uppercase tracking-wider shadow-lg shadow-blue-500/10 active:scale-95 transition-all">Start Camera</button>}
-                                    {cameraActive && <button type="button" onClick={capturePhoto} className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wider active:scale-95 transition-all">Capture</button>}
-                                    {capturedImage && <button type="button" onClick={() => { setCapturedImage(null); startCamera(); }} className="px-3 py-1.5 bg-slate-800 text-white rounded-lg text-[9px] font-black uppercase tracking-wider active:scale-95 transition-all">Retake</button>}
+                            
+                            <div className="text-center w-full">
+                                <h4 className={`text-[11px] font-black uppercase tracking-[0.2em] ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'} mb-3`}>Identity Verification</h4>
+                                <div className="flex gap-3 items-center justify-center">
+                                    {!capturedImage && !cameraActive && (
+                                        <button 
+                                            type="button" 
+                                            onClick={startCamera} 
+                                            className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg shadow-blue-500/20 hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-2"
+                                        >
+                                            <Camera size={14} /> Start Camera
+                                        </button>
+                                    )}
+                                    {cameraActive && (
+                                        <button 
+                                            type="button" 
+                                            onClick={capturePhoto} 
+                                            className="px-6 py-2.5 bg-red-500 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-lg shadow-red-500/20 hover:bg-red-600 active:scale-95 transition-all flex items-center gap-2"
+                                        >
+                                            <div className="w-2 h-2 bg-white rounded-full animate-pulse" /> Capture Photo
+                                        </button>
+                                    )}
+                                    {capturedImage && (
+                                        <button 
+                                            type="button" 
+                                            onClick={() => { setCapturedImage(null); startCamera(); }} 
+                                            className="px-6 py-2.5 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-slate-900 active:scale-95 transition-all flex items-center gap-2"
+                                        >
+                                            <RefreshCw size={14} /> Retake Photo
+                                        </button>
+                                    )}
                                 </div>
+                                <p className="mt-3 text-[9px] text-slate-400 font-medium">Ensure your face is clearly visible and well-lit.</p>
                             </div>
                         </div>
 
@@ -208,6 +240,38 @@ export default function SignupManual() {
                             <InputField label="Full Name" name="name" icon={<User size={16} />} value={formData.name} onChange={handleChange} placeholder="First and last name" theme={theme} />
                             <InputField label="Email Address" name="email" type="email" icon={<Mail size={16} />} value={formData.email} onChange={handleChange} placeholder="name@email.com" theme={theme} />
                             <InputField label="Phone Number" name="phone" type="tel" icon={<Phone size={16} />} value={formData.phone} onChange={handleChange} placeholder="10-digit mobile" theme={theme} />
+
+                            <div className="space-y-1.5">
+                                <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'} ml-1 uppercase tracking-widest`}>Educational Domain</label>
+                                <div className="relative group">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">
+                                        <Sparkles size={16} />
+                                    </div>
+                                    <select
+                                        name="domain" required value={formData.domain} onChange={handleChange}
+                                        className={`w-full ${theme === 'dark' ? 'bg-slate-800/40 border-white/5 text-white' : 'bg-[#F9FBFF] border-slate-200 text-slate-900'} border-2 rounded-xl py-3 pl-11 pr-4 text-[13px] outline-none transition-all focus:border-blue-500 focus:bg-white font-medium appearance-none shadow-sm`}
+                                    >
+                                        <option value="">Select Domain</option>
+                                        {['B.Tech', 'B.Pharmacy', 'Agriculture', 'Degree', 'MBA/PG', 'Others'].map(d => <option key={d} value={d} className="text-black">{d}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'} ml-1 uppercase tracking-widest`}>Branch / Specialization</label>
+                                <div className="relative group">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors">
+                                        <ChevronRight size={16} />
+                                    </div>
+                                    <select
+                                        name="branch" required value={formData.branch} onChange={handleChange}
+                                        className={`w-full ${theme === 'dark' ? 'bg-slate-800/40 border-white/5 text-white' : 'bg-[#F9FBFF] border-slate-200 text-slate-900'} border-2 rounded-xl py-3 pl-11 pr-4 text-[13px] outline-none transition-all focus:border-blue-500 focus:bg-white font-medium appearance-none shadow-sm`}
+                                    >
+                                        <option value="">Select Branch</option>
+                                        {['CSE', 'ECE', 'EEE', 'Mechanical', 'Civil', 'IT', 'AI/ML', 'Pharma', 'Agronomy', 'Others'].map(b => <option key={b} value={b} className="text-black">{b}</option>)}
+                                    </select>
+                                </div>
+                            </div>
 
                             <div className="space-y-1.5">
                                 <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'} ml-1 uppercase tracking-widest`}>Education Year</label>

@@ -14,6 +14,7 @@ type User = {
     year?: string;
     is_premium?: number;
     plan_id?: number;
+    interviews_remaining?: number;
     resume_score?: number;
     resume_feedback?: string;
 };
@@ -83,20 +84,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.setItem('user_session', JSON.stringify(userData));
     };
 
-    const logout = async () => {
-        try {
-            // Inform backend to clear global state
-            await fetch('http://localhost:5000/api/auth/logout', { method: 'POST' });
-        } catch (e) {
-            console.error("Backend logout failed:", e);
-        }
-
+    const logout = () => {
+        // 1. Clear everything locally FIRST (synchronous) so the user is immediately logged out
         setUser(null);
         localStorage.removeItem('user_session');
         localStorage.removeItem('admin_session');
         localStorage.removeItem('resume_uploaded');
-        // Optional: clear everything to be safe
-        // localStorage.clear(); 
+
+        // 2. Fire backend logout in background (don't await — don't block redirect)
+        fetch('http://localhost:5000/api/auth/logout', { method: 'POST' }).catch(() => {});
+
+        // 3. Redirect to home
         window.location.href = '/';
     };
 

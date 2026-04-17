@@ -1,0 +1,62 @@
+# ─── Web Frameworks ──────────────────────────────────────────
+flask
+flask-bcrypt
+flask-cors
+fastapi
+uvicorn
+python-multipart
+werkzeug
+
+# ─── AI / LLM ─────────────────────────────────────────────────
+groq
+
+# ─── PDF Processing & Generation ─────────────────────────────
+reportlab
+pdfminer.six
+pypdf2
+pymupdf
+
+# ─── Computer Vision & Proctoring ─────────────────────────────
+opencv-python
+numpy
+mediapipe
+face-recognition
+ultralytics
+
+# ─── Deep Face Verification ──────────────────────────────────
+deepface
+tensorflow
+
+# ─── PyTorch ──────────────────────────────────────────────────
+torch
+torchvision
+torchaudio
+
+# ─── Text-to-Speech ───────────────────────────────────────────
+gtts
+pyttsx3
+
+# ─── Data Visualization ───────────────────────────────────────
+matplotlib
+
+# ─── Database ─────────────────────────────────────────────────
+psycopg2-binary
+
+# ─── Payments ─────────────────────────────────────────────────
+razorpay
+
+# ─── HTTP / Networking ────────────────────────────────────────
+requests
+
+# ─── Image & Video Utilities ─────────────────────────────────
+imageio-ffmpeg>=0.6.0
+scikit-image>=0.25.2
+
+# ─── Utilities ────────────────────────────────────────────────
+python-dotenv
+python-dateutil
+tqdm>=4.67.3
+numba>=0.64.0
+
+# ─── Production WSGI Server ───────────────────────────────────
+gunicorn

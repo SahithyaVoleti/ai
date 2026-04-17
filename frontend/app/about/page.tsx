@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, Target, Users, Zap, Award, Globe, Heart, Rocket, ChevronLeft, Github, Linkedin, Twitter, Sun, Moon } from 'lucide-react';
+import { Shield, Target, Users, Zap, Award, Globe, Heart, Rocket, ChevronLeft, Github, Linkedin, Twitter, Sun, Moon, LogOut } from 'lucide-react';
 import { useTheme } from '../theme-context';
 import { useAuth } from '../auth-context';
 import Link from 'next/link';
@@ -10,21 +10,21 @@ import Link from 'next/link';
 export default function AboutPage() {
     const router = useRouter();
     const { theme, toggleTheme } = useTheme();
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
 
     return (
-        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] font-[Inter] selection:bg-indigo-500 selection:text-white transition-colors duration-500">
+        <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] font-[Inter] selection:bg-blue-500 selection:text-white transition-colors duration-500">
             {/* --- NAVBAR --- */}
             <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-[var(--nav-bg)]/80 border-b border-[var(--border)] py-4">
                 <div className="max-w-7xl mx-auto px-6 md:px-8 flex justify-between items-center">
                     <button
                         onClick={() => router.back()}
-                        className="flex items-center gap-2.5 text-[var(--text-muted)] hover:text-indigo-600 transition-all font-bold group"
+                        className="flex items-center gap-2.5 text-[var(--text-muted)] hover:text-blue-600 transition-all font-bold group"
                     >
                         <ChevronLeft size={20} className="group-hover:-translate-x-1 transition-transform" /> Back
                     </button>
                     <div className="flex items-center gap-2.5 select-none cursor-pointer" onClick={() => router.push('/')}>
-                        <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black shadow-indigo-500/20 shadow-lg">AI</div>
+                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black shadow-blue-500/20 shadow-lg">AI</div>
                         <div className="font-black tracking-tight text-[var(--foreground)] text-xl transition-all">AI Interviewer</div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -38,13 +38,22 @@ export default function AboutPage() {
                         
                         {/* Functional Name Button */}
                         {user && (
-                            <button
-                                onClick={() => router.push('/dashboard')}
-                                className={`px-5 py-2.5 rounded-2xl ${theme === 'dark' ? 'bg-indigo-500/10 text-white hover:bg-indigo-500/20 border-indigo-500/30' : 'bg-white text-slate-900 border-slate-200 hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/5'} border text-[13px] font-black tracking-tight transition-all active:scale-95 cursor-pointer flex items-center gap-2`}
-                            >
-                                <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
-                                {user.name.split(' ')[0]}
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => router.push('/dashboard')}
+                                    className={`px-5 py-2.5 rounded-2xl ${theme === 'dark' ? 'bg-blue-500/10 text-white hover:bg-blue-500/20 border-blue-500/30' : 'bg-white text-slate-900 border-slate-200 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/5'} border text-[13px] font-black tracking-tight transition-all active:scale-95 cursor-pointer flex items-center gap-2`}
+                                >
+                                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                                    {user.name.split(' ')[0]}
+                                </button>
+                                <button
+                                    onClick={logout}
+                                    className={`p-2.5 rounded-xl ${theme === 'dark' ? 'bg-white/5 border-white/10 text-red-400 hover:bg-red-500/10' : 'bg-white border-slate-200 text-red-500 hover:bg-red-50'} border transition-all shadow-sm active:scale-90`}
+                                    title="Sign Out"
+                                >
+                                    <LogOut size={20} />
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -55,20 +64,20 @@ export default function AboutPage() {
                 <div className="max-w-4xl mx-auto text-center">
 
                     <h1 className="text-5xl md:text-7xl font-black mb-8 tracking-tighter leading-tight">
-                        Revolutionizing <span className="text-indigo-600 italic">Hiring</span> Through <br className="hidden md:block" /> Intelligence.
+                        Revolutionizing <span className="text-blue-600 italic">Hiring</span> Through <br className="hidden md:block" /> Intelligence.
                     </h1>
                     <p className="text-xl text-[var(--text-muted)] font-medium leading-relaxed mb-12 max-w-2xl mx-auto">
                         We built AI Interviewer to bridge the gap between candidate potential and career opportunities. Experience the future of mock interviews today.
                     </p>
                     <div className="flex flex-wrap justify-center gap-4">
-                        <button onClick={() => router.push('/signup')} className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-indigo-500/20 hover:scale-105 transition-all active:scale-95">
+                        <button onClick={() => router.push('/signup')} className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-500/20 hover:scale-105 transition-all active:scale-95">
                             Join the Revolution
                         </button>
                         <button
                             onClick={() => {
                                 document.getElementById('story-section')?.scrollIntoView({ behavior: 'smooth' });
                             }}
-                            className="px-8 py-4 bg-[var(--card-bg)] border border-[var(--border)] text-[var(--foreground)] rounded-2xl font-black text-lg hover:border-indigo-500 transition-all shadow-sm"
+                            className="px-8 py-4 bg-[var(--card-bg)] border border-[var(--border)] text-[var(--foreground)] rounded-2xl font-black text-lg hover:border-blue-500 transition-all shadow-sm"
                         >
                             Our Story
                         </button>
@@ -78,21 +87,21 @@ export default function AboutPage() {
 
             {/* --- CORE VALUES --- */}
             <section className="py-20 bg-[var(--card-bg)] border-y border-[var(--border)] overflow-hidden relative">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/5 blur-[120px] rounded-full -mr-48 -mt-48"></div>
+                <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/5 blur-[120px] rounded-full -mr-48 -mt-48"></div>
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-16">
                         <div className="max-w-lg">
                             <h2 className="text-3xl md:text-4xl font-black tracking-tight mb-4">Our Core Values</h2>
                             <p className="text-[var(--text-muted)] font-medium italic">"The values we live by, the tech we build for."</p>
                         </div>
-                        <div className="text-indigo-600 font-bold flex items-center gap-2 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-2 rounded-xl">
+                        <div className="text-blue-600 font-bold flex items-center gap-2 bg-blue-50 dark:bg-blue-500/10 px-4 py-2 rounded-xl">
                             <Target size={18} /> Driven by Excellence
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
-                        <div className="p-8 bg-[var(--background)] rounded-[2.5rem] border border-[var(--border)] shadow-sm hover:border-indigo-500 transition-all group">
-                            <div className="w-14 h-14 bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 rounded-2xl flex items-center justify-center mb-6 group-hover:rotate-6 transition-transform">
+                        <div className="p-8 bg-[var(--background)] rounded-[2.5rem] border border-[var(--border)] shadow-sm hover:border-blue-500 transition-all group">
+                            <div className="w-14 h-14 bg-blue-100 dark:bg-blue-500/10 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:rotate-6 transition-transform">
                                 <Zap size={28} />
                             </div>
                             <h3 className="text-xl font-black mb-4">Unmatched Speed</h3>
@@ -101,8 +110,8 @@ export default function AboutPage() {
                             </p>
                         </div>
 
-                        <div className="p-8 bg-[var(--background)] rounded-[2.5rem] border border-[var(--border)] shadow-sm hover:border-indigo-500 transition-all group">
-                            <div className="w-14 h-14 bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:rotate-6 transition-transform">
+                        <div className="p-8 bg-[var(--background)] rounded-[2.5rem] border border-[var(--border)] shadow-sm hover:border-blue-500 transition-all group">
+                            <div className="w-14 h-14 bg-blue-50 dark:bg-emerald-500/10 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:rotate-6 transition-transform">
                                 <Shield size={28} />
                             </div>
                             <h3 className="text-xl font-black mb-4">Accountability</h3>
@@ -111,8 +120,8 @@ export default function AboutPage() {
                             </p>
                         </div>
 
-                        <div className="p-8 bg-[var(--background)] rounded-[2.5rem] border border-[var(--border)] shadow-sm hover:border-indigo-500 transition-all group">
-                            <div className="w-14 h-14 bg-purple-100 dark:bg-purple-500/10 text-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:rotate-6 transition-transform">
+                        <div className="p-8 bg-[var(--background)] rounded-[2.5rem] border border-[var(--border)] shadow-sm hover:border-blue-500 transition-all group">
+                            <div className="w-14 h-14 bg-blue-50 dark:bg-purple-500/10 text-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:rotate-6 transition-transform">
                                 <Heart size={28} />
                             </div>
                             <h3 className="text-xl font-black mb-4">Human-First</h3>
@@ -128,33 +137,33 @@ export default function AboutPage() {
             <section id="story-section" className="py-24 px-6 overflow-hidden">
                 <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
                     <div className="flex-1 space-y-8">
-                        <h2 className="text-4xl md:text-5xl font-black tracking-tighter">Small Team. <br />Big <span className="text-indigo-600 underline underline-offset-8">Impact</span>.</h2>
+                        <h2 className="text-4xl md:text-5xl font-black tracking-tighter">Small Team. <br />Big <span className="text-blue-600 underline underline-offset-8">Impact</span>.</h2>
                         <p className="text-lg font-medium text-[var(--text-muted)] italic">
                             "We are on a mission to prepare every student for their dream job, one mock interview at a time."
                         </p>
                         <div className="grid grid-cols-2 gap-8 pt-8">
                             <div>
-                                <p className="text-4xl font-black text-indigo-600">50K+</p>
+                                <p className="text-4xl font-black text-blue-600">50K+</p>
                                 <p className="text-xs font-black uppercase text-[var(--text-muted)] tracking-widest mt-1">Interviews Conducted</p>
                             </div>
                             <div>
-                                <p className="text-4xl font-black text-indigo-600">98%</p>
+                                <p className="text-4xl font-black text-blue-600">98%</p>
                                 <p className="text-xs font-black uppercase text-[var(--text-muted)] tracking-widest mt-1">Success Rate</p>
                             </div>
                             <div>
-                                <p className="text-4xl font-black text-indigo-600">120+</p>
+                                <p className="text-4xl font-black text-blue-600">120+</p>
                                 <p className="text-xs font-black uppercase text-[var(--text-muted)] tracking-widest mt-1">Global Institutions</p>
                             </div>
                             <div>
-                                <p className="text-4xl font-black text-indigo-600">1.2M</p>
+                                <p className="text-4xl font-black text-blue-600">1.2M</p>
                                 <p className="text-xs font-black uppercase text-[var(--text-muted)] tracking-widest mt-1">Lines of Intelligence</p>
                             </div>
                         </div>
                     </div>
                     <div className="flex-1 relative">
-                        <div className="absolute -inset-4 bg-indigo-500/5 blur-3xl opacity-50 rounded-full"></div>
+                        <div className="absolute -inset-4 bg-blue-500/5 blur-3xl opacity-50 rounded-full"></div>
                         <img
-                            src="/modern_ai_team.png"
+                            src="/ai_interviewer_about.png"
                             alt="Innovation in action"
                             className="rounded-[3rem] shadow-2xl relative z-1 border border-[var(--border)] transition-all duration-700 hover:scale-[1.02]"
                         />
@@ -164,7 +173,7 @@ export default function AboutPage() {
 
             {/* --- CTA SECTION --- */}
             <section className="py-20 px-6">
-                <div className="max-w-6xl mx-auto bg-indigo-600 rounded-[3rem] p-12 md:p-20 text-center text-white relative overflow-hidden shadow-2xl shadow-indigo-500/30">
+                <div className="max-w-6xl mx-auto bg-blue-600 rounded-[3rem] p-12 md:p-20 text-center text-white relative overflow-hidden shadow-2xl shadow-blue-500/30">
                     <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full -ml-32 -mt-32 blur-3xl"></div>
                     <div className="absolute bottom-0 right-0 w-64 h-64 bg-black/10 rounded-full -mr-32 -mb-32 blur-3xl"></div>
 
@@ -172,7 +181,7 @@ export default function AboutPage() {
                     <p className="text-lg md:text-xl font-medium text-white/80 max-w-2xl mx-auto mb-12">
                         Don't let your first interview be the one that matters. Practice with Ishan, our AI agent, and get hired.
                     </p>
-                    <button onClick={() => router.push('/signup')} className="px-12 py-5 bg-white text-indigo-600 rounded-3xl font-black text-xl hover:bg-slate-50 transition-all active:scale-95 shadow-xl">
+                    <button onClick={() => router.push('/signup')} className="px-12 py-5 bg-white text-blue-600 rounded-3xl font-black text-xl hover:bg-slate-50 transition-all active:scale-95 shadow-xl">
                         Get Started Free
                     </button>
                 </div>
@@ -183,13 +192,13 @@ export default function AboutPage() {
                 <div className="max-w-7xl mx-auto px-6 md:px-8">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xs">AI</div>
+                            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black text-xs">AI</div>
                             <span className="font-black text-lg tracking-tighter">AI Interviewer</span>
                         </div>
                         <div className="flex items-center gap-8 text-sm font-bold text-[var(--text-muted)]">
-                            <a href="/privacy" className="hover:text-indigo-600 transition-colors">Privacy</a>
-                            <a href="/terms" className="hover:text-indigo-600 transition-colors">Terms</a>
-                            <a href="/contact" className="hover:text-indigo-600 transition-colors">Contact</a>
+                            <a href="/privacy" className="hover:text-blue-600 transition-colors">Privacy</a>
+                            <a href="/terms" className="hover:text-blue-600 transition-colors">Terms</a>
+                            <a href="/contact" className="hover:text-blue-600 transition-colors">Contact</a>
                         </div>
                         <div className="text-xs font-medium text-[var(--text-muted)]">
                             &copy; AI Interviewer. Master your future.

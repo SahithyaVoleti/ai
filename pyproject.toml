@@ -35,6 +35,7 @@ dependencies = [
     "ultralytics",
     "uvicorn",
     "werkzeug",
+    "razorpay",
 ]
 
 [[tool.uv.index]]

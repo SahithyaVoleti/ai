@@ -161,8 +161,21 @@ build/
 Thumbs.db
 
 # Project specific
-backend/backend_debug.log
-backend/debug_error.log
+backend/*.db
+backend/*.db-journal
+backend/*.log
+backend/latest_otp.txt
 backend/evidence/*.jpg
 backend/resumes/*.pdf
 !backend/resumes/.gitkeep
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Maintenance & Scripts
+scripts/maintenance/
+logs/
+latest_otp.txt
+debug_error.log
+

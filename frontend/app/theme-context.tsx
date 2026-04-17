@@ -7,49 +7,63 @@ type Theme = 'light' | 'dark';
 type ThemeContextType = {
     theme: Theme;
     toggleTheme: () => void;
+    setTheme: (t: Theme) => void;
 };
 
 const ThemeContext = createContext<ThemeContextType>({
-    theme: 'dark',
+    theme: 'light',
     toggleTheme: () => { },
+    setTheme: () => { },
 });
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-    const [theme, setTheme] = useState<Theme>('light');
+    const [theme, setThemeState] = useState<Theme>('light');
+    const [mounted, setMounted] = useState(false);
 
+    // On mount: read saved preference or system preference
     useEffect(() => {
-        // Load preference
-        const stored = localStorage.getItem('app_theme') as Theme;
-        if (stored) {
-            setTheme(stored);
+        setMounted(true);
+        const stored = localStorage.getItem('app_theme') as Theme | null;
+        if (stored === 'dark' || stored === 'light') {
+            applyTheme(stored);
+            setThemeState(stored);
         } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            setTheme('dark');
+            applyTheme('dark');
+            setThemeState('dark');
         }
     }, []);
 
-    useEffect(() => {
-        // Apply theme to HTML and Body
-        const root = document.documentElement;
-        const body = document.body;
-
+    const applyTheme = (t: Theme) => {
+        const root = document.documentElement; // <html>
         root.classList.remove('light', 'dark');
-        body.classList.remove('light', 'dark');
-
-        root.classList.add(theme);
-        body.classList.add(theme);
-
-        root.setAttribute('data-theme', theme);
-        localStorage.setItem('app_theme', theme);
-
-        console.log(`Theme toggled to: ${theme}`);
-    }, [theme]);
-
-    const toggleTheme = () => {
-        setTheme(prev => prev === 'light' ? 'dark' : 'light');
+        root.classList.add(t);
+        root.setAttribute('data-theme', t);
+        document.body.classList.remove('light', 'dark');
+        document.body.classList.add(t);
+        localStorage.setItem('app_theme', t);
     };
 
+    const setTheme = (t: Theme) => {
+        applyTheme(t);
+        setThemeState(t);
+    };
+
+    const toggleTheme = () => {
+        const next = theme === 'light' ? 'dark' : 'light';
+        setTheme(next);
+    };
+
+    // Prevent flash: render children only after mount
+    if (!mounted) {
+        return (
+            <ThemeContext.Provider value={{ theme: 'light', toggleTheme, setTheme }}>
+                {children}
+            </ThemeContext.Provider>
+        );
+    }
+
     return (
-        <ThemeContext.Provider value={{ theme, toggleTheme }}>
+        <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
             {children}
         </ThemeContext.Provider>
     );

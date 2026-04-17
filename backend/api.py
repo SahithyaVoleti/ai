@@ -7,7 +7,11 @@ import threading
 import webbrowser
 import time
 import os
+import json
 import sys
+import razorpay
+import hmac
+import hashlib
 
 # Add the current directory to sys.path to ensure local imports work
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -31,12 +35,19 @@ import smtplib
 from email.message import EmailMessage
 import resume_analyzer
 from pdfminer.high_level import extract_text
-# from lip_sync_engine import engine as lip_sync_engine # Removed Wav2Lip
+
+# ReportLab Imports for Resume Builder
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, ListFlowable, ListItem
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from io import BytesIO
 
 app = Flask(__name__)
 
-# AI Interviewer Backend - Consolidated version
-print("\n[INIT] AI INTERVIEWER BACKEND - VERSION 2.0 (FIXED)\n")
+# AI Interviewer Backend
+print("\n[INIT] AI INTERVIEWER BACKEND INITIALIZED\n")
 
 @app.errorhandler(500)
 def internal_error(error):
@@ -110,35 +121,36 @@ except Exception as e:
 
 def send_otp_email(to_email, otp):
     """
-    Sends a real email using Brevo (Bervo) API using .env credentials.
+    Sends a real email using Brevo API using .env credentials.
+    Always saves locally for dev/debug. Returns (success, message).
     """
     api_key = os.environ.get("BREVO_API_KEY")
     sender_email = os.environ.get("BREVO_SENDER_EMAIL")
     app_name = os.environ.get("BREVO_APP_NAME", "AI Interviewer")
 
-    # ALWAYS Write to local file for development/debugging
+    # ALWAYS write OTP to local file for development/debugging
     otp_file = "latest_otp.txt"
     try:
         with open(otp_file, "w") as f:
             f.write(f"OTP: {otp}\nTo: {to_email}\nTime: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        print(f"saved OTP to {otp_file}")
+        print(f"[OTP] Saved OTP to {otp_file}: {otp}")
     except Exception as e:
-        print(f"Failed to save OTP locally: {e}")
+        print(f"[OTP] Failed to save OTP locally: {e}")
 
     if not api_key or "your_real_api_key" in api_key:
-        print(f"\n[INFO]  EMAIL NOT SENT: BREVO_API_KEY not configured in .env")
-        print(f"Current OTP: {otp} (Saved to {otp_file})\n")
+        print(f"\n[INFO] EMAIL NOT SENT: BREVO_API_KEY not configured in .env")
+        print(f"[OTP] Current OTP: {otp} (Saved to {otp_file})\n")
         return True, f"Code generated. Check {otp_file} for code."
 
-    print(f"\n[EMAIL] [Service] Attempting to send OTP via Brevo to: {to_email}")
-
+    # Send real email via Brevo
+    print(f"\n[EMAIL] Attempting to send OTP via Brevo to: {to_email}")
+    import requests as _req
     url = "https://api.brevo.com/v3/smtp/email"
     headers = {
         "accept": "application/json",
         "content-type": "application/json",
         "api-key": api_key
     }
-    
     payload = {
         "sender": {"name": app_name, "email": sender_email},
         "to": [{"email": to_email}],
@@ -150,33 +162,83 @@ def send_otp_email(to_email, otp):
                 </div>
                 <div style="padding: 20px; text-align: center;">
                     <h2 style="color: #333;">Security Verification</h2>
-                    <p style="color: #666; font-size: 16px;">Hello,</p>
-                    <p style="color: #666; font-size: 16px;">Your secure verification code to reset your <strong>Interview Agent</strong> account password is:</p>
+                    <p style="color: #666; font-size: 16px;">Your verification code is:</p>
                     <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4f46e5; margin: 20px 0;">
                         {otp}
                     </div>
-                    <p style="color: #999; font-size: 12px;">This code will expire in 10 minutes for your security.</p>
+                    <p style="color: #999; font-size: 12px;">This code expires in 10 minutes.</p>
                 </div>
                 <hr style="border: 0; border-top: 1px solid #eee;">
                 <div style="text-align: center; padding-top: 10px;">
-                    <p style="color: #aaa; font-size: 10px;">If you didn't request this code for your Interview Agent account, please ignore this email.</p>
+                    <p style="color: #aaa; font-size: 10px;">If you didn't request this, please ignore this email.</p>
                     <p style="color: #aaa; font-size: 10px;">&copy; 2026 {app_name} Team</p>
                 </div>
             </div>
         """
     }
-
     try:
-        response = requests.post(url, json=payload, headers=headers, timeout=10)
-        if response.status_code in [200, 201]:
-            print(f"OTP Email Sent via Brevo successfully to {to_email}")
+        response = _req.post(url, json=payload, headers=headers, timeout=10)
+        if response.status_code in [200, 201, 202]:
+            print(f"[EMAIL] OTP sent successfully to {to_email}")
             return True, "Code sent to your email."
         else:
-            print(f"Brevo API Error ({response.status_code}): {response.text}")
-            return False, f"Email delivery failed (API Error). Check server console."
+            print(f"[EMAIL] Brevo API Error ({response.status_code}): {response.text}")
+            return False, "Email delivery failed. Check server console."
     except Exception as e:
-        print(f"Connection Error: {e}")
-        return False, f"Could not connect to email service"
+        print(f"[EMAIL] Connection Error: {e}")
+        return False, "Could not connect to email service."
+
+
+def send_subscription_email(to_email, user_name, plan_name, credits):
+    """
+    Sends a subscription confirmation email using Brevo API.
+    """
+    api_key = os.environ.get("BREVO_API_KEY")
+    sender_email = os.environ.get("BREVO_SENDER_EMAIL")
+    app_name = os.environ.get("BREVO_APP_NAME", "AI Interviewer")
+
+    if not api_key or "your_real_api_key" in api_key:
+        print(f"\n[INFO] SUBSCRIPTION EMAIL NOT SENT: BREVO_API_KEY not configured.")
+        return False, "API key missing"
+
+    print(f"\n[EMAIL] Sending subscription confirmation to: {to_email}")
+    import requests as _req
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "api-key": api_key
+    }
+    payload = {
+        "sender": {"name": app_name, "email": sender_email},
+        "to": [{"email": to_email}],
+        "subject": f"Welcome to the {plan_name} Plan!",
+        "htmlContent": f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+                <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                    <h1 style="color: white; margin: 0;">Subscription Confirmed</h1>
+                </div>
+                <div style="padding: 20px; text-align: center;">
+                    <h2 style="color: #333;">Welcome aboard, {user_name}!</h2>
+                    <p style="color: #666; font-size: 16px;">You are now on the <strong>{plan_name}</strong> plan.</p>
+                    <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; font-size: 24px; font-weight: bold; color: #4f46e5; margin: 20px 0;">
+                        {credits} Interview Credit(s) Added
+                    </div>
+                    <p style="color: #666; font-size: 16px;">Log in to start your interview.</p>
+                </div>
+            </div>
+        """
+    }
+    try:
+        response = _req.post(url, json=payload, headers=headers)
+        if response.status_code in [200, 201, 202]:
+            return True, "Email sent successfully"
+        else:
+            return False, response.text
+    except Exception as e:
+        return False, str(e)
+
+
 
 
 # --- AUTH ENDPOINTS ---
@@ -189,6 +251,8 @@ def signup():
     phone = data.get('phone')
     password = data.get('password')
     year = data.get('year')
+    branch = data.get('branch')
+    domain = data.get('domain')
     college_name = data.get('college_name') # New field
     photo = data.get('photo') # Live captured image
     
@@ -196,7 +260,7 @@ def signup():
     if not all([name, email, phone, password, photo]):
         return jsonify({"status": "error", "message": "All fields including live photo are mandatory."}), 400
         
-    user_id, error = database.create_user(name, email, phone, password, photo, year=year, college_name=college_name)
+    user_id, error = database.create_user(name, email, phone, password, photo, year=year, college_name=college_name, branch=branch, domain=domain)
     if error:
         return jsonify({"status": "error", "message": error}), 400
         
@@ -234,25 +298,160 @@ def login():
     identifier = data.get('identifier') # Email or Phone
     password = data.get('password')
     
+    print(f"🔑 [LOGIN ATTEMPT] Identifier: {identifier}")
+    
     user = database.authenticate_user(identifier, password)
     if user:
+        print(f"✅ [LOGIN SUCCESS] User: {user['email']}")
         return jsonify({"status": "success", "user": user})
+    
+    print(f"❌ [LOGIN FAILED] Invalid credentials for: {identifier}")
     return jsonify({"status": "error", "message": "Invalid credentials"}), 401
 
-@app.route('/api/user/select-plan', methods=['POST'])
-def select_plan():
-    """Allows a user to select a subscription plan."""
+# RAZORPAY CONFIG
+RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "rzp_test_your_real_key_here")
+RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "your_real_secret_here")
+rzp_client = None
+if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
+    try:
+        rzp_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+    except:
+        print("Warning: Razorpay Client Init Failed.")
+
+@app.route('/api/payment/create-order', methods=['POST'])
+def create_payment_order():
+    """Generates a Razorpay Order ID for a specified plan."""
     data = request.json
     user_id = data.get('user_id')
-    plan_id = data.get('plan_id')
+    plan_name = data.get('plan_name')
+    amount = float(data.get('amount', 0))
+
+    # 1. Simulator Mode Detect (If keys are placeholders or testing mode enabled)
+    is_test_mode = (
+        "YOUR_RAZORPAY" in RAZORPAY_KEY_ID or 
+        "your_real_key_here" in RAZORPAY_KEY_ID or 
+        os.environ.get("PAYMENT_TEST_MODE", "true").lower() == "true" or 
+        not rzp_client
+    )
     
-    if not user_id or not plan_id:
-         return jsonify({"status": "error", "message": "Missing user_id or plan_id"}), 400
-         
-    success = database.update_user_plan(user_id, plan_id)
-    if success:
-         return jsonify({"status": "success", "message": "Plan updated successfully"})
-    return jsonify({"status": "error", "message": "Failed to update plan"}), 500
+    if is_test_mode:
+        print(f"🛠️ [PAYMENT SIMULATOR] Creating mock order for {plan_name} (₹{amount})")
+        return jsonify({
+            "status": "success",
+            "simulated": True,
+            "order_id": f"simulated_order_{int(time.time())}",
+            "amount": int(amount * 100),
+            "key_id": "rzp_test_simulated_key"
+        })
+
+    if not rzp_client:
+        return jsonify({"status": "error", "message": "Razorpay not configured on server."}), 503
+    user_id = data.get('user_id')
+    plan_name = data.get('plan_name')
+    amount = float(data.get('amount', 0))
+
+    if not user_id or amount <= 0:
+        return jsonify({"status": "error", "message": "Invalid request parameters."}), 400
+
+    try:
+        # Amount must be in paise (₹1 = 100 paise)
+        order_data = {
+            "amount": int(amount * 100),
+            "currency": "INR",
+            "receipt": f"receipt_user_{user_id}_{int(time.time())}",
+            "payment_capture": 1
+        }
+        order = rzp_client.order.create(data=order_data)
+        
+        # Log to DB
+        database.create_order_log(user_id, order['id'], amount)
+        
+        return jsonify({
+            "status": "success",
+            "order_id": order['id'],
+            "amount": order['amount'],
+            "key_id": RAZORPAY_KEY_ID
+        })
+    except Exception as e:
+        print(f"Razorpay Order Error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/payment/verify', methods=['POST'])
+def verify_payment():
+    """Verifies Razorpay signature and updates user credits."""
+    data = request.json
+    order_id = data.get('razorpay_order_id')
+    
+    # 1. Handle Simulated Verification
+    if (order_id and order_id.startswith('simulated_')) or data.get('razorpay_payment_id') in ['pay_simulated_success', 'pay_manual_bypass']:
+        user_id = data.get('user_id')
+        plan_id = data.get('plan_id')
+        
+        # Determine credits based on plan_id
+        # Standardized to 1 credit per subscription as requested
+        credits_to_add = 1
+        
+        # Update User in DB
+        database.finalize_order(user_id, order_id or "sim_order", "sim_pay", credits_to_add, plan_id)
+        updated_user = database.get_user_by_id(int(user_id))
+        
+        # Send subscription confirmation email
+        plan_names = {"1": "Starter", "2": "ATS Pro", "3": "Proctor Elite", "4": "Ultimate Bundle"}
+        plan_name = plan_names.get(str(plan_id), "Premium")
+        if updated_user and updated_user.get('email'):
+            send_subscription_email(updated_user['email'], updated_user.get('name', 'User'), plan_name, credits_to_add)
+        
+        print(f"✅ [PAYMENT SIMULATOR] Verified & Updated DB for User {user_id}, Plan {plan_id}")
+        return jsonify({
+            "status": "success", 
+            "message": "Simulated payment verified and credits added.",
+            "user": updated_user
+        })
+    user_id = data.get('user_id')
+    plan_id = data.get('plan_id')
+    razorpay_order_id = data.get('razorpay_order_id')
+    razorpay_payment_id = data.get('razorpay_payment_id')
+    razorpay_signature = data.get('razorpay_signature')
+
+    if not all([user_id, razorpay_order_id, razorpay_payment_id, razorpay_signature]):
+        return jsonify({"status": "error", "message": "Missing verification details."}), 400
+
+    try:
+        # Verify signature
+        params_dict = {
+            'razorpay_order_id': razorpay_order_id,
+            'razorpay_payment_id': razorpay_payment_id,
+            'razorpay_signature': razorpay_signature
+        }
+        
+        # Allow manual developer bypass signature
+        if razorpay_signature != 'bypass' and razorpay_payment_id != 'pay_manual_bypass':
+            rzp_client.utility.verify_payment_signature(params_dict)
+        
+        # Determine credits based on plan_id (Example mapping)
+        # Standardized to 1 credit per subscription as requested
+        credits_to_add = 1
+        
+        # Update User in DB
+        database.finalize_order(user_id, razorpay_order_id, razorpay_payment_id, credits_to_add, plan_id)
+        
+        # Fetch updated user to sync frontend context immediately
+        updated_user = database.get_user_by_id(int(user_id))
+        
+        # Send subscription confirmation email
+        plan_names = {"1": "Starter", "2": "ATS Pro", "3": "Proctor Elite", "4": "Ultimate Bundle"}
+        plan_name = plan_names.get(str(plan_id), "Premium")
+        if updated_user and updated_user.get('email'):
+            send_subscription_email(updated_user['email'], updated_user.get('name', 'User'), plan_name, credits_to_add)
+        
+        return jsonify({
+            "status": "success", 
+            "message": "Payment verified. Credits added.",
+            "user": updated_user
+        })
+    except Exception as e:
+        print(f"Payment Verification Failed: {e}")
+        return jsonify({"status": "error", "message": "Invalid payment signature."}), 400
 
 @app.route('/api/admin/login', methods=['POST'])
 def admin_login():
@@ -358,40 +557,28 @@ def verify_face():
         if matched:
              # Set the PROFILE PHOTO as the baseline for continuous verification
              proctor_service.set_reference_profile(p_frame)
-             print(f"✅ Identity Baseline established (Ground Truth) for user {user_id}")
+             print(f"✅ Identity Baseline established for user {user_id}")
              # Sync session and record successful verification snapshot
              proctor_service.session_id = manager.session_id
              proctor_service.save_evidence(frame, "Identity Verified")
         else:
-             print(f"❌ Mismatch: Identity Verification Failed for user {user_id}: distance={distance:.4f} Msg: {feedback}")
-             # STRICT: Log failure to proctoring events
-             proctor_service.record_event("IDENTITY_MISMATCH_ATTEMPT", f"Identity verification failed (Biometric match: False).", "HIGH", frame)
+             print(f"❌ Mismatch: Identity Verification Failed for user {user_id}: {feedback}")
              return jsonify({
                  "status": "error", 
-                 "message": f"Identity Verification Failed: {feedback}"
+                 "message": "Identity Not Matched: The person in camera does not match the person in resume/profile."
              }), 403
 
-        # 2. Eye Verification (Ensuring engagement)
-        eyes_verified, eye_msg = proctor_service.verify_eyes(frame)
-        
-        if not eyes_verified:
-            print(f"⚠️ Eye Verification Failed for user {user_id}: {eye_msg}")
-            return jsonify({
-                "status": "error", 
-                "message": f"Biometric Validation Failed: {eye_msg}. Please look directly at the camera.",
-                "confidence": 0.0
-            }), 400
-             
-        # High confidence success if Face and Eyes found
+        # High confidence success if Face matched
         print(f"✨ Success: Identity Verified for user {user_id} (Distance: {distance:.4f})")
         return jsonify({
             "status": "success", 
-            "message": "Identity & Eye Contact Verified", 
+            "message": "Identity Verified", 
             "confidence": 0.99,
             "match_distance": round(float(distance), 4),
             "should_terminate": proctor_service.should_terminate,
             "termination_reason": proctor_service.termination_reason
         })
+
         
     except Exception as e:
         import traceback
@@ -442,6 +629,42 @@ def forgot_password():
             "warning": msg
         })
 
+@app.route('/api/auth/resend-otp', methods=['POST'])
+def resend_otp():
+    """Generic endpoint to resend OTP for both Admin and Password Recovery."""
+    print(f"\n🔄 [RESEND OTP] Route HIT! Request: {request.json}")
+    data = request.json
+    email = data.get('email')
+    
+    if not email:
+        return jsonify({"status": "error", "message": "Email address is required to resend code."}), 400
+        
+    # Generate new OTP (Standard 6-digit)
+    otp = str(random.randint(100000, 999999))
+    
+    # Update existing storage context (whether it was admin_login or forgot_password)
+    if email in otp_storage:
+        otp_storage[email]["code"] = otp
+        otp_storage[email]["expires"] = time.time() + 600 # Refresh to 10 mins
+    else:
+        # If session timed out/cleared, create new entry
+        otp_storage[email] = {
+            "code": otp,
+            "expires": time.time() + 600
+        }
+        
+    # Attempt to send real email
+    sent_successfully, msg = send_otp_email(email, otp)
+    
+    if sent_successfully:
+        return jsonify({"status": "success", "message": "A new verification code has been dispatched."})
+    else:
+        return jsonify({
+            "status": "success", 
+            "message": "New code generated. Check local console/txt log.",
+            "warning": msg
+        })
+
 
 @app.route('/api/auth/verify-otp', methods=['POST'])
 def verify_otp():
@@ -463,6 +686,72 @@ def verify_otp():
          return jsonify({"status": "error", "message": "Invalid OTP"}), 400
          
     return jsonify({"status": "success", "message": "OTP verified"})
+
+@app.route('/api/user/<int:user_id>', methods=['GET'])
+def get_user_profile(user_id):
+    user_data = database.get_user_by_id(user_id)
+    if user_data:
+        return jsonify({"status": "success", "user": user_data})
+    return jsonify({"status": "error", "message": "User not found"}), 404
+
+@app.route('/api/init_session', methods=['POST'])
+def init_session():
+    """Initializes the manager with a pre-existing resume from the DB."""
+    data = request.json
+    user_id = data.get('user_id')
+    topic = data.get('topic')
+    mode = data.get('mode') # New: practice or interview
+    is_practice = mode == 'practice'
+    practice_section = data.get('practice_section') # New: For focused drills
+    
+    if not user_id: return jsonify({"status": "error", "message": "Missing user_id"}), 400
+    
+    # --- CREDIT GATING ---
+    if not is_practice:
+        if not database.decrement_user_credits(user_id):
+             return jsonify({"status": "error", "message": "No interview credits remaining. Please upgrade your plan."}), 402
+    
+    # Get user plan from DB
+    user_info = database.get_user_by_id(user_id)
+    plan_id = user_info.get('plan_id', 0) if user_info else 0
+    
+    if topic:
+        manager.set_module_topic(topic)
+        print(f" 🎯 [MODULE] Express Initiation for: {topic}")
+    else:
+        manager.set_module_topic(None)
+
+    # Initialize flow with plan and optional practice section
+    manager.update_flow_for_plan(plan_id, practice_section=practice_section)
+    
+    user_data = database.get_user_by_id(int(user_id))
+    if not user_data or not user_data.get('resume_path'):
+        return jsonify({"status": "error", "message": "No stored resume found"}), 404
+        
+    filepath = user_data['resume_path']
+    if not os.path.exists(filepath):
+        return jsonify({"status": "error", "message": "Resume file not found on server"}), 404
+        
+    # Process with Manager
+    success, msg = manager.load_resume(filepath)
+    manager.resume_path = filepath
+    manager.candidate_name = user_data['name']
+    manager.update_flow_for_plan(user_data.get('plan_id', 1))
+    
+    # NEW: Create a database record for this session
+    session_db_id = database.start_interview_session(user_id, topic)
+    manager.session_db_id = session_db_id
+    
+    # Reset proctoring
+    proctor_service.should_terminate = False
+    proctor_service.violations = []
+    manager.history = []
+    manager.current_step = 0
+    manager.credit_consumed = False
+    
+    if success:
+        return jsonify({"status": "success", "message": "Session initialized from profile"})
+    return jsonify({"status": "error", "message": msg}), 500
 
 @app.route('/api/auth/reset-password', methods=['POST'])
 def reset_password():
@@ -549,7 +838,18 @@ def delete_own_account():
 def get_dashboard(user_id):
     print(f"📊 Dashboard Request for User ID: {user_id}")
     interviews = database.get_user_interviews(user_id)
-    return jsonify({"status": "success", "interviews": interviews})
+    # Always return fresh user data so the frontend reflects the latest plan_id / credits
+    user_data = database.get_user_by_id(user_id)
+    return jsonify({"status": "success", "interviews": interviews, "user": user_data})
+
+    # STRICT: Check for Interview Credits
+    if not database.decrement_user_credits(user_id):
+        return jsonify({"status": "error", "message": "No interview credits remaining. Please buy a plan."}), 402
+
+    interview_id = database.start_interview_session(user_id)
+    if interview_id:
+        return jsonify({"status": "success", "interview_id": interview_id})
+    return jsonify({"status": "error", "message": "Failed to start interview session"}), 500
 
 @app.route('/api/interview/save', methods=['POST'])
 def save_interview_result():
@@ -557,11 +857,25 @@ def save_interview_result():
     user_id = data.get('user_id')
     score = data.get('score')
     details = data.get('details')
+    video_path = data.get('video_path')
+    interview_id = data.get('interview_id')
     
     if user_id:
-        database.save_interview(user_id, score, details)
+        database.save_interview(user_id, score, details, video_path, interview_id)
         return jsonify({"status": "success"})
     return jsonify({"status": "ignored", "message": "No user logged in"})
+
+@app.route('/api/interview/terminate', methods=['POST'])
+def terminate_interview():
+    data = request.json
+    interview_id = data.get('interview_id')
+    if not interview_id:
+        return jsonify({"status": "error", "message": "Interview ID required"}), 400
+    
+    success = database.terminate_interview_session(interview_id)
+    if success:
+        return jsonify({"status": "success", "message": "Interview session terminated due to violations."})
+    return jsonify({"status": "error", "message": "Failed to terminate session"}), 500
 
 
 def check_admin():
@@ -641,7 +955,7 @@ def download_best_report(user_id):
         return jsonify({"message": "No interviews found for this candidate"}), 404
     
     # Delegate to the existing report generation route handler
-    return download_past_report(interview_id)
+    return download_past_report(interview_id, plan_id=4)
 
 # --- EXISTING ENDPOINTS ---
 
@@ -658,7 +972,29 @@ def upload_resume():
     file = request.files['resume']
     candidate_name = request.form.get('name', 'Unknown').strip()
     candidate_email = request.form.get('email', 'Unknown').strip()
-    user_id = request.form.get('user_id') # Optional from dashboard
+    user_id = request.form.get('user_id') 
+    topic = request.form.get('topic') # New: Specialized Module Topic (e.g. System Design)
+    mode = request.form.get('mode')
+    is_practice = mode == 'practice'
+
+    if topic:
+        manager.set_module_topic(topic)
+        print(f" 🎯 [MODULE] Interview session starting for Module: {topic}")
+    else:
+        manager.set_module_topic(None)
+
+    # --- INTERVIEW CREDIT GATING ---
+    if user_id:
+        if not is_practice and not database.has_interview_credits(user_id):
+            return jsonify({
+                "status": "error", 
+                "message": "You have exhausted your interview credits. Please upgrade your plan to continue.",
+                "code": "OUT_OF_CREDITS"
+            }), 403
+        
+        # NOTE: Credit consumption moved to get_interview_question (Step 0) to prevent double-burn in case of errors.
+        print(f"💳 [Credits Check] User {user_id} has active credits.")
+    print(f" - Filename: {file.filename}")
     
     if file.filename == '':
         return jsonify({"status": "error", "message": "No file selected"}), 400
@@ -685,9 +1021,26 @@ def upload_resume():
     
     file.save(filepath)
     
-    if user_id and user_id != 'undefined':
-        database.update_resume_path(int(user_id), filepath)
     
+    if user_id and str(user_id).lower() not in ['undefined', 'null', '']:
+        try:
+            database.update_resume_path(int(user_id), filepath)
+            print(f" [DB] Updated resume path for User ID: {user_id}")
+        except Exception as db_err:
+            print(f" ⚠️ [DB ERROR] Failed to update resume path: {db_err}")
+    
+    # Fetch User Plan and Update Manager Flow
+    plan_id = 0
+    if user_id and str(user_id).lower() not in ['undefined', 'null', '']:
+        try:
+            user_data = database.get_user_by_id(int(user_id))
+            if user_data:
+                plan_id = user_data.get('plan_id', 0)
+                manager.update_flow_for_plan(plan_id)
+                print(f" ✅ [FLOW SYNC] Interview Manager set to Plan {plan_id}")
+        except Exception as flow_err:
+            print(f" ⚠️ [FLOW SYNC ERROR] {flow_err}")
+
     # Process with Manager
     success, msg = manager.load_resume(filepath)
     manager.resume_path = filepath # Link for auto-deletion after report
@@ -710,16 +1063,21 @@ def upload_resume():
     if not success:
          return jsonify({"status": "error", "message": msg}), 400
 
+    bypass = request.form.get('bypass_name_check') == 'true'
     match, detected_name = manager.verify_candidate_match(candidate_name, manager.resume_text)
-    if not match:
+    
+    if not match and not bypass:
          resume_uploaded = False
          return jsonify({
              "status": "error", 
-             "message": f"Resume name mismatch: The resume belongs to '{detected_name}', but you entered '{candidate_name}'. Please verify the name or upload correct resume."
-         }), 400
+             "message": "Identity Not Matched: The candidate name on your resume does not match your registered profile name. Please ensure they match exactly."
+         }), 403 # Changed from warning to error (403 Forbidden)
+
 
     manager.candidate_name = candidate_name
-    manager.analyze_resume()
+    # Run resume analysis in background to avoid blocking UI during upload/parsing
+    import threading
+    threading.Thread(target=manager.analyze_resume, daemon=True).start()
 
     resume_uploaded = True
     current_candidate_info = {
@@ -730,13 +1088,28 @@ def upload_resume():
         'uploaded_at': datetime.now().isoformat()
     }
     
+    # Update User Photo with Resume Portrait if available (Requested: person in resume matched)
+    if user_id and manager.candidate_photo:
+        try:
+            database.update_user_profile(
+                user_id=int(user_id),
+                name=candidate_name,
+                email=candidate_email,
+                phone='Unknown', # Only targeting photo here
+                college_name='Unknown',
+                year='Unknown',
+                photo=manager.candidate_photo
+            )
+            print(f" ✅ [MANAGER] Updated User {user_id} profile photo with resume portrait.")
+        except: pass
+
     print(f"\n{'='*60}")
     print(f"Resume uploaded & Verified: {candidate_name}")
     print(f"{'='*60}\n")
     
     return jsonify({
         "status": "success",
-        "message": "resume verified successfully lets move to the next processs",
+        "message": "Identity verified. Lets move to the next process.",
         "candidate": current_candidate_info
     })
 
@@ -749,6 +1122,40 @@ def check_resume():
 
 @app.route('/api/interview/question', methods=['GET'])
 def get_interview_question():
+    """Fetches the next question, ensuring plan-based flow is synced."""
+    user_id = request.args.get('user_id')
+    section = request.args.get('section')
+    mode = request.args.get('mode')
+    
+    # CRITICAL: Re-sync plan and consume credit if this is the first question of the session
+    if manager.current_step == 0 and user_id:
+        try:
+            user_data = database.get_user_by_id(int(user_id))
+            if user_data:
+                # 1. Plan & Practice Sync
+                plan_id = user_data.get('plan_id', 0)
+                is_practice = mode == 'practice'
+                
+                manager.update_flow_for_plan(plan_id, practice_section=section if is_practice else None)
+                print(f" 🔄 [LATE SYNC] Interview started. Plan: {plan_id}, Mode: {mode}, Section: {section}")
+
+                # 2. Billing Guard (Deduct credit ONLY ONCE per session, ONLY for full interviews)
+                if not is_practice and not manager.credit_consumed:
+                    # GATING: Ensure user actually has credits
+                    if not (user_data.get('interviews_remaining', 0) > 0):
+                        return jsonify({"status": "error", "message": "Interview cannot start. 0 Credits remaining."}), 403
+                    
+                    # Deduct from Database
+                    if database.consume_interview_credit(int(user_id)):
+                        manager.credit_consumed = True
+                        print(f" 💳 [BILLING] 1 Credit consumed for Session {manager.session_id}, User {user_id}")
+                    else:
+                        return jsonify({"status": "error", "message": "Failed to authorize session billing."}), 500
+                elif is_practice:
+                    print(f" 🛠️ [PRACTICE] Sessions billing bypassed for drill.")
+        except Exception as e:
+            print(f" ⚠️ [LATE SYNC/BILLING ERROR] {e}")
+
     # Use strict flow to get first category
     category = manager.get_next_category()
     question = manager.generate_question(category)
@@ -756,10 +1163,28 @@ def get_interview_question():
 
 @app.route('/api/interview/answer', methods=['POST'])
 def submit_answer():
-    data = request.json
+    data = request.json or {}
     question = data.get('question')
     answer = data.get('answer')
+    user_id = data.get('user_id')
     
+    # NOTE: Do NOT call update_flow_for_plan here — it resets current_step to 0,
+    # which would restart the interview flow from the beginning on every answer.
+    # Plan syncing is done once at session init (upload_resume / init_session / get_interview_question step 0).
+    # Only re-sync if the plan has genuinely changed mid-session.
+    if user_id:
+        try:
+            user_data = database.get_user_by_id(int(user_id))
+            if user_data:
+                plan_id = int(user_data.get('plan_id', 0))
+                if plan_id != manager.plan_id:
+                    # Plan changed (e.g. user upgraded mid-session) — preserve current_step
+                    old_step = manager.current_step
+                    manager.update_flow_for_plan(plan_id)
+                    manager.current_step = old_step  # Restore position in flow
+                    print(f" 🔄 [MID-SESSION] Plan changed {manager.plan_id} → {plan_id}. Step preserved at {old_step}.")
+        except Exception: pass
+
     # 1. Run evaluation in background to remove delay
     import threading
     threading.Thread(target=manager.evaluate_answer, args=(question, answer)).start()
@@ -827,15 +1252,21 @@ def finish_interview():
         data = request.json or {}
         user_id = data.get('user_id')
 
-        # 1. Stop proctoring and sync violations
-        try:
-            events = proctor_service.stop()
-            if events:
-                for ev in events:
-                    if ev not in manager.violations:
-                        manager.violations.append(ev)
-        except Exception:
-            pass
+        # 1. Stop proctoring and sync violations (Plan 3+ Only)
+        user_data = database.get_user_by_id(user_id) if user_id else None
+        plan_id = int(user_data.get('plan_id', 0)) if user_data else 0
+
+        if plan_id >= 3:
+            try:
+                events = proctor_service.stop()
+                if events:
+                    for ev in events:
+                        if ev not in manager.violations:
+                            manager.violations.append(ev)
+            except Exception:
+                pass
+        else:
+            print(f"ℹ️ Skipping Proctoring Sync for Plan {plan_id}")
 
         # Find the Identity Verified image if it exists
         identity_image = None
@@ -850,14 +1281,53 @@ def finish_interview():
 
         # 2. Calculate final score
         score = manager.calculate_score()
+        video_path = data.get('video_path')
 
         # 3. Save interview record to database
-        interview_id = None
+        interview_id_db = None
+        interview_id = data.get('interview_id')
         if user_id:
             # Sync Resume Score for report
             user_data = database.get_user_by_id(user_id)
             if user_data and user_data.get('resume_score') is not None:
                 manager.resume_score = user_data.get('resume_score')
+
+            # Collect evidence images as base64 so Plan 4 past reports can embed them
+            import base64 as _b64ev
+            evidence_b64 = []
+            _seen_ev = set()
+            # Priority 1: violation images
+            for v in manager.violations:
+                img_path = v.get('image_path')
+                if img_path and os.path.exists(img_path) and os.path.isfile(img_path) and img_path not in _seen_ev:
+                    try:
+                        with open(img_path, 'rb') as _f:
+                            evidence_b64.append({
+                                'label': f"{v.get('type','Evidence')}: {v.get('message','')} ({v.get('severity','MEDIUM')})",
+                                'b64': _b64ev.b64encode(_f.read()).decode('utf-8')
+                            })
+                        _seen_ev.add(img_path)
+                    except Exception as _ev_err:
+                        print(f"[Evidence] Could not encode violation image: {_ev_err}")
+            # Priority 2: session proof files from evidence/ directory
+            _ev_dir = os.path.join(os.getcwd(), 'evidence')
+            if os.path.exists(_ev_dir):
+                _sid_pfx = f"proof_{manager.session_id}_"
+                for _fn in os.listdir(_ev_dir):
+                    if not _fn.endswith('.jpg'): continue
+                    _fp = os.path.join(_ev_dir, _fn)
+                    if _sid_pfx in _fn and _fp not in _seen_ev and os.path.isfile(_fp):
+                        _lbl = 'Session Log'
+                        if 'Identity_Verified' in _fn: _lbl = 'Identity Proof (Live)'
+                        elif 'Gains' in _fn: _lbl = 'Focus Gain'
+                        elif 'loss'  in _fn: _lbl = 'Focus Loss'
+                        try:
+                            with open(_fp, 'rb') as _f:
+                                evidence_b64.append({'label': _lbl, 'b64': _b64ev.b64encode(_f.read()).decode('utf-8')})
+                            _seen_ev.add(_fp)
+                        except Exception as _ev_err:
+                            print(f"[Evidence] Could not encode session image {_fn}: {_ev_err}")
+            print(f"[Evidence] Captured {len(evidence_b64)} image(s) for interview record.")
 
             details = {
                 'candidate_name': manager.candidate_name,
@@ -867,9 +1337,13 @@ def finish_interview():
                 'proctor_score': proctor_score,
                 'evidence_path': manager.evidence_path,
                 'session_id': manager.session_id,
-                'resume_analysis_results': manager.resume_analysis_results
+                'resume_analysis_results': manager.resume_analysis_results,
+                'resume_score': manager.resume_score,  # Persist so all plan reports include it
+                'evidence_b64': evidence_b64,           # Base64 evidence for Plan 4 past reports
+                'is_trial_ended': data.get('is_trial_ended', False),
+                'module_name': getattr(manager, 'module_topic', None)
             }
-            interview_id = database.save_interview(user_id, score, details)
+            interview_id_db = database.save_interview(user_id, score, details, video_path, interview_id)
 
         print(f"\n{'='*60}")
         print(f"Success: Interview Finished: {manager.candidate_name} | Score: {score}% | ID: {interview_id}")
@@ -877,7 +1351,7 @@ def finish_interview():
 
         return jsonify({
             "status": "success",
-            "interview_id": interview_id,
+            "interview_id": interview_id_db,
             "score": score,
             "proctor_score": proctor_score,
             "evaluations": manager.evaluations,
@@ -895,6 +1369,16 @@ def finish_interview():
 @app.route('/api/start_monitoring', methods=['POST'])
 def start_proctoring():
     try:
+        # 1. Check Plan (Only Plan 3+ allowed proctoring)
+        data = request.json or {}
+        user_id = data.get('user_id')
+        user_data = database.get_user_by_id(user_id) if user_id else None
+        plan_id = int(user_data.get('plan_id', 0)) if user_data else 0
+
+        if plan_id < 3:
+            print(f"ℹ️ Skipping Proctoring Start for Plan {plan_id}")
+            return jsonify({"status": "success", "simulated": True, "message": "Proctoring skipped for this plan."})
+
         # Sync session ID from manager for evidence isolation
         proctor_service.session_id = manager.session_id
         proctor_service.start()
@@ -1086,12 +1570,11 @@ def get_report():
 def download_report():
     interview_id = request.args.get('id')
     
+    plan_id = request.args.get('plan_id', 0)
+    
     # If ID is provided, use the past report logic
     if interview_id:
-        try:
-            return download_past_report(int(interview_id))
-        except:
-            pass
+      return download_past_report(int(interview_id), int(plan_id))
 
     # Fallback to current manager as before
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1102,7 +1585,7 @@ def download_report():
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     
     try:
-        success = manager.generate_pdf_report(filepath)
+        success = manager.generate_pdf_report(filepath, int(plan_id))
     except Exception as e:
         print(f"[ERROR] PDF Generation Error: {e}")
         import traceback
@@ -1111,6 +1594,14 @@ def download_report():
     
     if success and os.path.exists(filepath):
         print(f"✅ Real-time PDF generated successfully: {filepath}")
+        
+        # Trigger cleanup of source files (Resume and Evidence Images)
+        # Note: This does NOT delete the generated PDF report itself.
+        try:
+            manager.cleanup_session()
+        except:
+            pass
+
         return send_file(
             os.path.abspath(filepath), 
             as_attachment=True, 
@@ -1127,7 +1618,10 @@ def download_report():
         }), 500
 
 @app.route('/api/download_report/<int:interview_id>', methods=['GET'])
-def download_past_report(interview_id):
+def download_past_report(interview_id, plan_id=None):
+    if plan_id is None:
+        plan_id = request.args.get('plan_id', 0)
+        
     # Fetch interview data
     data = database.get_interview_by_id(interview_id)
     if not data:
@@ -1148,6 +1642,18 @@ def download_past_report(interview_id):
     temp_manager.evidence_path = details.get('evidence_path', None)
     temp_manager.session_id = details.get('session_id', temp_manager.session_id)
     temp_manager.resume_analysis_results = details.get('resume_analysis_results')
+    # Restore resume_score for all plans — check details first, then fall back to user's DB record
+    temp_manager.resume_score = details.get('resume_score')
+    if temp_manager.resume_score is None:
+        try:
+            uid = data.get('user_id')  # get_interview_by_id always returns user_id
+            if uid:
+                u = database.get_user_by_id(int(uid))
+                if u and u.get('resume_score') is not None:
+                    temp_manager.resume_score = u['resume_score']
+                    print(f"✅ [RESUME SCORE] Restored from DB for user {uid}: {temp_manager.resume_score}")
+        except Exception as rs_err:
+            print(f"⚠️ Could not restore resume_score: {rs_err}")
     
     # Try to parse date for start_time (to find evidence)
     try:
@@ -1166,7 +1672,23 @@ def download_past_report(interview_id):
                 print(f"⚠️ Could not parse date '{data['date']}', using current time as baseline.")
                 pass
         
-    # Generate
+    # Decode base64 evidence images to temp files for Plan 4 reports
+    import base64 as _b64ev, uuid as _uuid
+    decoded_evidence_temps = []
+    evidence_b64 = details.get('evidence_b64', [])
+    if evidence_b64:
+        for _item in evidence_b64[:12]:  # cap at 12 images
+            try:
+                _img_bytes = _b64ev.b64decode(_item['b64'])
+                _tmp_path  = os.path.join(app.config['UPLOAD_FOLDER'], f"ev_{_uuid.uuid4().hex}.jpg")
+                with open(_tmp_path, 'wb') as _f:
+                    _f.write(_img_bytes)
+                decoded_evidence_temps.append((_tmp_path, _item.get('label', 'Evidence')))
+            except Exception as _dec_err:
+                print(f"[Evidence] Could not decode image: {_dec_err}")
+        temp_manager.evidence_images = decoded_evidence_temps
+        print(f"[Evidence] Restored {len(decoded_evidence_temps)} image(s) for past report.")
+
     # Prepare filename
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     safe_name = re.sub(r'[^a-zA-Z0-9_]', '', temp_manager.candidate_name or 'Candidate').strip()
@@ -1176,16 +1698,22 @@ def download_past_report(interview_id):
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     
     try:
-        print(f"📄 Generating PDF for {temp_manager.candidate_name} (ID: {interview_id})...")
-        success = temp_manager.generate_pdf_report(filepath)
+        print(f"Generating PDF for {temp_manager.candidate_name} (ID: {interview_id})...")
+        success = temp_manager.generate_pdf_report(filepath, int(plan_id))
     except Exception as e:
-        print(f"❌ Critical PDF Generation Exception: {e}")
+        print(f"Critical PDF Generation Exception: {e}")
         import traceback
         traceback.print_exc()
         success = False
+    finally:
+        # Always clean up decoded evidence temp files
+        for _tp, _ in decoded_evidence_temps:
+            try:
+                if os.path.exists(_tp): os.remove(_tp)
+            except: pass
     
     if success and os.path.exists(filepath):
-        print(f"✅ PDF generated successfully: {filepath}")
+        print(f"PDF generated successfully: {filepath}")
         return send_file(
             os.path.abspath(filepath), 
             as_attachment=True, 
@@ -1193,7 +1721,7 @@ def download_past_report(interview_id):
             mimetype='application/pdf'
         )
     else:
-        print(f"❌ Failed to serve PDF: success={success}, exists={os.path.exists(filepath)}")
+        print(f"Failed to serve PDF: success={success}, exists={os.path.exists(filepath)}")
         return jsonify({"message": "Failed to generate PDF. Data might be corrupted or missing."}), 500
 
 
@@ -1228,11 +1756,17 @@ text = sys.argv[1]
 filename = sys.argv[2]
 try:
     engine = pyttsx3.init()
-    engine.setProperty('rate', 160)
-    for v in engine.getProperty('voices'):
-        if 'david' in v.name.lower() or 'male' in v.name.lower():
-            engine.setProperty('voice', v.id)
+    engine.setProperty('rate', 155)
+    voices = engine.getProperty('voices')
+    selected_voice = voices[0].id
+    for v in voices:
+        v_name = v.name.lower()
+        if 'david' in v_name or 'james' in v_name or 'male' in v_name or 'guy' in v_name:
+            selected_voice = v.id
             break
+        if 'female' not in v_name and 'zira' not in v_name and 'samantha' not in v_name:
+             selected_voice = v.id
+    engine.setProperty('voice', selected_voice)
     engine.save_to_file(text, filename)
     engine.runAndWait()
 except Exception as e:
@@ -1247,10 +1781,19 @@ except Exception as e:
                 raise Exception(f"pyttsx3 subprocess failed: {proc.stderr}")
 
         except Exception as pyttsx_err:
-            print(f"⚠️ pyttsx3 failed: {pyttsx_err}. Falling back to gTTS...")
-            from gtts import gTTS
-            tts = gTTS(text=text, lang='en')
-            tts.save(filename_mp3)
+            print(f"⚠️ pyttsx3 failed: {pyttsx_err}. Falling back to edge-tts (Male)...")
+            try:
+                import asyncio
+                import edge_tts
+                async def gen_voice():
+                    comm = edge_tts.Communicate(text, "en-US-GuyNeural")
+                    await comm.save(filename_mp3)
+                asyncio.run(gen_voice())
+            except Exception as edge_err:
+                print(f"⚠️ edge-tts failed: {edge_err}. Last fallback to gTTS...")
+                from gtts import gTTS
+                tts = gTTS(text=text, lang='en')
+                tts.save(filename_mp3)
 
         audio_file = filename_wav if os.path.exists(filename_wav) else filename_mp3
 
@@ -1338,16 +1881,20 @@ def report_violation():
 
 
 @app.route('/api/analyze-resume', methods=['POST'])
+@app.route('/api/analyze_resume_ats', methods=['GET', 'POST'])
 def analyze_resume_endpoint():
-    data = request.json
-    user_id = data.get('user_id')
+    if request.method == 'POST':
+        data = request.json
+        user_id = data.get('user_id')
+    else:
+        user_id = request.args.get('user_id')
     
     if not user_id:
         return jsonify({"status": "error", "message": "User ID required"}), 400
         
     user = database.get_user_by_id(user_id)
     if not user or not user.get('resume_path'):
-        return jsonify({"status": "error", "message": "Resume not found"}), 404
+        return jsonify({"status": "error", "message": "Resume file not found in profile. Please upload one in settings."}), 404
         
     try:
         # Extract text and analyze
@@ -1362,10 +1909,34 @@ def analyze_resume_endpoint():
         
         return jsonify({
             "status": "success",
-            "analysis": analysis
+            "analysis": analysis,
+            "report": analysis # Alias for dashboard expectation
         })
     except Exception as e:
          return jsonify({"status": "error", "message": f"Analysis failed: {str(e)}"}), 500
+
+@app.route('/api/prep_drills', methods=['GET'])
+def get_prep_drills():
+    """Serves curated Case Studies and Behavioral questions with model answers."""
+    try:
+        drills_path = os.path.join(current_dir, 'data', 'drills.json')
+        if not os.path.exists(drills_path):
+            return jsonify({"status": "error", "message": "Drills repository not found"}), 404
+            
+        with open(drills_path, 'r') as f:
+            data = json.load(f)
+            
+        return jsonify({
+            "status": "success",
+            "case_studies": data.get('case_studies', []),
+            "behavioral": data.get('behavioral', []),
+            "projects": data.get('projects', []),
+            "self_intro": data.get('self_intro', []),
+            "total": len(data.get('case_studies', [])) + len(data.get('behavioral', [])) + len(data.get('projects', [])) + len(data.get('self_intro', []))
+        })
+    except Exception as e:
+        print(f"Drills API Error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/', methods=['GET'])
 @app.route('/api/health', methods=['GET'])
@@ -1414,7 +1985,7 @@ def global_logout():
     if proctor_service:
         try: proctor_service.stop()
         except: pass
-        proctor_service = None
+        proctor_service = ProctoringService()
     
     violations = {"tab_switches": 0, "fullscreen_exits": 0, "face_not_detected": 0}
     proctor_active = False
@@ -1431,6 +2002,272 @@ def global_logout():
         "status": "success", 
         "message": "Global session cleared. Backend state reset."
     })
+
+
+@app.route('/api/upload_video', methods=['POST'])
+def upload_video():
+    if 'video' not in request.files:
+        return jsonify({"error": "No video file"}), 400
+    
+    video_file = request.files['video']
+    interview_id = request.form.get('interview_id')
+    
+    if not interview_id:
+        # Fallback to current session if ID not yet known (new interview)
+        # However, it's better to have the ID.
+        # For now, generate a unique filename
+        filename = f"interview_video_{int(time.time())}.webm"
+    else:
+        filename = f"interview_{interview_id}_video.webm"
+        
+    video_dir = os.path.join(current_dir, 'evidence', 'videos')
+    if not os.path.exists(video_dir):
+        os.makedirs(video_dir)
+        
+    filepath = os.path.join(video_dir, filename)
+    video_file.save(filepath)
+    
+    # Return the relative path for storing in DB
+    return jsonify({
+        "status": "success", 
+        "video_path": f"evidence/videos/{filename}"
+    })
+
+@app.route('/api/video/stream/<int:interview_id>', methods=['GET'])
+def stream_interview_video(interview_id):
+    interview = database.get_interview_by_id(interview_id)
+    if not interview or not interview.get('video_path'):
+        return jsonify({"error": "Video not found"}), 404
+        
+    filepath = os.path.abspath(os.path.join(current_dir, interview['video_path']))
+    if os.path.exists(filepath):
+        return send_file(filepath, mimetype="video/webm")
+    return jsonify({"error": "File missing on server"}), 404
+
+@app.route('/api/video/download/<int:interview_id>', methods=['GET'])
+def download_interview_video(interview_id):
+    interview = database.get_interview_by_id(interview_id)
+    if not interview or not interview.get('video_path'):
+        return jsonify({"error": "Video not found"}), 404
+        
+    filepath = os.path.abspath(os.path.join(current_dir, interview['video_path']))
+    if not os.path.exists(filepath):
+        return jsonify({"error": "File missing on server"}), 404
+        
+    # Send then delete logic
+    def generate():
+        with open(filepath, 'rb') as f:
+            yield from f
+        # Delete after streaming
+        try:
+            os.remove(filepath)
+            # Optionally update DB to mark as deleted
+            print(f"🗑️ Video file {filepath} deleted after student download.")
+        except Exception as e:
+            print(f"Error deleting video file: {e}")
+
+    # For simple file serving with as_attachment, we can't easily delete immediately after send_file returns without complex logic
+    # But since this is a student download, we trigger the delete.
+    
+    # Check if delete=true is passed (usually from student results page)
+    should_delete = request.args.get('delete', 'false').lower() == 'true'
+    
+    if should_delete:
+        # Use a wrapper that deletes after the response is finished
+        @after_this_request
+        def remove_file(response):
+            try:
+                os.remove(filepath)
+                # Update DB to clear video_path so it's not served again
+                database.update_interview_video(interview_id, None)
+            except Exception as error:
+                print(f"Error deleting file and updating DB: {error}")
+            return response
+            
+    return send_file(
+        filepath, 
+        as_attachment=True, 
+        download_name=f"Interview_Recording_{interview_id}.webm",
+        mimetype="video/webm"
+    )
+
+# ==============================================================================
+# 📄 AI RESUME BUILDER ENGINE
+# ==============================================================================
+
+def generate_resume_pdf(data):
+    """Generates a professionally formatted Resume PDF."""
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from io import BytesIO
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.75*inch, bottomMargin=0.75*inch, leftMargin=0.75*inch, rightMargin=0.75*inch)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    # Custom premium styles
+    C_PRIMARY = colors.HexColor('#1E293B')
+    C_ACCENT = colors.HexColor('#2563EB')
+    
+    s_name = ParagraphStyle('Name', parent=styles['Normal'], fontSize=24, leading=28, textColor=C_PRIMARY, fontName='Helvetica-Bold')
+    s_contact = ParagraphStyle('Contact', parent=styles['Normal'], fontSize=10, textColor=colors.HexColor('#64748B'), alignment=2) # Right align
+    s_section = ParagraphStyle('Section', parent=styles['Heading2'], fontSize=14, spaceBefore=12, spaceAfter=6, textColor=C_ACCENT, fontName='Helvetica-Bold', borderPadding=(0,0,2,0), borderSide='bottom', borderColor=C_ACCENT)
+    s_title = ParagraphStyle('JobTitle', parent=styles['Normal'], fontSize=11, fontName='Helvetica-Bold', textColor=C_PRIMARY)
+    s_date = ParagraphStyle('Date', parent=styles['Normal'], fontSize=10, textColor=colors.HexColor('#64748B'), alignment=2)
+    s_body = ParagraphStyle('Body', parent=styles['Normal'], fontSize=10, leading=14, textColor=colors.HexColor('#334155'))
+    s_bullet = ParagraphStyle('Bullet', parent=s_body, leftIndent=12, firstLineIndent=0, spaceBefore=2)
+
+    p = data.get('personal_info', {})
+    
+    # Header
+    header_data = [
+        [Paragraph(p.get('name', 'CANDIDATE NAME').upper(), s_name), 
+         Paragraph(f"{p.get('location', '')}<br/>{p.get('email', '')}<br/>{p.get('phone', '')}", s_contact)]
+    ]
+    header_tab = Table(header_data, colWidths=[4.5*inch, 2.5*inch])
+    header_tab.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'BOTTOM'), ('BOTTOMPADDING', (0,0), (-1,-1), 0)]))
+    elements.append(header_tab)
+    elements.append(Spacer(1, 0.2*inch))
+
+    # Summary
+    if data.get('summary'):
+        elements.append(Paragraph("PROFESSIONAL SUMMARY", s_section))
+        elements.append(Paragraph(data['summary'], s_body))
+    
+    # Experience
+    if data.get('experience'):
+        elements.append(Paragraph("WORK EXPERIENCE", s_section))
+        for exp in data['experience']:
+            exp_header = [[Paragraph(f"<b>{exp.get('title', '')}</b> | {exp.get('company', '')}", s_title), 
+                           Paragraph(exp.get('period', ''), s_date)]]
+            exp_tab = Table(exp_header, colWidths=[5.5*inch, 1.5*inch])
+            exp_tab.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'TOP')]))
+            elements.append(exp_tab)
+            for bullet in exp.get('responsibilities', []):
+                elements.append(Paragraph(f"• {bullet}", s_bullet))
+            elements.append(Spacer(1, 0.1*inch))
+
+    # Education
+    if data.get('education'):
+        elements.append(Paragraph("EDUCATION", s_section))
+        for edu in data['education']:
+            edu_header = [[Paragraph(f"<b>{edu.get('degree', '')}</b>", s_title), 
+                           Paragraph(edu.get('year', ''), s_date)]]
+            edu_tab = Table(edu_header, colWidths=[5.5*inch, 1.5*inch])
+            edu_tab.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'TOP')]))
+            elements.append(edu_tab)
+            elements.append(Paragraph(f"{edu.get('institution', '')} • CGPA: {edu.get('cgpa', edu.get('gpa', 'N/A'))}", s_body))
+            elements.append(Spacer(1, 0.1*inch))
+
+    # Skills
+    if data.get('skills'):
+        elements.append(Paragraph("SKILLS & COMPETENCIES", s_section))
+        if isinstance(data['skills'], list):
+            elements.append(Paragraph(", ".join(data['skills']), s_body))
+        elif isinstance(data['skills'], dict):
+            s = data['skills']
+            if s.get('languages'): elements.append(Paragraph(f"<b>Languages:</b> {s.get('languages')}", s_body))
+            if s.get('frameworks'): elements.append(Paragraph(f"<b>Frameworks:</b> {s.get('frameworks')}", s_body))
+            if s.get('tools'): elements.append(Paragraph(f"<b>Tools & Tech:</b> {s.get('tools')}", s_body))
+
+    # Projects
+    if data.get('projects'):
+        elements.append(Paragraph("KEY PROJECTS", s_section))
+        for proj in data['projects']:
+            elements.append(Paragraph(f"<b>{proj.get('title', 'Project')}</b> ({proj.get('tech', '')})", s_title))
+            elements.append(Paragraph(proj.get('description', ''), s_body))
+            elements.append(Spacer(1, 0.1*inch))
+
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer
+
+def ai_polish_resume(data):
+    """
+    Leverages LLM to rewrite resume descriptions, summaries, and skills for professional impact.
+    """
+    if not manager.client: return data
+    
+    # We only want to polish text-heavy fields
+    prompt = f"""
+    You are an elite Executive Resume Writer. Rewrite the provided resume data to maximize professional impact and ATS optimization.
+    
+    STRICT CATEGORICAL RULES:
+    1. SUMMARY: Transformation into a powerful 2-3 sentence executive profile.
+    2. EXPERIENCE/PROJECTS: Rewrite descriptions using the STAR method (Situation, Task, Action, Result). Use active verbs (e.g., 'Spearheaded', 'Engineered', 'Optimized').
+    3. SKILLS: Standardize naming (e.g., 'js' -> 'JavaScript') and suggest 2-3 highly relevant missing skills based on the background.
+    4. Formatting: Ensure professional tone. Do not use first-person ('I' or 'My').
+    
+    Respond ONLY with a VALID JSON object matching the input structure. No prefix, no suffix.
+    
+    Input Data:
+    {json.dumps(data, indent=2)}
+    """
+    
+    try:
+        response = manager.client.chat.completions.create(
+            model=manager.model_name,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.4,
+            response_format={"type": "json_object"},
+            timeout=25.0
+        )
+        polished_data = json.loads(response.choices[0].message.content)
+        # Deep merge/validation to ensure structure consistency
+        return polished_data if isinstance(polished_data, dict) else data
+    except Exception as e:
+        print(f"⚠️ AI Polish Error: {e}")
+        return data
+
+@app.route('/api/resume/polish', methods=['POST'])
+def polish_resume_endpoint():
+    """Endpoint to trigger AI-powered resume content optimization."""
+    try:
+        data = request.json
+        user_id = data.get('user_id')
+        resume_data = data.get('resume_data')
+        
+        if not user_id or not resume_data:
+            return jsonify({"status": "error", "message": "Missing necessary data"}), 400
+            
+        print(f"✨ AI Polishing triggered for User {user_id}")
+        polished = ai_polish_resume(resume_data)
+        
+        return jsonify({
+            "status": "success",
+            "message": "Resume polished successfully!",
+            "polished_data": polished
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/resume/builder', methods=['POST'])
+def build_resume():
+    """Endpoint for generating a professional resume PDF from user data."""
+    try:
+        data = request.json
+        user_id = data.get('user_id')
+        resume_data = data.get('resume_data')
+        
+        if not user_id or not resume_data:
+            return jsonify({"status": "error", "message": "Missing necessary data"}), 400
+            
+        # Optional: AI Polishing logic could go here
+        # (Using manager.client to rewrite descriptions)
+        
+        pdf_buffer = generate_resume_pdf(resume_data)
+        
+        return send_file(
+            pdf_buffer,
+            as_attachment=True,
+            download_name=f"Resume_{resume_data['personal']['name'].replace(' ', '_')}.pdf",
+            mimetype='application/pdf'
+        )
+    except Exception as e:
+        print(f"Resume building failed: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
     start_flask_server()

@@ -1,0 +1,529 @@
+[
+  {
+    "id": 1,
+    "project": "Smart Parking System",
+    "answer": "My project is Smart Parking System. The problem is difficulty in finding parking spaces in crowded areas. The objective was to provide real-time parking availability. I used IoT sensors and a web application. The system detects empty slots and displays them to users. This reduces time and congestion. My role was developing the backend logic."
+  },
+  {
+    "id": 2,
+    "project": "Face Recognition Attendance System",
+    "answer": "My project is Face Recognition Attendance System. The problem is manual attendance errors. The objective was to automate attendance using facial recognition. I used Python and OpenCV. The system detects faces and marks attendance automatically. It improves accuracy and saves time. My role was implementing face recognition algorithms."
+  },
+  {
+    "id": 3,
+    "project": "Fake News Detection",
+    "answer": "My project is Fake News Detection. The problem is spread of misinformation online. The objective was to classify news as real or fake. I used NLP and machine learning. The model analyzes text and predicts authenticity. This helps in reducing misinformation. My role was building and training the model."
+  },
+  {
+    "id": 4,
+    "project": "Online Voting System",
+    "answer": "My project is Online Voting System. The problem is lack of secure remote voting. The objective was to create a secure voting platform. I used web technologies and encryption. The system ensures safe and transparent voting. This improves accessibility. My role was backend development and security implementation."
+  },
+  {
+    "id": 5,
+    "project": "Weather Prediction System",
+    "answer": "My project is Weather Prediction System. The problem is unpredictable weather conditions. The objective was to forecast weather using historical data. I used machine learning models. The system predicts temperature and rainfall. This helps in planning activities. My role was model development."
+  },
+  {
+    "id": 6,
+    "project": "Library Management System",
+    "answer": "My project is Library Management System. The problem is manual book tracking. The objective was to digitize library operations. I used Java and MySQL. The system manages book records and user transactions. This improves efficiency. My role was database design and backend logic."
+  },
+  {
+    "id": 7,
+    "project": "Email Spam Detection",
+    "answer": "My project is Email Spam Detection. The problem is unwanted spam emails. The objective was to classify emails as spam or not. I used NLP and machine learning. The system filters spam effectively. This improves user experience. My role was feature extraction and model training."
+  },
+  {
+    "id": 8,
+    "project": "Online Food Ordering System",
+    "answer": "My project is Online Food Ordering System. The problem is manual order management. The objective was to create a digital ordering platform. I used MERN stack. The system allows users to browse and order food online. This improves convenience. My role was frontend and backend integration."
+  },
+  {
+    "id": 9,
+    "project": "Stock Price Prediction",
+    "answer": "My project is Stock Price Prediction. The problem is market uncertainty. The objective was to predict stock trends. I used machine learning and time series analysis. The model predicts future prices based on historical data. This helps investors. My role was model implementation."
+  },
+  {
+    "id": 10,
+    "project": "Student Performance Prediction",
+    "answer": "My project is Student Performance Prediction. The problem is identifying weak students. The objective was to predict student performance. I used machine learning models. The system analyzes academic data and predicts results. This helps teachers provide support. My role was data preprocessing and modeling."
+  }
+]
+---
+[
+  {
+    "id": 11,
+    "project": "Disease Prediction System",
+    "answer": "My project is Disease Prediction System. The problem is late diagnosis of diseases. The objective was to predict diseases based on symptoms. I used Python and machine learning models. The system analyzes symptoms and predicts possible diseases. This helps in early treatment. My role was model training and evaluation."
+  },
+  {
+    "id": 12,
+    "project": "URL Phishing Detection",
+    "answer": "My project is URL Phishing Detection. The problem is increasing phishing attacks. The objective was to detect malicious URLs. I used machine learning and feature extraction techniques. The system classifies URLs as safe or phishing. This improves cybersecurity. My role was feature engineering and model development."
+  },
+  {
+    "id": 13,
+    "project": "Job Portal System",
+    "answer": "My project is Job Portal System. The problem is difficulty in connecting job seekers and recruiters. The objective was to build an online platform for job applications. I used MERN stack. The system allows users to apply and recruiters to post jobs. This improves hiring efficiency. My role was full-stack development."
+  },
+  {
+    "id": 14,
+    "project": "Handwritten Digit Recognition",
+    "answer": "My project is Handwritten Digit Recognition. The problem is recognizing handwritten digits accurately. The objective was to classify digits using deep learning. I used Python and neural networks. The system identifies digits from images. This is useful in automation. My role was model building and training."
+  },
+  {
+    "id": 15,
+    "project": "Movie Recommendation System",
+    "answer": "My project is Movie Recommendation System. The problem is difficulty in finding relevant content. The objective was to recommend movies based on user preferences. I used collaborative filtering. The system suggests personalized movies. This improves user experience. My role was algorithm implementation."
+  },
+  {
+    "id": 16,
+    "project": "Voice Assistant",
+    "answer": "My project is Voice Assistant. The problem is manual task execution. The objective was to automate tasks using voice commands. I used Python and speech recognition libraries. The system performs tasks like searching and opening apps. This improves convenience. My role was integrating voice processing modules."
+  },
+  {
+    "id": 17,
+    "project": "Intrusion Detection System",
+    "answer": "My project is Intrusion Detection System. The problem is unauthorized network access. The objective was to detect intrusions using machine learning. I used Python and classification models. The system identifies suspicious activities. This improves network security. My role was data preprocessing and model building."
+  },
+  {
+    "id": 18,
+    "project": "Expense Tracker",
+    "answer": "My project is Expense Tracker. The problem is poor financial management. The objective was to track and manage expenses. I used web technologies and a database. The system records and categorizes expenses. This helps users manage finances. My role was backend development."
+  },
+  {
+    "id": 19,
+    "project": "Online Quiz System",
+    "answer": "My project is Online Quiz System. The problem is difficulty in conducting tests online. The objective was to create a digital quiz platform. I used JavaScript and backend technologies. The system allows quiz creation and evaluation. This improves learning efficiency. My role was frontend development."
+  },
+  {
+    "id": 20,
+    "project": "Image Caption Generator",
+    "answer": "My project is Image Caption Generator. The problem is understanding image content automatically. The objective was to generate captions for images. I used deep learning and NLP. The system analyzes images and produces descriptions. This is useful in accessibility. My role was model training and integration."
+  }
+]
+---
+[
+  {
+    "id": 21,
+    "project": "AI-Based Resume Analyzer",
+    "answer": "My project is AI-Based Resume Analyzer. The problem is manual resume screening is time-consuming. The objective was to automate resume evaluation. I used NLP and machine learning. The system analyzes resumes and matches them with job roles. This improves hiring efficiency. My role was implementing NLP techniques."
+  },
+  {
+    "id": 22,
+    "project": "Smart Health Monitoring System",
+    "answer": "My project is Smart Health Monitoring System. The problem is lack of continuous health tracking. The objective was to monitor health parameters in real-time. I used IoT sensors and a web dashboard. The system tracks heart rate and temperature. This helps in early detection of health issues. My role was backend integration."
+  },
+  {
+    "id": 23,
+    "project": "AI-Based Chat Application",
+    "answer": "My project is AI-Based Chat Application. The problem is lack of smart communication tools. The objective was to build an intelligent chat system. I used NLP and web technologies. The system provides automated responses. This improves communication efficiency. My role was developing chatbot features."
+  },
+  {
+    "id": 24,
+    "project": "Credit Card Fraud Detection",
+    "answer": "My project is Credit Card Fraud Detection. The problem is increasing fraud transactions. The objective was to detect fraud using machine learning. I used classification models. The system identifies suspicious transactions. This improves financial security. My role was model training and evaluation."
+  },
+  {
+    "id": 25,
+    "project": "Smart Waste Management System",
+    "answer": "My project is Smart Waste Management System. The problem is inefficient waste collection. The objective was to optimize waste management. I used IoT sensors to monitor bin levels. The system alerts when bins are full. This improves cleanliness and efficiency. My role was system design."
+  },
+  {
+    "id": 26,
+    "project": "AI-Based Text Summarizer",
+    "answer": "My project is AI-Based Text Summarizer. The problem is time-consuming reading of long documents. The objective was to generate short summaries. I used NLP techniques. The system extracts important information. This saves time. My role was implementing summarization algorithms."
+  },
+  {
+    "id": 27,
+    "project": "Sign Language Recognition",
+    "answer": "My project is Sign Language Recognition. The problem is communication gap with hearing-impaired people. The objective was to recognize gestures using AI. I used computer vision and deep learning. The system translates gestures into text. This improves accessibility. My role was model training."
+  },
+  {
+    "id": 28,
+    "project": "Smart Irrigation System",
+    "answer": "My project is Smart Irrigation System. The problem is water wastage in agriculture. The objective was to automate irrigation. I used IoT sensors and automation. The system waters crops based on soil moisture. This conserves water. My role was system implementation."
+  },
+  {
+    "id": 29,
+    "project": "Sentiment Analysis System",
+    "answer": "My project is Sentiment Analysis System. The problem is understanding customer feedback. The objective was to classify sentiments from text. I used NLP and machine learning. The system identifies positive or negative sentiment. This helps businesses improve services. My role was model building."
+  },
+  {
+    "id": 30,
+    "project": "Online Code Editor",
+    "answer": "My project is Online Code Editor. The problem is lack of accessible coding platforms. The objective was to create a browser-based coding tool. I used web technologies and backend execution. The system allows users to write and run code online. This improves learning and accessibility. My role was full-stack development."
+  }
+]
+---
+[
+  {
+    "id": 31,
+    "project": "Blockchain-Based Voting System",
+    "answer": "My project is Blockchain-Based Voting System. The problem is lack of transparency in voting. The objective was to ensure secure and tamper-proof voting. I used blockchain technology. The system records votes securely. This improves trust and transparency. My role was implementing blockchain logic."
+  },
+  {
+    "id": 32,
+    "project": "AI Fitness Trainer",
+    "answer": "My project is AI Fitness Trainer. The problem is lack of proper workout guidance. The objective was to provide real-time feedback on exercises. I used computer vision and AI. The system analyzes body movements and suggests corrections. This improves fitness outcomes. My role was model implementation."
+  },
+  {
+    "id": 33,
+    "project": "Real-Time Chat Application",
+    "answer": "My project is Real-Time Chat Application. The problem is delay in communication. The objective was to enable instant messaging. I used WebSockets and MERN stack. The system allows real-time chat between users. This improves communication efficiency. My role was backend development."
+  },
+  {
+    "id": 34,
+    "project": "AI-Based Code Auto-Completion",
+    "answer": "My project is AI-Based Code Auto-Completion. The problem is slow coding productivity. The objective was to suggest code snippets automatically. I used machine learning and NLP. The system predicts next lines of code. This speeds up development. My role was model design."
+  },
+  {
+    "id": 35,
+    "project": "Smart Home Automation System",
+    "answer": "My project is Smart Home Automation System. The problem is manual control of home devices. The objective was to automate appliances. I used IoT and mobile app integration. The system controls devices remotely. This improves convenience. My role was system integration."
+  },
+  {
+    "id": 36,
+    "project": "AI-Based Interview Preparation System",
+    "answer": "My project is AI-Based Interview Preparation System. The problem is lack of personalized interview practice. The objective was to simulate interview scenarios. I used NLP and ML. The system asks questions and evaluates answers. This helps candidates prepare effectively. My role was backend logic and evaluation module."
+  },
+  {
+    "id": 37,
+    "project": "E-Learning Platform",
+    "answer": "My project is E-Learning Platform. The problem is limited access to education resources. The objective was to create an online learning system. I used MERN stack. The system provides courses and quizzes. This improves learning accessibility. My role was full-stack development."
+  },
+  {
+    "id": 38,
+    "project": "Fake Profile Detection on Social Media",
+    "answer": "My project is Fake Profile Detection. The problem is fake accounts on social media. The objective was to identify fake profiles. I used machine learning models. The system analyzes user behavior and flags fake accounts. This improves platform security. My role was model training."
+  },
+  {
+    "id": 39,
+    "project": "Speech Emotion Recognition",
+    "answer": "My project is Speech Emotion Recognition. The problem is understanding human emotions from speech. The objective was to classify emotions. I used deep learning and audio processing. The system detects emotions like happy or sad. This helps in human-computer interaction. My role was model implementation."
+  },
+  {
+    "id": 40,
+    "project": "AI-Based Resume Builder",
+    "answer": "My project is AI-Based Resume Builder. The problem is difficulty in creating professional resumes. The objective was to automate resume generation. I used NLP and web technologies. The system generates resumes based on user input. This improves job readiness. My role was frontend and backend development."
+  }
+]
+---
+[
+  {
+    "id": 41,
+    "project": "Smart Energy Management System",
+    "answer": "My project is Smart Energy Management System. The problem is inefficient energy usage. The objective was to monitor and optimize energy consumption. I used IoT and data analytics. The system tracks usage and suggests optimizations. This reduces cost and energy waste. My role was system design."
+  },
+  {
+    "id": 42,
+    "project": "AI-Based Plagiarism Checker",
+    "answer": "My project is AI-Based Plagiarism Checker. The problem is copying content in academic work. The objective was to detect plagiarism. I used NLP techniques. The system compares text similarity and detects copied content. This improves originality. My role was implementing text comparison algorithms."
+  },
+  {
+    "id": 43,
+    "project": "Smart Traffic Violation Detection",
+    "answer": "My project is Smart Traffic Violation Detection. The problem is manual monitoring of traffic violations. The objective was to automate detection. I used computer vision. The system detects rule violations like signal jumping. This improves road safety. My role was model implementation."
+  },
+  {
+    "id": 44,
+    "project": "AI-Based Email Reply Generator",
+    "answer": "My project is AI-Based Email Reply Generator. The problem is time-consuming email responses. The objective was to automate replies. I used NLP. The system generates context-based responses. This improves productivity. My role was building the NLP model."
+  },
+  {
+    "id": 45,
+    "project": "Crowd Density Monitoring System",
+    "answer": "My project is Crowd Density Monitoring System. The problem is overcrowding in public places. The objective was to monitor crowd levels. I used computer vision. The system analyzes video feeds and estimates crowd density. This helps in safety management. My role was implementing detection algorithms."
+  },
+  {
+    "id": 46,
+    "project": "AI-Based Personal Finance Advisor",
+    "answer": "My project is AI-Based Personal Finance Advisor. The problem is poor financial planning. The objective was to provide financial advice. I used machine learning. The system analyzes income and expenses and suggests savings plans. This improves financial management. My role was model design."
+  },
+  {
+    "id": 47,
+    "project": "Smart Disaster Alert System",
+    "answer": "My project is Smart Disaster Alert System. The problem is delayed disaster warnings. The objective was to provide early alerts. I used IoT and data analysis. The system detects unusual patterns and sends alerts. This helps in saving lives. My role was backend development."
+  },
+  {
+    "id": 48,
+    "project": "AI-Based Document Classifier",
+    "answer": "My project is AI-Based Document Classifier. The problem is organizing large documents. The objective was to classify documents automatically. I used NLP and ML. The system categorizes documents into types. This improves organization. My role was model training."
+  },
+  {
+    "id": 49,
+    "project": "Smart Shopping Assistant",
+    "answer": "My project is Smart Shopping Assistant. The problem is difficulty in finding best deals. The objective was to recommend products and compare prices. I used web scraping and ML. The system suggests best options. This improves user decision-making. My role was backend logic."
+  },
+  {
+    "id": 50,
+    "project": "AI-Based Meeting Scheduler",
+    "answer": "My project is AI-Based Meeting Scheduler. The problem is difficulty in scheduling meetings. The objective was to automate scheduling. I used NLP and calendar integration. The system finds optimal meeting times. This improves productivity. My role was system integration."
+  }
+]
+---
+[
+  {
+    "id": 51,
+    "project": "Smart Resume Ranking System",
+    "answer": "My project is Smart Resume Ranking System. The problem is difficulty in shortlisting candidates. The objective was to rank resumes based on job requirements. I used NLP and machine learning. The system scores resumes automatically. This improves hiring efficiency. My role was model development."
+  },
+  {
+    "id": 52,
+    "project": "AI-Based Bug Detection System",
+    "answer": "My project is AI-Based Bug Detection System. The problem is manual debugging in software development. The objective was to identify bugs automatically. I used machine learning and code analysis. The system detects potential errors in code. This improves development speed. My role was implementing detection algorithms."
+  },
+  {
+    "id": 53,
+    "project": "Smart Traffic Prediction System",
+    "answer": "My project is Smart Traffic Prediction System. The problem is traffic congestion. The objective was to predict traffic conditions. I used machine learning models. The system forecasts traffic based on historical data. This helps in route planning. My role was model training."
+  },
+  {
+    "id": 54,
+    "project": "AI-Based Code Reviewer",
+    "answer": "My project is AI-Based Code Reviewer. The problem is time-consuming code reviews. The objective was to automate code quality checks. I used machine learning. The system suggests improvements and detects issues. This improves code quality. My role was system design."
+  },
+  {
+    "id": 55,
+    "project": "Smart Healthcare Chatbot",
+    "answer": "My project is Smart Healthcare Chatbot. The problem is limited access to healthcare advice. The objective was to provide medical guidance. I used NLP and chatbot frameworks. The system answers health-related queries. This improves accessibility. My role was chatbot development."
+  },
+  {
+    "id": 56,
+    "project": "AI-Based Fake Review Detection",
+    "answer": "My project is AI-Based Fake Review Detection. The problem is fake product reviews online. The objective was to identify fake reviews. I used NLP and classification models. The system detects suspicious reviews. This improves trust in platforms. My role was model training."
+  },
+  {
+    "id": 57,
+    "project": "Smart Classroom System",
+    "answer": "My project is Smart Classroom System. The problem is lack of interactive learning. The objective was to enhance classroom experience. I used IoT and web technologies. The system enables digital learning tools. This improves engagement. My role was system integration."
+  },
+  {
+    "id": 58,
+    "project": "AI-Based Traffic Accident Prediction",
+    "answer": "My project is AI-Based Traffic Accident Prediction. The problem is increasing road accidents. The objective was to predict accident-prone areas. I used machine learning. The system analyzes data and predicts risks. This improves safety measures. My role was model building."
+  },
+  {
+    "id": 59,
+    "project": "Smart Inventory Management System",
+    "answer": "My project is Smart Inventory Management System. The problem is inefficient stock management. The objective was to automate inventory tracking. I used databases and analytics. The system monitors stock levels and alerts shortages. This improves efficiency. My role was backend development."
+  },
+  {
+    "id": 60,
+    "project": "AI-Based Language Translator",
+    "answer": "My project is AI-Based Language Translator. The problem is language barriers. The objective was to translate text automatically. I used NLP and deep learning. The system translates between languages. This improves communication. My role was implementing translation models."
+  }
+]
+---
+[
+  {
+    "id": 61,
+    "project": "AI-Based Fraud Detection System",
+    "answer": "My project is AI-Based Fraud Detection System. The problem is financial fraud in transactions. The objective was to detect fraudulent activities. I used machine learning models. The system analyzes transaction patterns and flags suspicious activities. This improves financial security. My role was model training."
+  },
+  {
+    "id": 62,
+    "project": "Smart Parking System",
+    "answer": "My project is Smart Parking System. The problem is difficulty in finding parking spaces. The objective was to automate parking management. I used IoT and sensors. The system shows available slots in real time. This reduces traffic congestion. My role was system integration."
+  },
+  {
+    "id": 63,
+    "project": "AI-Based Chat Summarizer",
+    "answer": "My project is AI-Based Chat Summarizer. The problem is long conversations being hard to review. The objective was to summarize chats automatically. I used NLP. The system extracts key points from conversations. This improves productivity. My role was implementing summarization algorithms."
+  },
+  {
+    "id": 64,
+    "project": "Smart Waste Management System",
+    "answer": "My project is Smart Waste Management System. The problem is inefficient garbage collection. The objective was to optimize waste collection. I used IoT sensors. The system monitors bin levels and schedules pickups. This improves cleanliness. My role was backend development."
+  },
+  {
+    "id": 65,
+    "project": "AI-Based News Recommendation System",
+    "answer": "My project is AI-Based News Recommendation System. The problem is information overload. The objective was to recommend relevant news. I used machine learning. The system suggests personalized news articles. This improves user engagement. My role was model design."
+  },
+  {
+    "id": 66,
+    "project": "Smart Water Management System",
+    "answer": "My project is Smart Water Management System. The problem is water wastage. The objective was to monitor and control water usage. I used IoT. The system tracks consumption and detects leaks. This helps conserve water. My role was system design."
+  },
+  {
+    "id": 67,
+    "project": "AI-Based Customer Support Bot",
+    "answer": "My project is AI-Based Customer Support Bot. The problem is handling large customer queries. The objective was to automate support. I used NLP and chatbot frameworks. The system answers customer queries instantly. This improves customer service. My role was chatbot development."
+  },
+  {
+    "id": 68,
+    "project": "Smart Agriculture Monitoring System",
+    "answer": "My project is Smart Agriculture Monitoring System. The problem is inefficient farming practices. The objective was to monitor soil and weather conditions. I used IoT and analytics. The system provides insights to farmers. This improves crop yield. My role was backend integration."
+  },
+  {
+    "id": 69,
+    "project": "AI-Based Resume Screening System",
+    "answer": "My project is AI-Based Resume Screening System. The problem is time-consuming recruitment. The objective was to filter resumes automatically. I used NLP and ML. The system selects candidates based on skills. This improves hiring speed. My role was model training."
+  },
+  {
+    "id": 70,
+    "project": "Smart Public Transport System",
+    "answer": "My project is Smart Public Transport System. The problem is inefficient public transport management. The objective was to optimize routes and schedules. I used data analytics and IoT. The system provides real-time updates. This improves commuter experience. My role was system development."
+  }
+]
+---
+[
+  {
+    "id": 71,
+    "project": "AI-Based Stock Price Prediction",
+    "answer": "My project is AI-Based Stock Price Prediction. The problem is uncertainty in stock markets. The objective was to predict stock prices. I used machine learning and time series analysis. The system forecasts future trends. This helps investors make decisions. My role was model training."
+  },
+  {
+    "id": 72,
+    "project": "Smart Attendance System using Face Recognition",
+    "answer": "My project is Smart Attendance System. The problem is manual attendance tracking. The objective was to automate attendance using face recognition. I used computer vision. The system identifies individuals and marks attendance. This improves accuracy. My role was model implementation."
+  },
+  {
+    "id": 73,
+    "project": "AI-Based Legal Document Analyzer",
+    "answer": "My project is AI-Based Legal Document Analyzer. The problem is complex legal documents. The objective was to simplify document analysis. I used NLP. The system extracts important clauses. This helps legal professionals. My role was model development."
+  },
+  {
+    "id": 74,
+    "project": "Smart Traffic Signal Control System",
+    "answer": "My project is Smart Traffic Signal Control System. The problem is fixed traffic signals causing congestion. The objective was to adjust signals dynamically. I used AI and sensors. The system adapts signal timing based on traffic. This reduces congestion. My role was system design."
+  },
+  {
+    "id": 75,
+    "project": "AI-Based Music Recommendation System",
+    "answer": "My project is AI-Based Music Recommendation System. The problem is difficulty in discovering music. The objective was to recommend songs based on preferences. I used machine learning. The system suggests personalized music. This improves user experience. My role was algorithm implementation."
+  },
+  {
+    "id": 76,
+    "project": "Smart Health Monitoring System",
+    "answer": "My project is Smart Health Monitoring System. The problem is lack of continuous health tracking. The objective was to monitor health parameters. I used IoT sensors. The system tracks vital signs and alerts abnormalities. This improves healthcare. My role was system integration."
+  },
+  {
+    "id": 77,
+    "project": "AI-Based Video Surveillance System",
+    "answer": "My project is AI-Based Video Surveillance System. The problem is manual monitoring of CCTV footage. The objective was to automate surveillance. I used computer vision. The system detects suspicious activities. This improves security. My role was model implementation."
+  },
+  {
+    "id": 78,
+    "project": "Smart Loan Approval System",
+    "answer": "My project is Smart Loan Approval System. The problem is slow loan approval process. The objective was to automate approvals. I used machine learning. The system evaluates applicant data and predicts approval. This improves efficiency. My role was model building."
+  },
+  {
+    "id": 79,
+    "project": "AI-Based Content Moderation System",
+    "answer": "My project is AI-Based Content Moderation System. The problem is harmful content online. The objective was to filter inappropriate content. I used NLP and deep learning. The system detects offensive content. This improves platform safety. My role was model training."
+  },
+  {
+    "id": 80,
+    "project": "Smart Supply Chain Management System",
+    "answer": "My project is Smart Supply Chain Management System. The problem is inefficiencies in logistics. The objective was to optimize supply chain operations. I used data analytics. The system tracks goods and predicts demand. This improves efficiency. My role was backend development."
+  }
+]
+---
+[
+  {
+    "id": 81,
+    "project": "AI-Based Personalized Learning System",
+    "answer": "My project is AI-Based Personalized Learning System. The problem is one-size-fits-all education. The objective was to customize learning paths. I used machine learning. The system adapts content based on student performance. This improves learning outcomes. My role was model development."
+  },
+  {
+    "id": 82,
+    "project": "Smart Cyber Threat Intelligence System",
+    "answer": "My project is Smart Cyber Threat Intelligence System. The problem is increasing cyber attacks. The objective was to analyze and predict threats. I used machine learning and data analytics. The system identifies potential risks. This improves cybersecurity. My role was data analysis."
+  },
+  {
+    "id": 83,
+    "project": "AI-Based Contract Review System",
+    "answer": "My project is AI-Based Contract Review System. The problem is time-consuming contract analysis. The objective was to automate review. I used NLP. The system highlights important clauses and risks. This improves efficiency. My role was model implementation."
+  },
+  {
+    "id": 84,
+    "project": "Smart Grid Energy Management",
+    "answer": "My project is Smart Grid Energy Management. The problem is inefficient energy distribution. The objective was to optimize grid usage. I used IoT and analytics. The system balances energy demand and supply. This improves efficiency. My role was system design."
+  },
+  {
+    "id": 85,
+    "project": "AI-Based Video Summarization",
+    "answer": "My project is AI-Based Video Summarization. The problem is long video content. The objective was to generate short summaries. I used deep learning. The system extracts key frames and highlights. This improves content consumption. My role was model training."
+  },
+  {
+    "id": 86,
+    "project": "Smart Recruitment Analytics Dashboard",
+    "answer": "My project is Smart Recruitment Analytics Dashboard. The problem is lack of insights in hiring. The objective was to visualize recruitment data. I used data analytics and dashboards. The system provides insights into hiring trends. This improves decision-making. My role was dashboard development."
+  },
+  {
+    "id": 87,
+    "project": "AI-Based Emotion-Aware Chatbot",
+    "answer": "My project is AI-Based Emotion-Aware Chatbot. The problem is lack of emotional understanding in chatbots. The objective was to detect user emotions. I used NLP and sentiment analysis. The system responds based on emotions. This improves user interaction. My role was model integration."
+  },
+  {
+    "id": 88,
+    "project": "Smart Retail Analytics System",
+    "answer": "My project is Smart Retail Analytics System. The problem is lack of customer insights. The objective was to analyze shopping behavior. I used data analytics and ML. The system provides insights into customer preferences. This improves sales strategies. My role was backend development."
+  },
+  {
+    "id": 89,
+    "project": "AI-Based Code Summarizer",
+    "answer": "My project is AI-Based Code Summarizer. The problem is understanding complex codebases. The objective was to generate code summaries. I used NLP. The system explains code in simple language. This improves developer productivity. My role was model implementation."
+  },
+  {
+    "id": 90,
+    "project": "Smart Logistics Route Optimization",
+    "answer": "My project is Smart Logistics Route Optimization. The problem is inefficient delivery routes. The objective was to optimize routes. I used algorithms and data analytics. The system suggests shortest paths. This reduces delivery time. My role was algorithm design."
+  }
+]
+---
+[
+  {
+    "id": 91,
+    "project": "AI-Based Deepfake Detection System",
+    "answer": "My project is AI-Based Deepfake Detection System. The problem is fake media content. The objective was to detect deepfake videos. I used deep learning. The system identifies manipulated media. This improves digital trust. My role was model training."
+  },
+  {
+    "id": 92,
+    "project": "Smart Resume Skill Gap Analyzer",
+    "answer": "My project is Smart Resume Skill Gap Analyzer. The problem is lack of skill awareness. The objective was to compare resumes with job roles. I used NLP. The system suggests missing skills. This helps candidates improve. My role was model development."
+  },
+  {
+    "id": 93,
+    "project": "AI-Based Voice Cloning Detection",
+    "answer": "My project is AI-Based Voice Cloning Detection. The problem is misuse of voice cloning. The objective was to detect fake voices. I used audio processing and ML. The system identifies synthetic voices. This improves security. My role was model implementation."
+  },
+  {
+    "id": 94,
+    "project": "Smart Disaster Damage Assessment",
+    "answer": "My project is Smart Disaster Damage Assessment. The problem is slow damage evaluation. The objective was to analyze disaster impact. I used computer vision and satellite data. The system estimates damage quickly. This helps in relief planning. My role was model design."
+  },
+  {
+    "id": 95,
+    "project": "AI-Based Knowledge Graph Builder",
+    "answer": "My project is AI-Based Knowledge Graph Builder. The problem is scattered information. The objective was to connect related data. I used NLP and graph databases. The system builds knowledge graphs. This improves data understanding. My role was system implementation."
+  },
+  {
+    "id": 96,
+    "project": "Smart Mental Health Monitoring System",
+    "answer": "My project is Smart Mental Health Monitoring System. The problem is lack of early mental health detection. The objective was to monitor emotional patterns. I used AI and sentiment analysis. The system detects stress levels. This helps early intervention. My role was model training."
+  },
+  {
+    "id": 97,
+    "project": "AI-Based Autonomous Delivery Robot",
+    "answer": "My project is AI-Based Autonomous Delivery Robot. The problem is manual delivery challenges. The objective was to automate delivery. I used robotics and AI. The system navigates and delivers items. This improves efficiency. My role was system integration."
+  },
+  {
+    "id": 98,
+    "project": "Smart Fake News Detection System",
+    "answer": "My project is Smart Fake News Detection System. The problem is spread of misinformation. The objective was to detect fake news. I used NLP and ML. The system classifies news as real or fake. This improves information reliability. My role was model building."
+  },
+  {
+    "id": 99,
+    "project": "AI-Based Personalized Career Guidance System",
+    "answer": "My project is AI-Based Career Guidance System. The problem is confusion in career choices. The objective was to suggest career paths. I used machine learning. The system analyzes skills and interests. This helps students choose careers. My role was system design."
+  },
+  {
+    "id": 100,
+    "project": "Smart Multi-Modal Biometric Authentication System",
+    "answer": "My project is Smart Multi-Modal Biometric Authentication System. The problem is weak security systems. The objective was to enhance authentication. I used face, voice, and fingerprint recognition. The system verifies users using multiple methods. This improves security. My role was integration and model development."
+  }
+]

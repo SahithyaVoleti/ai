@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: ai_interviewer_backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend/storage:/app/storage
+      - ./backend/resumes:/app/resumes
+      - ./backend/logs:/app/logs
+    env_file:
+      - ./backend/.env
+    restart: always
+
+  frontend:
+    build: ./frontend
+    container_name: ai_interviewer_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5000
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - backend
+    restart: always
+
+networks:
+  default:
+    name: ai_interviewer_network

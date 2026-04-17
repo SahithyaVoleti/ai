@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../auth-context';
 import { Upload, FileText, CheckCircle, AlertCircle, Loader, Sun, Moon, ChevronRight } from 'lucide-react';
@@ -14,6 +14,9 @@ export default function ResumeUpload() {
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const globalSpeechTokenRef = useRef(0);
 
     // Redirect if not logged in
     React.useEffect(() => {
@@ -31,6 +34,89 @@ export default function ResumeUpload() {
 
     const [warning, setWarning] = useState('');
 
+    const speak = (text: string) => {
+        if (typeof window === 'undefined') return;
+
+        // 1. Generate new unique ID for this speech request
+        const myId = ++globalSpeechTokenRef.current;
+
+        // 2. Stop everything previously running
+        if (audioRef.current) {
+            try {
+                const oldAudio = audioRef.current;
+                audioRef.current = null;
+                oldAudio.onended = null;
+                oldAudio.onerror = null;
+                oldAudio.pause();
+                oldAudio.src = "";
+            } catch (e) { }
+        }
+        try { window.speechSynthesis.cancel(); } catch (e) { }
+
+        setIsSpeaking(true);
+
+        const playFallback = async () => {
+            if (myId !== globalSpeechTokenRef.current) return;
+
+            console.log("🔊 Atlas (Resume Upload):", text.slice(0, 50));
+
+            try {
+                // Call the masculine-hardened backend proxy
+                const response = await fetch("/api/tts", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text }),
+                });
+
+                if (!response.ok) throw new Error("Backend TTS failed");
+
+                const blob = await response.blob();
+                const audioUrl = URL.createObjectURL(blob);
+
+                if (myId !== globalSpeechTokenRef.current) return;
+
+                const audio = new Audio(audioUrl);
+                audioRef.current = audio;
+
+                audio.onended = () => {
+                    setIsSpeaking(false);
+                };
+
+                audio.onerror = () => {
+                    console.warn("⚠️ Audio playback error, using browser fallback.");
+                    browserFallback();
+                };
+
+                await audio.play();
+            } catch (err) {
+                browserFallback();
+            }
+        };
+
+        const browserFallback = () => {
+            try {
+                const utt = new SpeechSynthesisUtterance(text);
+                const voices = window.speechSynthesis.getVoices();
+                // Strictly prioritize Male voices for Atlas
+                const maleVoice = voices.find(v =>
+                    v.name.toLowerCase().includes('david') ||
+                    v.name.toLowerCase().includes('james') ||
+                    v.name.toLowerCase().includes('google us english') ||
+                    (v.name.toLowerCase().includes('male') && !v.name.toLowerCase().includes('female'))
+                );
+                if (maleVoice) utt.voice = maleVoice;
+                utt.rate = 0.9;
+                utt.pitch = 0.85; // Lower pitch for masculine feel
+                utt.onend = () => setIsSpeaking(false);
+                window.speechSynthesis.speak(utt);
+            } catch (e) {
+                setIsSpeaking(false);
+            }
+        };
+
+        playFallback();
+    };
+
     const handleSubmit = async (e?: React.FormEvent, bypass: boolean = false) => {
         if (e) e.preventDefault();
         if (!file || !user) return;
@@ -44,7 +130,6 @@ export default function ResumeUpload() {
         formData.append('resume', file);
         formData.append('name', user.name);
         formData.append('user_id', String(user.id));
-        if (bypass) formData.append('bypass_name_check', 'true');
 
         try {
             const res = await fetch('http://localhost:5000/api/upload_resume', {
@@ -54,22 +139,32 @@ export default function ResumeUpload() {
             const data = await res.json();
 
             if (res.ok && data.status === 'success') {
-                setSuccess('Resume verified! Analyzing performance...');
+                const msg = 'Resume verified successfully. Lets move to the next process.';
+                setSuccess(msg);
+                speak(msg);
                 
-                // Trigger automatic ATS analysis
-                await fetch('http://localhost:5000/api/analyze-resume', {
+                // Trigger automatic ATS analysis in the background
+                fetch('http://localhost:5000/api/analyze-resume', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: user.id })
-                });
+                }).catch(err => console.error("ATS Analysis error:", err));
 
                 setTimeout(() => {
                     window.location.href = '/dashboard';
                 }, 1500);
-            } else if (data.status === 'warning') {
-                setWarning(data.message || 'Name mismatch detected. Is this your resume?');
             } else {
-                setError(data.message || 'Verification failed. Please try again.');
+                const msg = data.message || 'Verification failed. Please upload your correct resume.';
+                setError(msg);
+                speak(msg);
+
+                // Handle trial expired / out of credits
+                if (data.code === 'OUT_OF_CREDITS') {
+                    setWarning('Your free demo session has ended. Please subscribe to a plan to continue your preparation.');
+                    setTimeout(() => {
+                        window.location.href = '/pricing';
+                    }, 3500);
+                }
             }
         } catch (err) {
             setError('Network error. Backend might be offline.');
@@ -158,24 +253,6 @@ export default function ResumeUpload() {
                             </div>
                         </div>
 
-                        {warning && (
-                            <div className="p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-xl space-y-3 animate-fadeIn">
-                                <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 text-sm font-semibold">
-                                    <AlertCircle size={18} />
-                                    Name Mismatch Detected
-                                </div>
-                                <p className="text-xs text-amber-600 dark:text-amber-300">
-                                    The name on your resume doesn't perfectly match "{user.name}". Proceed only if you're sure it's yours.
-                                </p>
-                                <button 
-                                    type="button"
-                                    onClick={() => handleSubmit(undefined, true)}
-                                    className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg transition-colors"
-                                >
-                                    Confirm & Continue anyway
-                                </button>
-                            </div>
-                        )}
 
                         {error && (
                             <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2 animate-shake">

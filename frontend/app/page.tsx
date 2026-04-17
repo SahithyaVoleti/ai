@@ -5,7 +5,7 @@ import styles from './home.module.css';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from './auth-context';
-import { Sun, Moon, Shield, ShieldAlert, Camera, Mic, Monitor, User, CheckCircle, Check, AlertCircle, LogOut, Sparkles, FileText, BarChart, ArrowRight, ArrowLeft, Volume2, ChevronRight, Brain, LayoutDashboard, Play, Terminal, Video, Zap, Globe, Lock, Database } from 'lucide-react';
+import { Sun, Moon, Shield, ShieldAlert, Camera, Mic, Monitor, User, CheckCircle, Check, AlertCircle, LogOut, Sparkles, FileText, BarChart, ArrowRight, ArrowLeft, Volume2, ChevronRight, Brain, LayoutDashboard, Play, Terminal, Video, Zap, Globe, Lock, Database, Loader } from 'lucide-react';
 import { useTheme } from './theme-context';
 import Editor from "@monaco-editor/react";
 
@@ -23,21 +23,32 @@ function HomeContent() {
   const [proctorStatus, setProctorStatus] = useState({ face: false, warning: '' });
 
   useEffect(() => {
-    if (user && stage === 'landing') {
+    if (user) {
       setName(user.name);
       setEmail(user.email);
     }
-  }, [user, stage]);
+  }, [user]);
 
   const searchParams = useSearchParams();
   useEffect(() => {
-    const startParam = searchParams.get('start');
+    const startParam = searchParams?.get('start');
     const setupStages = ['upload', 'verification', 'calibration', 'instructions'];
 
     if (startParam === 'true' && user) {
-      // STRICT GATING: Redirect to pricing if user has no plan
+      // STRICT GATING: Redirect to pricing if user has no credits (and not practice mode) or no plan
+      const isPractice = searchParams?.get('mode') === 'practice';
+      if (!isPractice && (!user.interviews_remaining || user.interviews_remaining <= 0)) {
+        const msg = "Your evaluation attempts are exhausted. Please subscribe to a package to continue your training.";
+        speak(msg);
+        setFeedback("⚠️ " + msg);
+        setTimeout(() => router.push('/pricing'), 3500);
+        return;
+      }
       if (!user.plan_id) {
-        router.push('/pricing');
+        const msg = "Please select a professional plan to initiate the core and specialized assessment modules.";
+        speak(msg);
+        setFeedback("⚠️ " + msg);
+        setTimeout(() => router.push('/pricing'), 3500);
         return;
       }
       if (stage === 'landing') setStage('upload');
@@ -67,6 +78,7 @@ function HomeContent() {
   const [interviewId, setInterviewId] = useState<string | null>(null);
   const [isFinishing, setIsFinishing] = useState(false);
   const [feedback, setFeedback] = useState('');
+  const [nameWarning, setNameWarning] = useState('');
   const [questionCount, setQuestionCount] = useState(0);
   const [phase, setPhase] = useState('warmup');
   const [phaseCount, setPhaseCount] = useState(0);
@@ -81,27 +93,50 @@ function HomeContent() {
     return a;
   };
 
-  const buildPhases = () => [
-    'greeting',
-    'warmup',
-    'intro',
-    'resume_overview',
-    'resume_skills',
-    'resume_projects',
-    'technical_core',
-    'technical_advanced',
-    'code',
-    'case_study',
-    'scenario_behavioral',
-    'leadership',
-    'teamwork',
-    'adaptability',
-    'future_goals',
-    'conclusion'
-  ];
+  const buildPhases = (planId: number = 0, section: string | null = null, mode: string | null = null) => {
+    // 1. PRACTICE MODE (Bucketed Drills)
+    if (mode === 'practice' && section) {
+      if (section === 'intro' || section === 'self_intro') return ['greeting', 'warmup', 'intro', 'conclusion'];
+      if (section === 'projects') return ['greeting', 'resume_projects', 'conclusion'];
+      if (section === 'technical') return ['greeting', 'technical_core', 'technical_advanced', 'code', 'case_study', 'scenario_behavioral', 'conclusion'];
+      if (section === 'case_study') return ['greeting', 'case_study', 'case_study', 'conclusion'];
+      if (section === 'behavioral' || section === 'hr') return ['greeting', 'scenario_behavioral', 'teamwork', 'conclusion'];
+      return ['greeting', 'warmup', 'conclusion'];
+    }
 
-  const [PHASES, setPHASES] = useState<string[]>(buildPhases);
+    // 2. STANDARD PLANS
+    const pId = Number(planId) || 0;
+    if (pId === 1) { // Starter
+      return ['greeting', 'warmup', 'resume_overview', 'resume_skills', 'technical_core', 'conclusion'];
+    }
+    if (pId === 2) { // ATS Pro
+      return ['greeting', 'warmup', 'intro', 'resume_overview', 'resume_skills', 'resume_projects', 'technical_core', 'technical_advanced', 'code', 'scenario_behavioral', 'conclusion'];
+    }
+    if (pId === 3) { // Proctor Elite
+      return ['greeting', 'warmup', 'intro', 'resume_overview', 'resume_skills', 'resume_projects', 'technical_core', 'technical_advanced', 'code', 'case_study', 'scenario_behavioral', 'scenario_hr', 'leadership', 'teamwork', 'adaptability', 'conclusion'];
+    }
+
+    if (pId === 4) { // Ultimate Bundle
+      return [
+        'greeting', 'warmup', 'intro', 'resume_overview', 'resume_skills', 'resume_projects',
+        'technical_core', 'technical_advanced', 'code', 'case_study', 'scenario_behavioral',
+        'scenario_hr', 'leadership', 'teamwork', 'adaptability', 'future_goals', 'conclusion'
+      ];
+    }
+    
+    // Default/Free/Unknown: Very short demo flow
+    return ['greeting', 'warmup', 'resume_skills', 'technical_core', 'conclusion'];
+  };
+
+  const [PHASES, setPHASES] = useState<string[]>(() => buildPhases(user?.plan_id, searchParams?.get('section'), searchParams?.get('mode')));
   const [phaseIndex, setPhaseIndex] = useState(0);
+
+  // Sync Phases when user or params change
+  useEffect(() => {
+    const newPhases = buildPhases(user?.plan_id, searchParams?.get('section'), searchParams?.get('mode'));
+    setPHASES(newPhases);
+    console.log("🔄 [DYNAMICS] Interview Phases synchronized for Plan:", user?.plan_id || 0, "Length:", newPhases.length);
+  }, [user?.plan_id, searchParams]);
 
   // Auto-clear feedback
   useEffect(() => {
@@ -117,6 +152,17 @@ function HomeContent() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
+  const [activeStep, setActiveStep] = useState(1);
+
+  // Auto-play active step for roadmap animation
+  useEffect(() => {
+    if (stage === 'landing') {
+      const interval = setInterval(() => {
+        setActiveStep(prev => (prev % 4) + 1);
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [stage]);
 
   const [codingProblems, setCodingProblems] = useState<any[]>([]);
   const [currentCodingIdx, setCurrentCodingIdx] = useState(0);
@@ -156,6 +202,7 @@ function HomeContent() {
 
   const tabSwitchCountRef = useRef(0);
   const lookingDownRef = useRef(0);
+  const lastVocalWarningRef = useRef(0);
   const hasStartedRef = useRef(false);
   const isManualStopRef = useRef(false);
 
@@ -341,7 +388,7 @@ function HomeContent() {
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     setSilenceCountdown(null);
     setIsSilenced(false);
-    
+
     if (stage !== 'interview' || isSpeakingRef.current) return;
 
     // Use a persistent effect for the countdown instead of a simple timeout
@@ -504,7 +551,7 @@ function HomeContent() {
           const recorder = new MediaRecorder(activeStream, mimeType ? { mimeType } : {});
           audioChunksRef.current = [];
           recorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
-          
+
           // CRITICAL: Defensive start logic
           if (recorder.state === 'inactive') {
             try {
@@ -513,7 +560,7 @@ function HomeContent() {
             } catch (err) {
               console.warn("⚠️ MediaRecorder chunked start failed, trying basic start...");
               if (recorder.state === 'inactive') {
-                 try { recorder.start(); } catch (err2) { console.error("❌ MediaRecorder failed to start:", err2); }
+                try { recorder.start(); } catch (err2) { console.error("❌ MediaRecorder failed to start:", err2); }
               }
             }
             mediaRecorderRef.current = recorder;
@@ -582,10 +629,10 @@ function HomeContent() {
           let stream: MediaStream;
           try {
             stream = await navigator.mediaDevices.getUserMedia({
-              video: { 
-                width: { ideal: 640, min: 480 }, 
-                height: { ideal: 480, min: 360 }, 
-                facingMode: "user" 
+              video: {
+                width: { ideal: 640, min: 480 },
+                height: { ideal: 480, min: 360 },
+                facingMode: "user"
               },
               audio: {
                 echoCancellation: true,
@@ -608,9 +655,9 @@ function HomeContent() {
           syncCameraToElement(videoRef.current);
           syncCameraToElement(verificationVideoRef.current);
           // Re-sync after render settles for edge cases
-          setTimeout(() => { 
-            syncCameraToElement(videoRef.current); 
-            syncCameraToElement(verificationVideoRef.current); 
+          setTimeout(() => {
+            syncCameraToElement(videoRef.current);
+            syncCameraToElement(verificationVideoRef.current);
           }, 700);
 
           // Audio Visualizer
@@ -660,7 +707,7 @@ function HomeContent() {
       if (isCameraNeeded) {
         const s = streamRef.current || (window as any).__cameraStream;
         const tracksDead = !s || s.getTracks().some((t: MediaStreamTrack) => t.readyState === 'ended');
-        
+
         if (tracksDead) {
           console.warn("📸 Watchdog: Stream dead. Auto-repairing...");
           init();
@@ -765,7 +812,7 @@ function HomeContent() {
         recognition.onresult = (event: any) => {
           // 0. HARD GUARD: Ignore incoming audio if Agent is speaking
           if (isSpeakingRef.current) return;
-          
+
           lastResultTimeRef.current = Date.now();
 
           // 1. Extract RESULTS: Cumulative for interim to ensure zero misses
@@ -784,7 +831,7 @@ function HomeContent() {
           }
 
           const cleanFinalAdd = currentFinalChunks.join(' ').trim();
-          
+
           // 2. State synchronization (Update interim first for speed)
           setInterimTranscript(currentInterim);
 
@@ -1053,9 +1100,25 @@ function HomeContent() {
   const fetchNextQuestion = async (cat: string) => {
     setFetchingQuestion(true);
     try {
-      const apiUrl = `http://localhost:5000/api/interview/question?category=${cat}`;
+      const apiUrl = `http://localhost:5000/api/interview/question?category=${cat}&user_id=${user?.id || ''}&section=${searchParams?.get('section') || ''}&mode=${searchParams?.get('mode') || ''}`;
       const res = await fetch(apiUrl);
+      if (res.status === 403) {
+        const errData = await res.json().catch(() => ({}));
+        const msg = errData.message || "Interview node locked. 0 Credits remaining.";
+        speak(msg);
+        setFeedback("⚠️ " + msg);
+        setTimeout(() => router.push('/pricing'), 3000);
+        return;
+      }
       const data = await res.json();
+      
+      if (data.status === 'error') {
+        const err = data.message || "Error fetching question.";
+        setFeedback("⚠️ " + err);
+        speak("I'm sorry, I'm having trouble fetching the next question. Please check your connection.");
+        return;
+      }
+
       const q = data.question;
 
       setQuestion(q);
@@ -1196,6 +1259,9 @@ function HomeContent() {
     if (interviewId) {
       url += `?id=${interviewId}`;
     }
+    if (user?.plan_id) {
+      url += `${interviewId ? '&' : '?'}plan_id=${user.plan_id}`;
+    }
 
     // Use hidden anchor for more reliable download behavior
     const link = document.createElement("a");
@@ -1267,10 +1333,14 @@ function HomeContent() {
   // STABLE VIOLATION LOGIC
   useEffect(() => {
     const monitoringStages = ['verification', 'calibration', 'instructions', 'interview', 'code'];
-    if (!monitoringStages.includes(stage)) return;
+    const userPlan = Number(user?.plan_id || 0);
+
+    // GATING: Only run proctoring if plan is Elite or Ultimate (Plan 3+)
+    if (!monitoringStages.includes(stage) || userPlan < 3) return;
 
     const check = () => {
-      if (!monitoringStages.includes(stage)) return;
+      // Re-verify plan inside check for safety
+      if (!monitoringStages.includes(stage) || userPlan < 3) return;
       const isExited = !document.fullscreenElement;
       const isHidden = document.visibilityState === 'hidden';
 
@@ -1282,10 +1352,10 @@ function HomeContent() {
 
         fetch("http://localhost:5000/proctor/event", {
           method: "POST", headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            type: "FULLSCREEN_EXIT", 
-            message: `User exited full screen mode (Attempt ${fullscreenWarnCountRef.current})`, 
-            severity: fullscreenWarnCountRef.current >= 3 ? "CRITICAL" : "MEDIUM" 
+          body: JSON.stringify({
+            type: "FULLSCREEN_EXIT",
+            message: `User exited full screen mode (Attempt ${fullscreenWarnCountRef.current})`,
+            severity: fullscreenWarnCountRef.current >= 3 ? "CRITICAL" : "MEDIUM"
           })
         });
 
@@ -1320,10 +1390,10 @@ function HomeContent() {
         tabSwitchCountRef.current += 1;
         fetch("http://localhost:5000/proctor/event", {
           method: "POST", headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            type: "TAB_SWITCH", 
-            message: `Tab switch detected (Attempt ${tabSwitchCountRef.current})`, 
-            severity: tabSwitchCountRef.current >= 3 ? "CRITICAL" : "MEDIUM" 
+          body: JSON.stringify({
+            type: "TAB_SWITCH",
+            message: `Tab switch detected (Attempt ${tabSwitchCountRef.current})`,
+            severity: tabSwitchCountRef.current >= 3 ? "CRITICAL" : "MEDIUM"
           })
         });
         if (tabSwitchCountRef.current >= 3) {
@@ -1409,8 +1479,9 @@ function HomeContent() {
 
   // PROCTORING POLL & FRAME LOGIC
   useEffect(() => {
-    // Continuous monitoring from verification onwards
-    if (!['verification', 'calibration', 'instructions', 'interview', 'code'].includes(stage)) return;
+    const userPlan = Number(user?.plan_id || 0);
+    // Continuous monitoring from verification onwards - Plan 3+ only
+    if (!['verification', 'calibration', 'instructions', 'interview', 'code'].includes(stage) || userPlan < 3) return;
     const detectExtensions = () => {
       // Check for common extension attributes or injected elements
       const indicators = [
@@ -1462,9 +1533,9 @@ function HomeContent() {
       } else {
         activeVideo = document.getElementById('main-video') as HTMLVideoElement || videoRef.current;
       }
-      
+
       if (!activeVideo || activeVideo.readyState < 2) return;
-      
+
       const canvas = document.createElement('canvas');
       canvas.width = 640; canvas.height = 480;
       canvas.getContext('2d')?.drawImage(activeVideo, 0, 0, 640, 480);
@@ -1491,18 +1562,23 @@ function HomeContent() {
           handleTermination(reason);
           return;
         }
-        if (warning.toLowerCase().includes("movement") || warning.toLowerCase().includes("down")) {
+        if (warning.toLowerCase().includes("movement") || warning.toLowerCase().includes("down") || warning.toLowerCase().includes("stay in frame")) {
           lookingDownRef.current += 1;
-          if (lookingDownRef.current > 4) {
-            setFeedback("⚠️ Please maintain focus on the screen.");
+          const now = Date.now();
+          if (lookingDownRef.current > 8 && (now - lastVocalWarningRef.current > 15000)) {
+            setFeedback("⚠️ " + warning);
+            // Vocal nudge from Atlas
+            if (stage === 'interview') {
+               speak(warning === "⚠️ Please stay in frame!" ? "Please stay within the camera view so I can continue the evaluation." : "Please maintain your focus on the interview screen.");
+            }
+            lastVocalWarningRef.current = now;
             lookingDownRef.current = 0;
           }
         } else {
           lookingDownRef.current = 0;
         }
         if (!data.face_detected) noFaceRef.current += 1; else noFaceRef.current = 0;
-        // Match 20s requirement (40 frames at 2 FPS)
-        setShowNoFaceWarn(noFaceRef.current > 20); 
+        setShowNoFaceWarn(noFaceRef.current > 20);
       } catch (e) { }
     };
     const t = setInterval(poll, 1000); // 1s poll for faster warnings
@@ -1520,7 +1596,7 @@ function HomeContent() {
     // Agent video provides idle background animation
     v.loop = true;
     v.muted = true;
-    v.play().catch(() => {});
+    v.play().catch(() => { });
 
     if (isSpeaking) {
       // Stop mic while agent is speaking
@@ -1557,7 +1633,7 @@ function HomeContent() {
       } catch (e) { }
     }
     try { synth.cancel(); } catch (e) { }
-    
+
     /* Removed Wav2Lip logic
     if (wav2lipVideoRef.current) {
       try {
@@ -1601,7 +1677,7 @@ function HomeContent() {
       if (showFullscreenWarnRef.current || showTabSwitchWarnRef.current) return;
 
       console.log("🔊 Fetching OpenAI TTS for:", text.slice(0, 50));
-      
+
       try {
         const response = await fetch("/api/tts", {
           method: "POST",
@@ -1616,15 +1692,15 @@ function HomeContent() {
 
         const blob = await response.blob();
         const audioUrl = URL.createObjectURL(blob);
-        
+
         if (myId !== globalSpeechTokenRef.current) return;
 
         const audio = new Audio(audioUrl);
         audioRef.current = audio;
-        
+
         // Trigger speaking animation
         startLipSync(audio);
-        
+
         audio.onended = () => {
           stopLipSync();
           setIsSpeaking(false);
@@ -1635,7 +1711,7 @@ function HomeContent() {
             latestFnRef.current?.resetInactivityTimer?.();
           }
         };
-        
+
         audio.onerror = (e) => {
           console.warn("⚠️ Audio Playback Error:", e);
           stopLipSync();
@@ -1649,8 +1725,31 @@ function HomeContent() {
         // Browser Speech Synthesis Fallback
         try {
           const utt = new SpeechSynthesisUtterance(text);
+          
+          // Use Male Voice for consistency
+          const voices = window.speechSynthesis.getVoices();
+          const maleVoice = voices.find(v => 
+            v.name.toLowerCase().includes('david') || 
+            v.name.toLowerCase().includes('james') || 
+            v.name.toLowerCase().includes('mark') || 
+            v.name.toLowerCase().includes('paul') || 
+            v.name.toLowerCase().includes('richard') || 
+            v.name.toLowerCase().includes('google us english') ||
+            (v.name.toLowerCase().includes('male') && !v.name.toLowerCase().includes('female'))
+          );
+          
+          if (maleVoice) {
+            utt.voice = maleVoice;
+          } else {
+             const fallback = voices.find(v => !v.name.toLowerCase().includes('female') && !v.name.toLowerCase().includes('zira') && !v.name.toLowerCase().includes('samantha'));
+             if (fallback) utt.voice = fallback;
+          }
+
+          utt.rate = 0.85;
+          utt.pitch = 0.8;
+
           utt.onstart = () => { setIsSpeaking(true); isSpeakingRef.current = true; };
-          utt.onend = () => { 
+          utt.onend = () => {
             setTimeout(() => { setIsSpeaking(false); isSpeakingRef.current = false; }, 1000);
             if (onComplete) onComplete();
           };
@@ -1678,7 +1777,11 @@ function HomeContent() {
     // Helper: start Web Audio API lip-sync loop
     const startLipSync = (audioEl: HTMLAudioElement) => {
       try {
-        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        // Use SHARED context to avoid suspension
+        if (!audioContextRef.current) {
+            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        const audioCtx = audioContextRef.current;
         const analyser = audioCtx.createAnalyser();
         analyser.fftSize = 64;
         analyser.smoothingTimeConstant = 0.6;
@@ -1729,23 +1832,31 @@ function HomeContent() {
     const dummy = new SpeechSynthesisUtterance("");
     synth.speak(dummy);
 
-    audioUnlockedRef.current = true;
-    if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+    // PERSISTENT SHARED CONTEXT: RESUME OR CREATE
+    if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    
+    if (audioContextRef.current.state === 'suspended') {
       audioContextRef.current.resume();
     }
+    
+    audioUnlockedRef.current = true;
     setAudioBlocked(false);
+    console.log("🔊 Audio Unlocked & Context Initialized.");
   };
 
-  const handleBeginInterview = async () => {
+  const handleBeginInterview = async (e?: any, bypass: boolean = false) => {
     if (!file || !name) {
       alert("Please enter your name and upload a resume.");
       return;
     }
 
     // 1. Immediate Audio Unlock & Feedback
-    speak("Analyzing your resume. Please wait a moment.");
+    if (!bypass) speak("Analyzing your resume. Please wait a moment.");
 
     isTerminatingRef.current = false;
+    setNameWarning('');
 
     setLoading(true);
     const formData = new FormData();
@@ -1753,6 +1864,7 @@ function HomeContent() {
     formData.append('name', name);
     formData.append('email', email);
     if (user) formData.append('user_id', String(user.id));
+    if (bypass) formData.append('bypass_name_check', 'true');
 
     try {
       const res = await fetch('http://localhost:5000/api/upload_resume', {
@@ -1771,16 +1883,29 @@ function HomeContent() {
 
         // MANDATORY Identity Verification for all candidates
         speak(data.message || "Resume verified. Now, please verify your identity.", () => {
-           setStage('verification');
+          setStage('verification');
         }, true);
-        
+
         // Safety fallback to ensure stage transition
         setTimeout(() => setStage('verification'), 3000);
 
+      } else if (data.status === 'warning') {
+        setNameWarning(data.message);
+        speak(data.message);
       } else {
         const errorMsg = data.message || "Resume verification failed.";
+        
+        if (data.code === 'OUT_OF_CREDITS' || res.status === 403) {
+          speak(errorMsg);
+          setFeedback("⚠️ " + errorMsg);
+          
+          if (data.code === 'OUT_OF_CREDITS') {
+            setTimeout(() => router.push('/pricing'), 3000);
+          }
+          return;
+        }
+        
         setFeedback("⚠️ " + errorMsg);
-        // Do NOT clear the file state, since clearing it without clearing the HTML input causes onChange to permanently fail for the same file.
         speak(errorMsg);
       }
     } catch (e) {
@@ -1840,7 +1965,7 @@ function HomeContent() {
         speak(data.message || "Identity verified. Now, let's calibrate your environment.", () => {
           setStage('calibration');
         }, true);
-        
+
         // Signal proctoring reset
         fetch("http://localhost:5000/proctor/reset", { method: "POST" }).catch(() => { });
 
@@ -1850,7 +1975,7 @@ function HomeContent() {
       } else {
         setVerifyFailCount(prev => prev + 1);
         setVerifyStatus("❌ " + (data.message || "Verification failed."));
-        
+
         // Detailed feedback logic
         if (data.message?.toLowerCase().includes("light")) {
           speak("Verification failed due to low lighting. Please move to a brighter area.");
@@ -1972,7 +2097,7 @@ function HomeContent() {
 
 
       {/* GLOBAL PROCTORING OVERLAY */}
-      {proctorStatus.warning && ['calibration', 'instructions', 'interview', 'code'].includes(stage) && (
+      {proctorStatus.warning && ['calibration', 'instructions', 'interview', 'code'].includes(stage) && Number(user?.plan_id || 0) >= 3 && (
         <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[999] w-full max-w-md px-4 pointer-events-none">
           <div className="bg-red-600 text-white font-black py-4 px-8 rounded-3xl shadow-[0_20px_50px_rgba(220,38,38,0.5)] border-4 border-white flex items-center justify-center gap-4 animate-in slide-in-from-top-10 duration-300">
             <div className="p-2 bg-white/20 rounded-full animate-pulse">
@@ -1990,29 +2115,19 @@ function HomeContent() {
         <nav className={`h-20 w-full flex items-center justify-center border-b ${theme === 'dark' ? 'border-slate-800 bg-slate-950/80' : 'border-slate-100 bg-white/80'} backdrop-blur-xl sticky top-0 z-[100] transition-all duration-300`}>
           <div className="w-full max-w-[1400px] flex items-center justify-between px-8 md:px-12">
             <div className="flex items-center gap-5 group cursor-pointer" onClick={() => router.push('/')}>
-              <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center font-black text-white shadow-2xl shadow-indigo-600/30 group-hover:scale-110 transition-transform">AI</div>
+              <div className="w-12 h-12 bg-white border border-slate-200 text-slate-900 rounded-lg flex items-center justify-center font-black group-hover:scale-110 shadow-lg shadow-slate-100 transition-transform">AI</div>
               <div className="flex flex-col">
                 <span className={`font-black text-2xl tracking-tighter leading-none ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Interview.AI</span>
-                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mt-1"></span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1"></span>
               </div>
             </div>
 
             <div className="flex items-center gap-6 lg:gap-10">
               <div className="hidden lg:flex gap-10">
-                <Link href="/features" className={`text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} hover:text-indigo-600 uppercase tracking-[0.2em] transition-colors`}>Features</Link>
-                <Link href="/pricing" className={`text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} hover:text-indigo-600 uppercase tracking-[0.2em] transition-colors`}>Pricing</Link>
-                <Link href="/about" className={`text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} hover:text-indigo-600 uppercase tracking-[0.2em] transition-colors`}>About</Link>
-                <button 
-                  onClick={() => {
-                    const el = document.getElementById('instructions');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                    speak("To ensure a successful interview session, please follow these four steps. First, upload your professional resume. Second, wait for our AI to adapt the questions to your specific background. Third, enter the mock session and face voice-based questions and coding challenges. Finally, review your expert feedback and instant PDF report to master your performance.");
-                  }}
-                  className={`text-xs font-black bg-transparent border-none cursor-pointer ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} hover:text-indigo-600 uppercase tracking-[0.2em] transition-colors`}
-                >
-                  Guidelines
-                </button>
-                <Link href="#faq" className={`text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} hover:text-indigo-600 uppercase tracking-[0.2em] transition-colors`}>FAQs</Link>
+                <Link href="/features" className={`text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} hover:text-slate-900 uppercase tracking-[0.2em] transition-colors`}>Features</Link>
+                <Link href="/pricing" className={`text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} hover:text-slate-900 uppercase tracking-[0.2em] transition-colors`}>Pricing</Link>
+                <Link href="/about" className={`text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} hover:text-slate-900 uppercase tracking-[0.2em] transition-colors`}>About</Link>
+                <Link href="#faq" className={`text-xs font-black ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} hover:text-slate-900 uppercase tracking-[0.2em] transition-colors`}>FAQs</Link>
               </div>
 
               <div className={`h-8 w-px ${theme === 'dark' ? 'bg-white/10' : 'bg-slate-200'} mx-2`}></div>
@@ -2021,7 +2136,7 @@ function HomeContent() {
                 {/* Premium Theme Toggle */}
                 <button
                   onClick={toggleTheme}
-                  className={`p-3 rounded-2xl border ${theme === 'dark' ? 'bg-white/5 border-white/10 text-yellow-400 hover:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-white hover:border-indigo-200'} border transition-all shadow-sm active:scale-90`}
+                  className={`p-3 rounded-2xl border ${theme === 'dark' ? 'bg-white/5 border-white/10 text-yellow-400 hover:bg-white/10' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-white hover:border-slate-300'} border transition-all shadow-sm active:scale-90`}
                   title={theme === 'dark' ? "Activate Daylight Mode" : "Activate Midnight Mode"}
                 >
                   {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
@@ -2031,15 +2146,22 @@ function HomeContent() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => router.push('/dashboard')}
-                      className="px-6 py-3 bg-indigo-600 text-white rounded-[18px] text-[11px] font-black shadow-xl shadow-indigo-500/30 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all flex items-center gap-2 uppercase tracking-widest"
+                      className="px-6 py-3 bg-slate-100 text-slate-900 border border-slate-200 rounded-[18px] text-[11px] font-black shadow-soft hover:bg-slate-200 hover:-translate-y-0.5 transition-all flex items-center gap-2 uppercase tracking-widest"
                     >
                       <LayoutDashboard size={14} /> My Deck
+                    </button>
+                    <button
+                      onClick={logout}
+                      className="p-3 bg-white text-red-500 border border-red-100 rounded-[18px] hover:bg-red-50 transition-all shadow-sm active:scale-90"
+                      title="Sign Out"
+                    >
+                      <LogOut size={18} />
                     </button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-4">
-                    <button onClick={() => router.push('/login')} className={`text-[11px] font-black ${theme === 'dark' ? 'text-slate-300' : 'text-slate-900'} hover:text-indigo-600 uppercase tracking-widest px-2`}>Login</button>
-                    <button onClick={() => router.push('/signup')} className="px-7 py-3.5 bg-indigo-600 text-white rounded-[18px] text-[11px] font-black shadow-2xl shadow-indigo-600/30 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all active:scale-95 uppercase tracking-widest">Enroll Now</button>
+                    <button onClick={() => router.push('/login')} className={`text-[11px] font-black ${theme === 'dark' ? 'text-slate-300' : 'text-slate-900'} hover:text-slate-950 uppercase tracking-widest px-2 transition-colors`}>Login</button>
+                    <button onClick={() => router.push('/signup')} className="px-7 py-3.5 bg-white text-slate-900 border border-slate-200 rounded-[18px] text-[11px] font-black shadow-soft hover:bg-slate-50 hover:-translate-y-0.5 transition-all active:scale-95 uppercase tracking-widest">Enroll Now</button>
                   </div>
                 )}
               </div>
@@ -2056,23 +2178,17 @@ function HomeContent() {
             <main className={styles.heroSection}>
               <div className={styles.heroContent}>
 
-
-                <h1 className={styles.heroTitle}>
-                  Experience <span className={styles.gradientText}>Reel Interviews</span>.<br />
+                <h1 className={`${styles.heroTitle} text-4xl md:text-5xl lg:text-[56px] mb-8 tracking-tight leading-[1.1] font-black`}>
+                  Experience <span className={styles.gradientText}>Reel Interviews.</span><br />
                   Before the Real One.
                 </h1>
 
-                {/* STAGE: CODE EDITOR (New Step 4 End) */}
-                {/* (Moved Code Block out) */}
-
-                {/* STAGE: UPLOAD */}
-
-                <p className={styles.heroSubtitle}>
-                  Join thousands of students forcing their way into top tech jobs.
-                  Real-time voice interaction, emotion analysis, and resume-tailored questions.
+                <p className={`${styles.heroSubtitle} text-base md:text-[18px] lg:text-[20px] max-w-2xl mb-12 leading-[1.6] opacity-[0.85] text-[var(--text-main)]`}>
+                  Join thousands of <span className="font-bold text-[var(--foreground)]">elite candidates</span> mastering their way into top tech jobs.
+                  Real-time voice interaction, emotion analysis, and <span className="font-bold text-[var(--foreground)]">deep technical tailoring</span>.
                 </p>
 
-                <div className={`${styles.ctaGroup} relative z-10`}>
+                <div className={`${styles.ctaGroup} relative z-10 mb-12 flex flex-wrap gap-4`}>
                   <button
                     onClick={() => {
                       if (user) {
@@ -2082,235 +2198,311 @@ function HomeContent() {
                         router.push('/login');
                       }
                     }}
-                    className={`${styles.btnPrimary} cursor-pointer`}
+                    className={`${styles.btnPrimary} px-6 py-3 text-[15px] md:text-[17px] rounded-full cursor-pointer shadow-xl shadow-slate-200/50 font-bold transition-all hover:scale-105`}
                   >
-                    Start Mock Interview
+                    Start Assessment
                   </button>
                   <button
-                    className={`${styles.btnSecondary} cursor-pointer`}
+                    className={`${styles.btnSecondary} px-6 py-3 text-[15px] md:text-[17px] rounded-full cursor-pointer font-bold transition-all hover:scale-105`}
                     onClick={() => {
                       router.push('/pricing');
                     }}
                   >
-                    View Plans
+                    View Premium Plans
                   </button>
                 </div>
               </div>
 
               <div className={styles.heroImageContainer}>
                 <div className="relative">
-                  <div className="absolute -inset-4 bg-indigo-500/10 blur-3xl rounded-full"></div>
+                  <div className="absolute -inset-4 bg-blue-600/10 blur-3xl rounded-full"></div>
                   <img
                     src="/robot_hero_final.png"
                     alt="AI Interviewer"
-                    className={styles.heroImage}
+                    className={`${styles.heroImage} opacity-90`}
                   />
                   {/* Premium Halo Effect */}
-                  <div className="absolute inset-0 bg-white/40 rounded-full blur-[100px] -z-10 animate-pulse" />
+                  <div className={`absolute inset-0 bg-white/40 rounded-full blur-[100px] -z-10 ${styles.breathing}`} />
                 </div>
               </div>
             </main>
-
+            
             {/* ENTERPRISE INFRASTRUCTURE MARQUEE */}
             <section className={styles.infrastructureSection}>
               <div className={styles.infraHeader}>
                 <span className={styles.infraBadge}>Enterprise Infrastructure</span>
               </div>
-              
               <div className={styles.marqueeContainer}>
-                {[1, 2].map((loop) => (
-                  <React.Fragment key={loop}>
-                    <div className={styles.infraCard}>
-                      <Shield className={styles.infraIcon} size={28} />
-                      <div>
-                        <div className={styles.infraLabel}>Secure Biometrics</div>
-                        <div className={styles.infraDesc}>256-bit Encrypted identity</div>
-                      </div>
+                {[
+                  { icon: <Database size={20} />, label: "Real-time Analytics", desc: "Instant performance storage" },
+                  { icon: <Lock size={20} />, label: "Privacy First", desc: "SOC2 Compliant processing" },
+                  { icon: <Brain size={20} />, label: "Neural Engine", desc: "Proprietary LLM architecture" },
+                  { icon: <Shield size={20} />, label: "Secure Biometrics", desc: "256-bit Encrypted identity" },
+                  { icon: <Zap size={20} />, label: "Ultra-Low Latency", desc: "150ms Voice response" },
+                  { icon: <Globe size={20} />, label: "Global Network", desc: "Edge-deployed AI models" },
+                  // Duplicated for seamless loop
+                  { icon: <Database size={20} />, label: "Real-time Analytics", desc: "Instant performance storage" },
+                  { icon: <Lock size={20} />, label: "Privacy First", desc: "SOC2 Compliant processing" },
+                  { icon: <Brain size={20} />, label: "Neural Engine", desc: "Proprietary LLM architecture" },
+                  { icon: <Shield size={20} />, label: "Secure Biometrics", desc: "256-bit Encrypted identity" },
+                  { icon: <Zap size={20} />, label: "Ultra-Low Latency", desc: "150ms Voice response" },
+                  { icon: <Globe size={20} />, label: "Global Network", desc: "Edge-deployed AI models" }
+                ].map((item, i) => (
+                  <div key={i} className={`${styles.infraCard} ${styles.floatingImg}`} style={{ animationDelay: `${i * 0.2}s` }}>
+                    <div className={`${styles.infraIcon} group-hover:rotate-12 transition-transform`}>{item.icon}</div>
+                    <div className="flex flex-col">
+                      <span className={styles.infraLabel}>{item.label}</span>
+                      <span className={styles.infraDesc}>{item.desc}</span>
                     </div>
-                    <div className={styles.infraCard}>
-                      <Zap className={styles.infraIcon} size={28} />
-                      <div>
-                        <div className={styles.infraLabel}>Ultra-Low Latency</div>
-                        <div className={styles.infraDesc}>150ms Voice response</div>
-                      </div>
-                    </div>
-                    <div className={styles.infraCard}>
-                      <Globe className={styles.infraIcon} size={28} />
-                      <div>
-                        <div className={styles.infraLabel}>Global Network</div>
-                        <div className={styles.infraDesc}>Edge-deployed AI models</div>
-                      </div>
-                    </div>
-                    <div className={styles.infraCard}>
-                      <Database className={styles.infraIcon} size={28} />
-                      <div>
-                        <div className={styles.infraLabel}>Real-time Analytics</div>
-                        <div className={styles.infraDesc}>Instant performance storage</div>
-                      </div>
-                    </div>
-                    <div className={styles.infraCard}>
-                      <Lock className={styles.infraIcon} size={28} />
-                      <div>
-                        <div className={styles.infraLabel}>Privacy First</div>
-                        <div className={styles.infraDesc}>SOC2 Compliant processing</div>
-                      </div>
-                    </div>
-                    <div className={styles.infraCard}>
-                      <Brain className={styles.infraIcon} size={28} />
-                      <div>
-                        <div className={styles.infraLabel}>Neural Engine</div>
-                        <div className={styles.infraDesc}>Proprietary LLM architecture</div>
-                      </div>
-                    </div>
-                  </React.Fragment>
+                  </div>
                 ))}
               </div>
             </section>
 
-            {/* INSTRUCTIONS SECTION */}
-            <section id="instructions" className={styles.instructionsSection}>
-              <div className="max-w-7xl mx-auto px-6 md:px-8">
-                <div className="text-center mb-16">
-                  <span className="text-indigo-600 font-bold tracking-wider uppercase text-sm">How It Works</span>
-                  <h2 className="text-3xl md:text-5xl font-black mt-3 mb-6">4 Steps to Your Dream Job.</h2>
-                  <p className="text-[var(--text-muted)] max-w-2xl mx-auto text-lg">Follow this roadmap to master your skills and dominate your next technical interview.</p>
-                </div>
-
-                <div className={`${styles.instructionsContainer} ${styles['stepStage' + activeInstructionStep]}`}>
-                  {/* Step 1 */}
-                  <div
-                    className={`${styles.stepNode} ${activeInstructionStep === 0 ? styles.stepActive : ''} cursor-pointer`}
-                    onClick={() => {
-                      if (user) {
-                        enterFullScreen();
-                        router.push('/?start=true');
-                      } else {
-                        router.push('/login');
-                      }
-                    }}
-                  >
-                    <div className={styles.stepCircle}>
-                      <FileText size={32} />
-                      <div className={styles.stepBadge}>1</div>
-                    </div>
-                    <div className={styles.stepContent}>
-                      <h3 className={styles.stepTitle}>Resume Upload</h3>
-                      <p className={styles.stepText}>Start by uploading your current resume. Our AI analyzes your experience, skills, and projects in seconds.</p>
-                    </div>
-                  </div>
-
-                  {/* Step 2 */}
-                  <div
-                    className={`${styles.stepNode} ${activeInstructionStep === 1 ? styles.stepActive : ''} cursor-pointer`}
-                    onClick={() => {
-                      if (user) {
-                        enterFullScreen();
-                        router.push('/?start=true');
-                      } else {
-                        router.push('/login');
-                      }
-                    }}
-                  >
-                    <div className={styles.stepCircle}>
-                      <Sparkles size={32} />
-                      <div className={styles.stepBadge}>2</div>
-                    </div>
-                    <div className={styles.stepContent}>
-                      <h3 className={styles.stepTitle}>AI Adaptation</h3>
-                      <p className={styles.stepText}>The platform generates a unique set of questions specifically tailored to your background and targeting role.</p>
-                    </div>
-                  </div>
-
-                  {/* Step 3 */}
-                  <div
-                    className={`${styles.stepNode} ${activeInstructionStep === 2 ? styles.stepActive : ''} cursor-pointer`}
-                    onClick={() => {
-                      if (user) {
-                        enterFullScreen();
-                        router.push('/?start=true');
-                      } else {
-                        router.push('/login');
-                      }
-                    }}
-                  >
-                    <div className={styles.stepCircle}>
-                      <Mic size={32} />
-                      <div className={styles.stepBadge}>3</div>
-                    </div>
-                    <div className={styles.stepContent}>
-                      <h3 className={styles.stepTitle}>Mock Session</h3>
-                      <p className={styles.stepText}>Enter the realistic interview room. Face voice-based questions, coding challenges, and proctoring.</p>
-                    </div>
-                  </div>
-
-                  {/* Step 4 */}
-                  <div
-                    className={`${styles.stepNode} ${activeInstructionStep === 3 ? styles.stepActive : ''} cursor-pointer`}
-                    onClick={() => {
-                      if (user) {
-                        enterFullScreen();
-                        router.push('/?start=true');
-                      } else {
-                        router.push('/login');
-                      }
-                    }}
-                  >
-                    <div className={styles.stepCircle}>
-                      <BarChart size={32} />
-                      <div className={styles.stepBadge}>4</div>
-                    </div>
-                    <div className={styles.stepContent}>
-                      <h3 className={styles.stepTitle}>Expert Feedback</h3>
-                      <p className={styles.stepText}>Complete the round to receive an instant report. Fix your weak points and try again until you&apos;re perfect.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
 
             {/* FEATURES SECTION (Restored) */}
             <section id="features" className="flex flex-col justify-center py-24 bg-[var(--card-bg)] border-t border-[var(--border)]">
               <div className="max-w-7xl mx-auto px-6 md:px-8">
                 <div className="text-center mb-16">
-                  <span className="text-indigo-600 font-bold tracking-wider uppercase text-sm">Why Choose Us</span>
-                  <h2 className="text-3xl md:text-5xl font-black mt-3 mb-6">Master Every Interview Stage.</h2>
+                  <span className="text-blue-600 font-bold tracking-wider uppercase text-sm">Why Choose Us</span>
+                  <h2 className="text-3xl md:text-4xl lg:text-[44px] font-black mt-3 mb-6">Master Every Interview Stage.</h2>
                   <p className="text-[var(--text-muted)] max-w-2xl mx-auto text-lg">From behavioral questions to live coding challenges, we simulate it all with AI precision.</p>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-8">
                   {/* Row 1 */}
-                  <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-indigo-500 transition-all group">
-                    <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform"><Sparkles size={24} /></div>
+                  <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-blue-500 transition-all group overflow-hidden">
+                    <div className={`w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform ${styles.rotating}`}><Sparkles size={24} /></div>
                     <h3 className="text-lg font-bold mb-3">Builds Confidence</h3>
                     <p className="text-sm text-[var(--text-muted)]">Practice in a stress-free environment. Overcome anxiety and gain the confidence to ace your real interview.</p>
                   </div>
-                  <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-purple-500 transition-all group">
-                    <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 mb-6 group-hover:scale-110 transition-transform"><FileText size={24} /></div>
+                  <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-blue-400 transition-all group">
+                    <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform"><FileText size={24} /></div>
                     <h3 className="text-lg font-bold mb-3">Resume Analysis</h3>
                     <p className="text-sm text-[var(--text-muted)]">Our AI scans your resume to generate tailored questions, ensuring you practice what actually matters for your role.</p>
                   </div>
-                  <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-green-500 transition-all group">
-                    <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center text-green-600 mb-6 group-hover:scale-110 transition-transform"><Monitor size={24} /></div>
+                  <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-blue-500 transition-all group">
+                    <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform"><Monitor size={24} /></div>
                     <h3 className="text-lg font-bold mb-3">Real Experience</h3>
                     <p className="text-sm text-[var(--text-muted)]">Experience the pressure of a real interview with realistic voice interactions, strict proctoring, and live coding.</p>
                   </div>
 
                   {/* Row 2 */}
-                  <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-indigo-500 transition-all group">
-                    <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 mb-6 group-hover:scale-110 transition-transform"><Mic size={24} /></div>
+                  <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-blue-500 transition-all group">
+                    <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform"><Mic size={24} /></div>
                     <h3 className="text-lg font-bold mb-3">Voice-First AI</h3>
                     <p className="text-sm text-[var(--text-muted)]">Speak naturally. Our AI listens, understands, and responds with human-like latency and voice.</p>
                   </div>
-                  <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-red-500 transition-all group">
-                    <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600 mb-6 group-hover:scale-110 transition-transform"><Shield size={24} /></div>
+                  <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-blue-700 transition-all group">
+                    <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-700 mb-6 group-hover:scale-110 transition-transform"><Shield size={24} /></div>
                     <h3 className="text-lg font-bold mb-3">Strict Proctoring</h3>
                     <p className="text-sm text-[var(--text-muted)]">Simulate exam conditions with full-screen enforcement, tab monitoring, and gadget detection.</p>
                   </div>
-                  <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-orange-500 transition-all group">
-                    <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 mb-6 group-hover:scale-110 transition-transform"><BarChart size={24} /></div>
+                  <div className="p-7 rounded-3xl bg-[var(--background)] border border-[var(--border)] hover:border-blue-500 transition-all group">
+                    <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform"><BarChart size={24} /></div>
                     <h3 className="text-lg font-bold mb-3">Detailed Reporting</h3>
                     <p className="text-sm text-[var(--text-muted)]">Get instant feedback, actionable insights, and a downloadable PDF report of your performance.</p>
                   </div>
+                </div>
+              </div>
+            </section>
+
+            {/* HOW IT WORKS SECTION */}
+            <section className="py-24 bg-[var(--background)] border-t border-[var(--border)] relative overflow-hidden">
+              <div className="max-w-7xl mx-auto px-6 md:px-8 relative z-10">
+                <div className="text-center mb-16">
+                  <span className="text-blue-600 font-bold tracking-[0.2em] uppercase text-[10px] bg-blue-50 px-4 py-1.5 rounded-sm border border-blue-200 shadow-sm">Simple Process</span>
+                  <h2 className="text-3xl md:text-4xl lg:text-[44px] font-black mt-6 mb-6 tracking-tight text-[var(--foreground)]">From Upload to Job Offer.</h2>
+                  <p className="text-[var(--text-muted)] max-w-2xl mx-auto text-lg font-medium">Four simple steps to master your interview skills and land your dream role.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
+                  {/* Connecting Line for Desktop with Progress Animation */}
+                  <div className="hidden md:block absolute top-[45px] left-[10%] right-[10%] h-0.5 bg-slate-200 dark:bg-slate-800 z-0">
+                    <div 
+                        className="h-full bg-blue-600 transition-all duration-1000 ease-in-out shadow-[0_0_15px_rgba(37,99,235,0.5)]"
+                        style={{ width: `${((activeStep - 1) / 3) * 100}%` }}
+                    />
+                  </div>
+
+                  {[
+                    { step: '01', title: 'Upload Resume', desc: 'Our AI instantly analyzes your past experiences, projects, and tech stack.' },
+                    { step: '02', title: 'Pick Interview', desc: 'Customize your drill: choose coding, behavioral, case study, or HR.' },
+                    { step: '03', title: 'Live Simulation', desc: 'Take a real-time, voice-first video interview with our strict proctoring.' },
+                    { step: '04', title: 'Get Analytics', desc: 'Receive instant, actionable data on your micropauses, tone, and code.' }
+                  ].map((item, index) => {
+                    const stepNum = index + 1;
+                    const isActive = activeStep === stepNum;
+                    return (
+                      <div key={index} className={`relative z-10 flex flex-col items-center text-center transition-all duration-500 ${isActive ? 'scale-110' : 'opacity-60 grayscale'}`}>
+                        <div 
+                          className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 transition-all duration-500 relative z-10 border-4 ${isActive ? 'bg-blue-600 border-blue-400 text-white shadow-[0_15px_35px_rgba(37,99,235,0.4)]' : 'bg-white border-slate-100 text-slate-900 shadow-md'}`}
+                        >
+                          <span className={`text-3xl font-black tracking-tighter`}>{item.step}</span>
+                          {isActive && <div className="absolute inset-0 rounded-full bg-blue-400 animate-ping opacity-20" />}
+                        </div>
+                        <h3 className={`text-xl font-black mb-3 transition-colors ${isActive ? 'text-blue-600' : 'text-[var(--foreground)]'}`}>{item.title}</h3>
+                        <p className={`text-sm px-4 leading-relaxed transition-colors ${isActive ? 'text-slate-900 font-medium' : 'text-[var(--text-muted)]'}`}>{item.desc}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+
+            {/* PLATFORM ECOSYSTEM SECTION - [NEW] */}
+            <section className="py-24 bg-white border-t border-slate-100 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-full bg-classy-grid pointer-events-none opacity-40"></div>
+              <div className="max-w-7xl mx-auto px-6 md:px-8 relative z-10">
+                <div className="text-center mb-16">
+                  <span className="text-slate-900 font-bold tracking-[0.2em] uppercase text-[10px] bg-white px-4 py-1.5 rounded-full border border-slate-100 shadow-sm">Integrated Intelligence</span>
+                  <h2 className="text-3xl md:text-4xl lg:text-[44px] font-black mt-6 mb-6 tracking-tight text-slate-900">Platform Ecosystem.</h2>
+                  <p className="text-slate-500 max-w-2xl mx-auto text-lg font-medium">A unified suite of tools designed to transform the academic and professional assessment landscape.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {/* Card 1: Class Tests */}
+                  <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 hover:border-blue-500 border-t-4 border-t-blue-600 shadow-soft hover:shadow-xl transition-all duration-500 group">
+                    <div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center mb-8 transition-all duration-500 overflow-hidden shadow-inner">
+                      <img src="/ecosystem/test.png" alt="Class Tests" className={`w-full h-full object-cover mix-blend-multiply ${styles.floatingImg} group-hover:scale-125 transition-all duration-700`} />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-800 mb-4 tracking-tight">Class Tests</h3>
+                    <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                      Our platform simplifies the class test process, allowing lecturers to seamlessly conduct digital class tests using the iQuiz question database.
+                    </p>
+                  </div>
+
+                  {/* Card 2: Comprehensive Reports */}
+                  <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 hover:border-blue-500 border-t-4 border-t-blue-600 shadow-soft hover:shadow-xl transition-all duration-500 group">
+                    <div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center mb-8 transition-all duration-500 overflow-hidden shadow-inner">
+                      <img src="/ecosystem/reports.png" alt="Reports" className={`w-full h-full object-cover mix-blend-multiply ${styles.floatingImg} group-hover:scale-125 transition-all duration-700`} style={{ animationDelay: '0.5s' }} />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-800 mb-4 tracking-tight">Reports</h3>
+                    <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                      Our platform combines reports and advanced metrics for interpreting data and making impactful decisions, enhancing the academic experience.
+                    </p>
+                  </div>
+
+                  {/* Card 3: AI Interviews */}
+                  <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 hover:border-blue-500 border-t-4 border-t-blue-600 shadow-soft hover:shadow-xl transition-all duration-500 group">
+                    <div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center mb-8 transition-all duration-500 overflow-hidden shadow-inner">
+                      <img src="/ecosystem/interview.png" alt="AI Interviews" className={`w-full h-full object-cover mix-blend-multiply ${styles.floatingImg} group-hover:scale-125 transition-all duration-700`} style={{ animationDelay: '1s' }} />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-800 mb-4 tracking-tight">AI Interviews</h3>
+                    <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                      Interview.AI&apos;s AI Interviews you based on your skills, utilizing advanced technology to seamlessly showcase your strengths to recruiters.
+                    </p>
+                  </div>
+
+                  {/* Card 4: Admin Profile */}
+                  <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 hover:border-blue-500 border-t-4 border-t-blue-600 shadow-soft hover:shadow-xl transition-all duration-500 group">
+                    <div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center mb-8 transition-all duration-500 overflow-hidden shadow-inner">
+                      <img src="/ecosystem/admin.png" alt="Admin Profile" className={`w-full h-full object-cover mix-blend-multiply ${styles.floatingImg} group-hover:scale-125 transition-all duration-700`} style={{ animationDelay: '1.5s' }} />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-800 mb-4 tracking-tight">Admin Profile</h3>
+                    <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                      Our platform empowers specialized admin profile, providing a detailed view of students performance and technical assessment data.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* COMPARISON SECTION */}
+            <section className="py-24 bg-white border-t border-slate-100 relative overflow-hidden">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-4xl bg-slate-600/5 blur-[100px] rounded-full pointer-events-none"></div>
+              <div className="max-w-7xl mx-auto px-6 md:px-8 relative z-10">
+                <div className="text-center mb-16">
+                  <span className="text-slate-600 font-bold tracking-[0.2em] uppercase text-[10px] bg-slate-50 px-4 py-1.5 rounded-sm border border-slate-200 shadow-sm">The Evolution of Prep</span>
+                  <h2 className="text-3xl md:text-4xl lg:text-[44px] font-black mt-6 mb-6 tracking-tight text-[var(--foreground)]">Why Candidates Switch to AI.</h2>
+                  <p className="text-[var(--text-muted)] max-w-2xl mx-auto text-lg font-medium">Traditional mock interviews are expensive and hard to schedule. Welcome to the future of interview prep.</p>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-8 lg:gap-12 max-w-5xl mx-auto">
+                  {/* Traditional Mocks (Left side) */}
+                  <div className="flex-1 p-8 md:p-10 rounded-[2.5rem] bg-[var(--card-bg)] border border-[var(--border)] opacity-80 filter grayscale hover:grayscale-0 transition-all duration-500 transform hover:-translate-y-1">
+                    <h3 className="text-2xl font-black text-[var(--foreground)] mb-8 border-b border-[var(--border)] pb-4">Human Mock</h3>
+                    <ul className="space-y-6">
+                      <li className="flex items-start gap-4">
+                        <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center shrink-0 mt-0.5"><span className="text-slate-400 font-bold text-[10px] leading-none">&#10006;</span></div>
+                        <span className="text-[var(--text-muted)] font-medium text-lg leading-snug text-left">Expensive and hard to afford frequently ($100+/hr).</span>
+                      </li>
+                      <li className="flex items-start gap-4">
+                        <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center shrink-0 mt-0.5"><span className="text-slate-400 font-bold text-[10px] leading-none">&#10006;</span></div>
+                        <span className="text-[var(--text-muted)] font-medium text-lg leading-snug text-left">Scheduling conflicts and limited availability.</span>
+                      </li>
+                      <li className="flex items-start gap-4">
+                        <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center shrink-0 mt-0.5"><span className="text-slate-400 font-bold text-[10px] leading-none">&#10006;</span></div>
+                        <span className="text-[var(--text-muted)] font-medium text-lg leading-snug text-left">Subjective, biased, and inconsistent feedback.</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* VS Badge for Desktop */}
+                  <div className="hidden md:flex items-center justify-center -mx-10 z-10 w-20">
+                    <div className="w-16 h-16 bg-[var(--background)] rounded-full flex items-center justify-center shadow-xl border border-blue-100 font-black text-xl text-blue-600 italic">VS</div>
+                  </div>
+
+                  {/* AI Interviewer (Right side) */}
+                  <div className="flex-1 p-8 md:p-10 bg-white text-slate-900 shadow-2xl border-t-[6px] border-t-blue-600 border-x border-b border-blue-50 transform md:scale-105 relative overflow-hidden rounded-md">
+                    <div className={`absolute top-0 right-0 p-8 opacity-10 pointer-events-none ${styles.rotating}`}>
+                      <Sparkles size={120} className="text-blue-600" />
+                    </div>
+                    <h3 className="text-2xl font-black mb-8 border-b border-blue-50 pb-4 relative z-10 text-blue-600">AI Interviewer</h3>
+                    <ul className="space-y-6 relative z-10">
+                      <li className="flex items-start gap-4">
+                        <div className="w-5 h-5 rounded-sm bg-blue-600 flex items-center justify-center shrink-0 mt-0.5"><Check size={12} className="text-white font-black" /></div>
+                        <span className="font-medium text-base leading-snug text-left text-slate-700">Instant, comprehensive feedback reports.</span>
+                      </li>
+                      <li className="flex items-start gap-4">
+                        <div className="w-5 h-5 rounded-sm bg-blue-600 flex items-center justify-center shrink-0 mt-0.5"><Check size={12} className="text-white font-black" /></div>
+                        <span className="font-medium text-base leading-snug text-left text-slate-700">Available 24/7—practice whenever you are ready.</span>
+                      </li>
+                      <li className="flex items-start gap-4">
+                        <div className="w-5 h-5 rounded-sm bg-blue-600 flex items-center justify-center shrink-0 mt-0.5"><Check size={12} className="text-white font-black" /></div>
+                        <span className="font-medium text-base leading-snug text-left text-slate-700">Adapts dynamically to analyze your specific resume.</span>
+                      </li>
+                      <li className="flex items-start gap-4">
+                        <div className="w-5 h-5 rounded-sm bg-blue-600 flex items-center justify-center shrink-0 mt-0.5"><Check size={12} className="text-white font-black" /></div>
+                        <span className="font-medium text-base leading-snug text-left text-slate-700">Analyzes micro-expressions and vocal tone.</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* WALL OF LOVE (TESTIMONIALS) */}
+            <section className="py-24 bg-slate-50 text-slate-900 border-t border-slate-200 relative overflow-hidden">
+              <div className="absolute inset-0 opacity-5 mix-blend-overlay bg-[url('/noise.png')]"></div>
+              <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-slate-100/50 blur-[150px] rounded-full pointer-events-none -mt-48 -mr-48"></div>
+
+              <div className="max-w-7xl mx-auto px-6 md:px-8 relative z-10">
+                <div className="text-center mb-16">
+                  <span className="text-slate-600 font-bold tracking-[0.2em] uppercase text-[10px] bg-slate-100 px-4 py-1.5 rounded-sm border border-slate-200 shadow-sm">Wall of Love</span>
+                  <h2 className="text-3xl md:text-4xl lg:text-[44px] font-black mt-6 mb-6 tracking-tight text-slate-900">Loved by Candidates.</h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {[
+                    { quote: "I was failing system design rounds constantly. Just 3 sessions here completely rewired how I structure my answers. Starting at Meta in 2 weeks!", name: "Alex T.", role: "Senior Engineer", company: "Meta" },
+                    { quote: "The micro-expression analysis caught that my eyes wander when I'm nervous. Unbelievably helpful to see real data on my non-verbal cues.", name: "Sarah M.", role: "Data Scientist", company: "Stripe" },
+                    { quote: "Exactly like the real thing. It threw me a curveball question based on a 4-year-old Python project on my resume. Scary but perfect prep.", name: "David K.", role: "Backend Developer", company: "Amazon" }
+                  ].map((review, i) => (
+                    <div key={i} className="bg-white border text-left border-slate-200 border-t-4 border-t-blue-600 hover:border-blue-500 p-8 rounded-lg hover:shadow-lg transition-all shadow-sm">
+                      <div className="flex gap-1 mb-6 text-blue-600">
+                        {[1, 2, 3, 4, 5].map(star => <span key={star} className="text-lg leading-none">&#9733;</span>)}
+                      </div>
+                      <p className="text-lg font-medium leading-relaxed mb-8 text-slate-700">"{review.quote}"</p>
+                      <div className="flex items-center gap-4 mt-auto">
+                        <div className="w-12 h-12 bg-slate-600 rounded-full flex items-center justify-center font-black text-white shrink-0">{review.name[0]}</div>
+                        <div>
+                          <p className="font-bold text-slate-900">{review.name}</p>
+                          <p className="text-[10px] uppercase tracking-widest text-slate-500 font-black">{review.role} @ {review.company}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </section>
@@ -2363,15 +2555,29 @@ function HomeContent() {
                 </div>
               </div>
             </section>
-            
+
+            {/* FINAL CTA SECTION */}
+            <section className="py-24 relative overflow-hidden bg-[#2563eb]">
+              <div className="max-w-5xl mx-auto px-6 md:px-8 relative z-10">
+                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-12 md:p-20 text-center shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:24px_24px] opacity-20"></div>
+                  <div className="relative z-10">
+                    <h2 className="text-3xl md:text-5xl font-black text-white mb-6 tracking-tight">Ready to Land Your Dream Job?</h2>
+                    <p className="text-lg text-blue-100 font-medium max-w-xl mx-auto mb-10 leading-relaxed">Join thousands of candidates who transformed their interview anxiety into offer letters.</p>
+                    <button onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); router.push('/signup'); }} className="px-10 py-5 bg-white text-blue-600 rounded-xl text-sm font-bold uppercase tracking-wider shadow-lg hover:-translate-y-1 hover:shadow-xl hover:bg-blue-50 transition-all duration-300">Enroll Now. It's Free.</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
             {/* FOOTER SECTION */}
             <footer className="py-20 bg-[var(--background)] border-t border-[var(--border)] overflow-hidden relative">
-              <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-600/5 blur-[120px] rounded-full -ml-48 -mb-48"></div>
+              <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-600/5 blur-[120px] rounded-full -ml-48 -mb-48"></div>
               <div className="max-w-7xl mx-auto px-6 md:px-8 relative z-10">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
                   <div className="col-span-1 md:col-span-2">
                     <div className="flex items-center gap-4 mb-6">
-                      <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg shadow-indigo-500/20">AI</div>
+                      <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/20">AI</div>
                       <span className="text-2xl font-black tracking-tighter">Interview.AI</span>
                     </div>
                     <p className="text-[var(--text-muted)] font-medium max-w-sm leading-relaxed mb-8">
@@ -2383,30 +2589,26 @@ function HomeContent() {
 
 
                   </div>
-                  
+
                   <div>
-                    <h4 className="font-black text-xs uppercase tracking-[0.2em] text-indigo-600 mb-6">Platform</h4>
+                    <h4 className="font-black text-xs uppercase tracking-[0.2em] text-blue-600 mb-6">Platform</h4>
                     <ul className="space-y-4">
-                      <li><Link href="/features" className="text-sm font-bold text-[var(--text-muted)] hover:text-indigo-600 transition-colors">Features</Link></li>
-                      <li><Link href="/about" className="text-sm font-bold text-[var(--text-muted)] hover:text-indigo-600 transition-colors">About Us</Link></li>
-                      <li><button onClick={() => {
-                        const el = document.getElementById('instructions');
-                        if (el) el.scrollIntoView({ behavior: 'smooth' });
-                      }} className="text-sm font-bold text-[var(--text-muted)] hover:text-indigo-600 transition-colors bg-transparent border-none cursor-pointer">Guidelines</button></li>
-                      <li><Link href="#faq" className="text-sm font-bold text-[var(--text-muted)] hover:text-indigo-600 transition-colors">FAQs</Link></li>
+                      <li><Link href="/features" className="text-sm font-bold text-[var(--text-muted)] hover:text-blue-600 transition-colors">Features</Link></li>
+                      <li><Link href="/about" className="text-sm font-bold text-[var(--text-muted)] hover:text-blue-600 transition-colors">About Us</Link></li>
+                      <li><Link href="#faq" className="text-sm font-bold text-[var(--text-muted)] hover:text-blue-600 transition-colors">FAQs</Link></li>
                     </ul>
                   </div>
-                  
+
                   <div>
-                    <h4 className="font-black text-xs uppercase tracking-[0.2em] text-indigo-600 mb-6">Legal</h4>
+                    <h4 className="font-black text-xs uppercase tracking-[0.2em] text-blue-600 mb-6">Legal</h4>
                     <ul className="space-y-4">
-                      <li><Link href="/privacy" className="text-sm font-bold text-[var(--text-muted)] hover:text-indigo-600 transition-colors">Privacy Policy</Link></li>
-                      <li><Link href="/terms" className="text-sm font-bold text-[var(--text-muted)] hover:text-indigo-600 transition-colors">Terms of Service</Link></li>
-                      <li><Link href="/contact" className="text-sm font-bold text-[var(--text-muted)] hover:text-indigo-600 transition-colors">Contact Support</Link></li>
+                      <li><Link href="/privacy" className="text-sm font-bold text-[var(--text-muted)] hover:text-blue-600 transition-colors">Privacy Policy</Link></li>
+                      <li><Link href="/terms" className="text-sm font-bold text-[var(--text-muted)] hover:text-blue-600 transition-colors">Terms of Service</Link></li>
+                      <li><Link href="/contact" className="text-sm font-bold text-[var(--text-muted)] hover:text-blue-600 transition-colors">Contact Support</Link></li>
                     </ul>
                   </div>
                 </div>
-                
+
                 <div className="pt-8 border-t border-[var(--border)] flex flex-col md:flex-row items-center justify-between gap-6 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
                 </div>
               </div>
@@ -2425,7 +2627,7 @@ function HomeContent() {
                   <div className="px-3 py-1 bg-indigo-600 rounded-lg text-xs font-black uppercase tracking-widest">Coding Round</div>
                   <h2 className="text-xl font-bold text-slate-200">Problem {currentCodingIdx + 1} of {codingProblems.length}</h2>
                 </div>
-                
+
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">
                     <span>Session Progress</span>
@@ -2559,10 +2761,10 @@ function HomeContent() {
                   {/* PiP Video Feed (Overlays Editor) */}
                   <div className="absolute top-4 right-4 w-48 aspect-video bg-black/40 rounded-xl border border-white/20 shadow-2xl overflow-hidden z-30 pointer-events-none flex items-center justify-center relative">
                     <div className="absolute bottom-3 right-3 z-40 flex flex-col items-end">
-                        <div className="flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-lg border border-white/10">
-                            <Shield className="text-green-500 w-3 h-3" />
-                            <span className="text-[7px] font-black uppercase tracking-[0.2em] text-green-500">Secure</span>
-                        </div>
+                      <div className="flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-lg border border-white/10">
+                        <Shield className="text-green-500 w-3 h-3" />
+                        <span className="text-[7px] font-black uppercase tracking-[0.2em] text-green-500">Secure</span>
+                      </div>
                     </div>
 
                     <video
@@ -2645,7 +2847,7 @@ function HomeContent() {
 
               {/* Right Column: Camera Feed */}
               <div className="flex-1 flex flex-col items-center w-full max-w-lg">
-                <div className="relative w-full aspect-square md:aspect-[4/5] max-h-[60vh] bg-black rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white/20 ring-4 ring-black/5 group">
+                <div className="relative w-full aspect-square md:aspect-[4/5] max-h-[60vh] bg-slate-50 rounded-[3rem] overflow-hidden shadow-2xl border-4 border-white ring-4 ring-slate-100 group">
                   <video
                     id="verification-video"
                     ref={(el) => {
@@ -2734,11 +2936,11 @@ function HomeContent() {
               </div>
               <h1 className="text-4xl font-black mb-6 tracking-tight text-slate-800">Environment Security Mode</h1>
               <p className="text-lg text-slate-500 font-medium mb-10 leading-relaxed max-w-xl mx-auto">
-                Identity Verified. Activating <span className="text-indigo-600 font-black">Atlas Security Pro</span>. 
+                Identity Verified. Activating <span className="text-indigo-600 font-black">Atlas Security Pro</span>.
                 We are now scanning your environment for unauthorized gadgets or individuals.
               </p>
 
-              <div className="relative w-full max-w-lg aspect-video mx-auto bg-black rounded-[2rem] overflow-hidden border-4 border-indigo-500 shadow-2xl mb-10 group">
+              <div className="relative w-full max-w-lg aspect-video mx-auto bg-white rounded-[2rem] overflow-hidden border-4 border-slate-200 shadow-2xl mb-10 group">
                 <video
                   id="main-video"
                   ref={(el) => {
@@ -2843,30 +3045,32 @@ function HomeContent() {
                   </div>
                 </div>
 
-                <div className="space-y-4 bg-red-50 dark:bg-red-950/20 p-6 rounded-3xl border border-red-100 dark:border-red-900/30 relative overflow-hidden group">
-                  <img src="/robot_friend.png" className="absolute -right-12 -bottom-12 w-48 opacity-10 group-hover:rotate-12 transition-transform duration-700 pointer-events-none" />
-                  <h3 className="font-black text-red-600 dark:text-red-400 uppercase tracking-widest text-[10px] mb-2 flex items-center gap-2">
-                    <Shield size={14} /> Proctoring Rules
-                  </h3>
-                  <ul className="space-y-3">
-                    <li className="flex items-start gap-3">
-                      <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5 shrink-0"></div>
-                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200"><span className="font-bold underline decoration-red-200">No Tab Switching:</span> Session will end after 3 warnings.</p>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5 shrink-0"></div>
-                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200"><span className="font-bold underline decoration-red-200">Fullscreen:</span> Maintain active fullscreen throughout.</p>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5 shrink-0"></div>
-                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200"><span className="font-bold underline decoration-red-200">No Gadgets:</span> Phone detection leads to immediate failure.</p>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5 shrink-0"></div>
-                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200"><span className="font-bold underline decoration-red-200">Visuals:</span> Full face must be visible in camera at all times.</p>
-                    </li>
-                  </ul>
-                </div>
+                {Number(user?.plan_id || 0) >= 3 && (
+                  <div className="space-y-4 bg-red-50 dark:bg-red-950/20 p-6 rounded-3xl border border-red-100 dark:border-red-900/30 relative overflow-hidden group">
+                    <img src="/robot_friend.png" className="absolute -right-12 -bottom-12 w-48 opacity-10 group-hover:rotate-12 transition-transform duration-700 pointer-events-none" />
+                    <h3 className="font-black text-red-600 dark:text-red-400 uppercase tracking-widest text-[10px] mb-2 flex items-center gap-2">
+                      <Shield size={14} /> Proctoring Rules
+                    </h3>
+                    <ul className="space-y-3">
+                      <li className="flex items-start gap-3">
+                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5 shrink-0"></div>
+                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-200"><span className="font-bold underline decoration-red-200">No Tab Switching:</span> Session will end after 3 warnings.</p>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5 shrink-0"></div>
+                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-200"><span className="font-bold underline decoration-red-200">Fullscreen:</span> Maintain active fullscreen throughout.</p>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5 shrink-0"></div>
+                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-200"><span className="font-bold underline decoration-red-200">No Gadgets:</span> Phone detection leads to immediate failure.</p>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-1.5 shrink-0"></div>
+                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-200"><span className="font-bold underline decoration-red-200">Visuals:</span> Full face must be visible in camera at all times.</p>
+                      </li>
+                    </ul>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col md:flex-row gap-4">
@@ -3020,10 +3224,31 @@ function HomeContent() {
                       </button>
                     </div>
                   </div>
+                  {nameWarning && (
+                    <div className="p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-xl space-y-3 animate-fadeIn">
+                      <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 text-sm font-semibold">
+                        <AlertCircle size={18} />
+                        Potential Name Mismatch
+                      </div>
+                      <p className="text-xs text-amber-600 dark:text-amber-300">
+                        {nameWarning} If this is indeed your resume, you can proceed by clicking the button below.
+                      </p>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => handleBeginInterview(undefined, true)}
+                        className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+                      >
+                        {loading ? <Loader size={14} className="animate-spin" /> : <Shield size={14} />}
+                        Confirm & Begin Interview Anyway
+                      </button>
+                    </div>
+                  )}
+
                   <button
                     onClick={handleBeginInterview}
                     disabled={loading}
-                    className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xl hover:bg-indigo-700 transition-all shadow-xl hover:shadow-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`w-full py-5 ${nameWarning ? 'bg-slate-200 text-slate-500 cursor-not-allowed opacity-50' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl hover:shadow-indigo-500/30'} rounded-2xl font-black text-xl transition-all`}
                   >
                     {loading ? "Analyzing Resume..." : "Begin Interview"}
                   </button>
@@ -3055,8 +3280,8 @@ function HomeContent() {
             <div className="flex-1 flex flex-col lg:flex-row gap-8 h-full min-h-0">
 
               {/* LEFT: PROFESSIONAL VIDEO STAGE */}
-              <div className={`flex-[2.5] flex flex-col relative rounded-[3rem] overflow-hidden bg-slate-900 shadow-2xl border-4 transition-all duration-500 ${isSpeaking ? 'border-blue-500 shadow-blue-500/20' : 'border-slate-800'}`}>
-                
+              <div className={`flex-[2.5] flex flex-col relative rounded-[3rem] overflow-hidden bg-white shadow-2xl border-4 transition-all duration-500 ${isSpeaking ? 'border-slate-400 shadow-slate-200' : 'border-slate-100'}`}>
+
                 {/* Agent Backdrop */}
                 <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'radial-gradient(circle, #1e293b 0%, #0f172a 100%)' }}>
                   <div className="relative w-full h-full overflow-hidden shadow-2xl">
@@ -3068,9 +3293,9 @@ function HomeContent() {
                       autoPlay
                       playsInline
                       className={`h-full w-full object-contain transition-all duration-700 ${isSpeaking ? 'opacity-100' : 'opacity-100'}`}
-                      onLoadedData={(e) => (e.target as HTMLVideoElement).play().catch(() => {})}
+                      onLoadedData={(e) => (e.target as HTMLVideoElement).play().catch(() => { })}
                     />
-                    
+
                     {/* Wav2Lip Overlay Removed */}
 
                     {/* Glow ring when speaking */}
@@ -3123,15 +3348,15 @@ function HomeContent() {
                       <div className="absolute top-0 right-0 bottom-0 left-0 z-[100] flex flex-col items-end justify-end p-10 pointer-events-none animate-in fade-in duration-500">
                         {/* Background dimming layer - keeping it subtler for 'aside' view */}
                         <div className="absolute inset-0 bg-slate-950/20 backdrop-blur-[1px] pointer-events-none"></div>
-                        
+
                         <div className="relative z-[101] pointer-events-auto flex flex-col items-end">
                           <div className={`text-6xl font-black italic mb-4 drop-shadow-2xl transition-colors duration-300 ${silenceCountdown <= 5 ? 'text-red-500 scale-110' : 'text-white'}`}>
                             {silenceCountdown}
                             <span className="text-xl ml-2 uppercase tracking-widest not-italic">sec</span>
                           </div>
-                          
+
                           <div className="flex gap-4">
-                            <button 
+                            <button
                               onClick={() => {
                                 setSilenceCountdown(30);
                                 lastSpeechTimeRef.current = Date.now();
@@ -3141,14 +3366,14 @@ function HomeContent() {
                             >
                               Extend 30s
                             </button>
-                            <button 
+                            <button
                               onClick={handleSubmitAnswer}
                               className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-2xl shadow-indigo-600/30 transition-all active:scale-95"
                             >
                               Next Question
                             </button>
                           </div>
-                          
+
                           <div className="mt-6 px-4 py-1 bg-white/5 rounded-full border border-white/10 text-[9px] font-black uppercase tracking-[0.3em] text-white/60 animate-pulse">
                             Silence Detected — Recording Paused
                           </div>
@@ -3167,7 +3392,7 @@ function HomeContent() {
                       <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                       <span className="text-[10px] font-black text-white uppercase tracking-widest">Neural Link: Active</span>
                     </div>
-                    <button 
+                    <button
                       onClick={() => { (window as any).location.reload(); }}
                       className="flex items-center gap-2 bg-white/5 hover:bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 w-fit text-white/60 transition-all active:scale-95 group pointer-events-auto"
                     >
@@ -3177,7 +3402,7 @@ function HomeContent() {
                   </div>
 
                   {/* User Camera PiP */}
-                  <div className="w-56 aspect-video bg-slate-900 rounded-3xl border-4 border-slate-700 shadow-2xl overflow-hidden group-hover:scale-105 transition-transform shrink-0 pointer-events-auto relative flex items-center justify-center">
+                  <div className="w-56 aspect-video bg-white scale-75 md:scale-100 rounded-3xl border-4 border-slate-100 shadow-2xl overflow-hidden group-hover:scale-105 transition-transform shrink-0 pointer-events-auto relative flex items-center justify-center">
                     <div className="absolute top-3 left-3 z-50">
                       <div className={`flex items-center gap-1.5 px-2.5 py-1 ${proctorStatus.face ? 'bg-green-500/90' : 'bg-red-500/90'} backdrop-blur-md rounded-full border border-white/20`}>
                         <div className={`w-1.5 h-1.5 bg-white rounded-full ${proctorStatus.face ? 'animate-pulse' : 'animate-ping'}`}></div>
@@ -3188,10 +3413,10 @@ function HomeContent() {
                     </div>
 
                     <div className="absolute bottom-3 right-3 z-40 flex flex-col items-end">
-                        <div className="flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-lg border border-white/10">
-                            <Shield className="text-green-500 w-3 h-3" />
-                            <span className="text-[7px] font-black uppercase tracking-[0.2em] text-green-500">Secure</span>
-                        </div>
+                      <div className="flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded-lg border border-white/10">
+                        <Shield className="text-green-500 w-3 h-3" />
+                        <span className="text-[7px] font-black uppercase tracking-[0.2em] text-green-500">Secure</span>
+                      </div>
                     </div>
 
                     <video
@@ -3297,9 +3522,9 @@ function HomeContent() {
                   </div>
                 </div>
                 <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm text-center">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Status</span>
-                    <div className="inline-block px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[9px] font-black uppercase tracking-widest">Round 1</div>
-                  </div>
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Status</span>
+                  <div className="inline-block px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[9px] font-black uppercase tracking-widest">Round 1</div>
+                </div>
 
                 {/* Transcript Card */}
                 <div className="bg-white flex flex-col gap-4 flex-1 min-h-[350px] rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden group">
@@ -3524,7 +3749,7 @@ function HomeContent() {
       {/* GLOBAL SECURITY OVERLAYS */}
       {
         showFullscreenWarn && (
-          <div className="fixed inset-0 z-[300] bg-black/90 backdrop-blur-xl flex items-center justify-center p-8">
+          <div className="fixed inset-0 z-[300] bg-white/90 backdrop-blur-xl flex items-center justify-center p-8">
             <div className="bg-white dark:bg-gray-900 p-8 rounded-[3rem] max-w-lg text-center shadow-[0_0_50px_rgba(239,68,68,0.3)] border border-red-500/50 animate-in zoom-in duration-300">
               <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <AlertCircle size={40} />
@@ -3552,7 +3777,7 @@ function HomeContent() {
 
       {
         showTabSwitchWarn && (
-          <div className="fixed inset-0 z-[301] bg-black/90 backdrop-blur-xl flex items-center justify-center p-8">
+          <div className="fixed inset-0 z-[301] bg-white/90 backdrop-blur-xl flex items-center justify-center p-8">
             <div className="bg-white dark:bg-gray-900 p-8 rounded-[3rem] max-w-lg text-center shadow-[0_0_50px_rgba(245,158,11,0.3)] border border-orange-500/50 animate-in zoom-in duration-300">
               <div className="w-20 h-20 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Monitor size={40} />

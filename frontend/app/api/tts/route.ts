@@ -12,26 +12,25 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("🔊 Generating Free Cloud TTS:", text.slice(0, 50), "...");
+    console.log("🔊 Proxying TTS request to Masculine Backend:", text.slice(0, 50), "...");
 
-    const results = await googleTTS.getAllAudioBase64(text, {
-      lang: "en",
-      slow: false,
-      host: "https://translate.google.com",
-      splitPunct: ",.?",
-    });
+    // Call the hardened Flask backend which prioritizes Male voices (pyttsx3/edge-tts)
+    const backendUrl = `http://localhost:5000/api/tts?text=${encodeURIComponent(text)}`;
+    const response = await fetch(backendUrl);
 
-    // Reconstruct Buffer from returned base64 chunks
-    const buffers = results.map((res: any) => Buffer.from(res.base64, "base64"));
-    const finalBuffer = Buffer.concat(buffers);
+    if (!response.ok) {
+      throw new Error(`Backend TTS failed: ${response.statusText}`);
+    }
 
-    return new Response(finalBuffer, {
+    const audioBuffer = await response.arrayBuffer();
+
+    return new Response(audioBuffer, {
       headers: {
         "Content-Type": "audio/mpeg",
       },
     });
   } catch (error: any) {
-    console.error("❌ Google Cloud TTS Error:", error);
+    console.error("❌ High-Identity TTS Error:", error);
     
     return NextResponse.json(
       { 

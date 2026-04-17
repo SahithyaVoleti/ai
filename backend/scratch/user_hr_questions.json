@@ -1,0 +1,702 @@
+[
+    {
+      "id": 1,
+      "question": "Tell me about yourself.",
+      "difficulty": "Easy",
+      "type": "Introduction",
+      "answer": "I am a dedicated professional with experience in my field and a strong passion for learning new skills. I enjoy solving problems, working with teams, and contributing to organizational success."
+    },
+    {
+      "id": 2,
+      "question": "Why do you want to join our company?",
+      "difficulty": "Easy",
+      "type": "Motivation",
+      "answer": "Your company has a strong reputation for innovation and growth, which attracts me greatly. I believe my skills and dedication can add value while helping me grow professionally."
+    },
+    {
+      "id": 3,
+      "question": "What do you know about our company?",
+      "difficulty": "Easy",
+      "type": "Company Research",
+      "answer": "I know your company is known for delivering quality services/products and maintaining strong customer trust. I also admire your focus on employee growth and innovation."
+    },
+    {
+      "id": 4,
+      "question": "Why should we hire you?",
+      "difficulty": "Medium",
+      "type": "Self Assessment",
+      "answer": "I have the right combination of skills, dedication, and adaptability required for this role. I am also a quick learner who can contribute positively from the beginning."
+    },
+    {
+      "id": 5,
+      "question": "What are your strengths?",
+      "difficulty": "Easy",
+      "type": "Strengths",
+      "answer": "My strengths include problem-solving, teamwork, and effective communication. I am also highly responsible and focused on completing tasks on time."
+    },
+    {
+      "id": 6,
+      "question": "What are your weaknesses?",
+      "difficulty": "Medium",
+      "type": "Weaknesses",
+      "answer": "Sometimes I focus too much on details to ensure quality work. However, I am learning to balance perfection with efficiency and deadlines."
+    },
+    {
+      "id": 7,
+      "question": "Where do you see yourself in 5 years?",
+      "difficulty": "Medium",
+      "type": "Career Goals",
+      "answer": "In five years, I see myself growing into a senior role with more responsibilities. I also want to contribute significantly to the company’s success."
+    },
+    {
+      "id": 8,
+      "question": "Why are you leaving your current job?",
+      "difficulty": "Medium",
+      "type": "Career Change",
+      "answer": "I am grateful for my current role, but I am looking for better growth opportunities and new challenges. I believe this position aligns with my long-term career goals."
+    },
+    {
+      "id": 9,
+      "question": "Describe a challenging situation you faced at work.",
+      "difficulty": "Hard",
+      "type": "Behavioral",
+      "answer": "I once handled a project with a very tight deadline and limited resources. By planning properly and coordinating with the team, we completed it successfully on time."
+    },
+    {
+      "id": 10,
+      "question": "How do you handle stress and pressure?",
+      "difficulty": "Medium",
+      "type": "Behavioral",
+      "answer": "I stay calm under pressure by prioritizing tasks and focusing on solutions. Proper planning and time management help me handle stress effectively."
+    },
+    {
+      "id": 11,
+      "question": "What motivates you to perform well?",
+      "difficulty": "Easy",
+      "type": "Motivation",
+      "answer": "I am motivated by learning new things, achieving goals, and being recognized for quality work. Contributing to team success also inspires me."
+    },
+    {
+      "id": 12,
+      "question": "Describe your ideal work environment.",
+      "difficulty": "Easy",
+      "type": "Culture Fit",
+      "answer": "My ideal workplace is collaborative, positive, and growth-oriented. I value an environment where ideas are welcomed and performance is appreciated."
+    },
+    {
+      "id": 13,
+      "question": "Are you a team player?",
+      "difficulty": "Easy",
+      "type": "Teamwork",
+      "answer": "Yes, I enjoy working with teams because collaboration leads to better results. I also respect others’ ideas and support team goals."
+    },
+    {
+      "id": 14,
+      "question": "Describe a time when you worked in a team.",
+      "difficulty": "Medium",
+      "type": "Behavioral",
+      "answer": "During a project, I worked closely with teammates to divide responsibilities and meet deadlines. Our coordination helped us complete the work successfully."
+    },
+    {
+      "id": 15,
+      "question": "How do you prioritize your tasks?",
+      "difficulty": "Medium",
+      "type": "Productivity",
+      "answer": "I prioritize tasks based on urgency, deadlines, and business impact. I usually create a task list and focus on the most important items first."
+    },
+    {
+      "id": 16,
+      "question": "What is your greatest professional achievement?",
+      "difficulty": "Medium",
+      "type": "Achievements",
+      "answer": "One of my greatest achievements was successfully completing an important project before the deadline. It improved efficiency and earned appreciation from management."
+    },
+    {
+      "id": 17,
+      "question": "Describe a time you failed and what you learned.",
+      "difficulty": "Hard",
+      "type": "Behavioral",
+      "answer": "I once underestimated the time needed for a task and missed an internal deadline. I learned the importance of realistic planning and proactive communication."
+    },
+    {
+      "id": 18,
+      "question": "How do you deal with criticism?",
+      "difficulty": "Medium",
+      "type": "Behavioral",
+      "answer": "I accept constructive criticism positively because it helps me improve. I listen carefully, reflect on feedback, and take corrective action."
+    },
+    {
+      "id": 19,
+      "question": "How do you handle conflict with coworkers?",
+      "difficulty": "Hard",
+      "type": "Conflict Resolution",
+      "answer": "I handle conflicts professionally by discussing issues calmly and respectfully. My focus is always on finding solutions and maintaining teamwork."
+    },
+    {
+      "id": 20,
+      "question": "What salary are you expecting?",
+      "difficulty": "Medium",
+      "type": "Compensation",
+      "answer": "I am open to a fair salary based on industry standards, my experience, and the responsibilities of the role. I am confident we can reach a mutually beneficial agreement."
+    },
+    {
+      "id": 21,
+      "question": "Are you willing to relocate?",
+      "difficulty": "Easy",
+      "type": "Availability",
+      "answer": "Yes, I am open to relocation if the opportunity supports my career growth. I can adapt quickly to a new environment and responsibilities."
+    },
+    {
+      "id": 22,
+      "question": "Are you willing to travel for work?",
+      "difficulty": "Easy",
+      "type": "Availability",
+      "answer": "Yes, I am comfortable traveling whenever required for business needs. I understand travel can be important for meetings and project success."
+    },
+    {
+      "id": 23,
+      "question": "Why is there a gap in your employment history?",
+      "difficulty": "Hard",
+      "type": "Career Gap",
+      "answer": "During that period, I focused on improving my skills and personal development. I used the time productively and now I am fully ready to contribute professionally."
+    },
+    {
+      "id": 24,
+      "question": "Why did you change jobs frequently?",
+      "difficulty": "Hard",
+      "type": "Career Stability",
+      "answer": "Each move was based on better learning opportunities and career growth. Those experiences helped me gain broader skills and adaptability."
+    },
+    {
+      "id": 25,
+      "question": "What makes you different from other candidates?",
+      "difficulty": "Medium",
+      "type": "Self Assessment",
+      "answer": "I combine technical skills with a positive attitude and willingness to learn. I also focus strongly on results, teamwork, and continuous improvement."
+    },
+    {
+      "id": 26,
+      "question": "Describe a time you showed leadership.",
+      "difficulty": "Medium",
+      "type": "Leadership",
+      "answer": "In a project, I took initiative to organize tasks and guide teammates toward deadlines. My coordination helped the team complete the work successfully."
+    },
+    {
+      "id": 27,
+      "question": "How do you handle deadlines?",
+      "difficulty": "Medium",
+      "type": "Productivity",
+      "answer": "I handle deadlines by planning tasks early and tracking progress regularly. I stay focused and communicate quickly if any risk arises."
+    },
+    {
+      "id": 28,
+      "question": "What would your previous manager say about you?",
+      "difficulty": "Medium",
+      "type": "Reference",
+      "answer": "My previous manager would likely describe me as reliable, hardworking, and responsible. They would also mention my positive attitude and ability to meet commitments."
+    },
+    {
+      "id": 29,
+      "question": "What are your hobbies and interests?",
+      "difficulty": "Easy",
+      "type": "Personality",
+      "answer": "My hobbies include reading, learning new technologies, and staying active. These interests help me remain curious, disciplined, and balanced."
+    },
+    {
+      "id": 30,
+      "question": "Do you prefer working alone or in a team?",
+      "difficulty": "Easy",
+      "type": "Work Style",
+      "answer": "I am comfortable in both situations depending on the task. I enjoy teamwork for collaboration, while I can also work independently with full accountability."
+    },
+    {
+      "id": 31,
+      "question": "How quickly can you join?",
+      "difficulty": "Easy",
+      "type": "Availability",
+      "answer": "I can join based on the required notice period and company process. I will do my best to ensure a smooth and timely transition."
+    },
+    {
+      "id": 32,
+      "question": "What do you do when you disagree with your manager?",
+      "difficulty": "Hard",
+      "type": "Conflict Resolution",
+      "answer": "I respectfully share my perspective with facts and possible solutions. Once a final decision is made, I fully support it professionally."
+    },
+    {
+      "id": 33,
+      "question": "How do you learn new skills?",
+      "difficulty": "Medium",
+      "type": "Learning Ability",
+      "answer": "I learn through practice, structured courses, and hands-on projects. I also seek feedback and keep updating myself with industry trends."
+    },
+    {
+      "id": 34,
+      "question": "What are your short-term career goals?",
+      "difficulty": "Medium",
+      "type": "Career Goals",
+      "answer": "My short-term goal is to excel in this role and strengthen my expertise. I also want to contribute measurable value to the organization."
+    },
+    {
+      "id": 35,
+      "question": "Why do you want to leave your current company?",
+      "difficulty": "Medium",
+      "type": "Career Change",
+      "answer": "I appreciate my current company, but I am seeking better growth opportunities and new challenges. This role appears more aligned with my long-term goals."
+    },
+    {
+      "id": 36,
+      "question": "Have you ever had a conflict with a customer?",
+      "difficulty": "Hard",
+      "type": "Behavioral",
+      "answer": "Yes, I handled it calmly by listening carefully and understanding the concern. By communicating clearly, I was able to resolve the issue professionally."
+    },
+    {
+      "id": 37,
+      "question": "How do you manage multiple responsibilities?",
+      "difficulty": "Medium",
+      "type": "Productivity",
+      "answer": "I manage multiple responsibilities through planning, prioritization, and regular follow-up. Breaking tasks into smaller steps helps me stay organized."
+    },
+    {
+      "id": 38,
+      "question": "What does success mean to you?",
+      "difficulty": "Easy",
+      "type": "Mindset",
+      "answer": "Success means achieving goals while continuously learning and growing. It also means creating value for the team and organization."
+    },
+    {
+      "id": 39,
+      "question": "What does failure mean to you?",
+      "difficulty": "Easy",
+      "type": "Mindset",
+      "answer": "Failure is a learning opportunity rather than an ending. It helps identify mistakes and improve future performance."
+    },
+    {
+      "id": 40,
+      "question": "How do you adapt to change?",
+      "difficulty": "Medium",
+      "type": "Adaptability",
+      "answer": "I adapt to change by staying positive and open to new ideas. I focus on learning quickly and adjusting my approach to meet new goals."
+    },
+    {
+      "id": 41,
+      "question": "Describe a time you solved a problem creatively.",
+      "difficulty": "Hard",
+      "type": "Problem Solving",
+      "answer": "I once improved a slow process by introducing automation tools and better task tracking. This saved time and increased overall team productivity."
+    },
+    {
+      "id": 42,
+      "question": "How do you stay organized?",
+      "difficulty": "Medium",
+      "type": "Productivity",
+      "answer": "I stay organized by maintaining task lists, setting priorities, and reviewing progress daily. Proper planning helps me complete work efficiently."
+    },
+    {
+      "id": 43,
+      "question": "Why do you want this role specifically?",
+      "difficulty": "Medium",
+      "type": "Motivation",
+      "answer": "This role matches my skills, interests, and career goals very well. I believe I can contribute strongly while growing professionally."
+    },
+    {
+      "id": 44,
+      "question": "What can you contribute to our company?",
+      "difficulty": "Medium",
+      "type": "Value Proposition",
+      "answer": "I can contribute my skills, dedication, and problem-solving ability to help achieve business goals. I also bring a positive attitude and willingness to learn."
+    },
+    {
+      "id": 45,
+      "question": "How do you handle repetitive tasks?",
+      "difficulty": "Medium",
+      "type": "Work Style",
+      "answer": "I stay focused on quality and consistency while doing repetitive tasks. I also look for smarter ways to improve efficiency whenever possible."
+    },
+    {
+      "id": 46,
+      "question": "Have you ever made a mistake at work? What happened?",
+      "difficulty": "Hard",
+      "type": "Behavioral",
+      "answer": "Yes, I once missed a small detail in a task, but I corrected it quickly after identifying it. I learned the importance of double-checking work before submission."
+    },
+    {
+      "id": 47,
+      "question": "What type of manager do you work best with?",
+      "difficulty": "Easy",
+      "type": "Management Style",
+      "answer": "I work best with managers who communicate clearly and support growth. I also appreciate leaders who trust employees and provide constructive feedback."
+    },
+    {
+      "id": 48,
+      "question": "How do you define teamwork?",
+      "difficulty": "Easy",
+      "type": "Teamwork",
+      "answer": "Teamwork means collaborating effectively toward a shared goal. It involves communication, trust, and supporting one another."
+    },
+    {
+      "id": 49,
+      "question": "How do you handle feedback from your peers?",
+      "difficulty": "Medium",
+      "type": "Behavioral",
+      "answer": "I welcome peer feedback because it offers useful perspectives for improvement. I listen carefully and apply suggestions when relevant."
+    },
+    {
+      "id": 50,
+      "question": "What do you expect from this job?",
+      "difficulty": "Medium",
+      "type": "Expectations",
+      "answer": "I expect opportunities to learn, contribute, and grow professionally. I also look for a positive environment where performance is valued."
+    },
+    {
+      "id": 51,
+      "question": "How do you manage your time effectively?",
+      "difficulty": "Medium",
+      "type": "Time Management",
+      "answer": "I manage time by prioritizing important tasks and setting realistic deadlines. I also avoid distractions and track progress regularly."
+    },
+    {
+      "id": 52,
+      "question": "Describe a time when you handled pressure successfully.",
+      "difficulty": "Hard",
+      "type": "Behavioral",
+      "answer": "During a tight deadline project, I stayed calm, focused on priorities, and coordinated with the team. We completed the project successfully on time."
+    },
+    {
+      "id": 53,
+      "question": "How do you build relationships at work?",
+      "difficulty": "Medium",
+      "type": "Interpersonal Skills",
+      "answer": "I build relationships through respect, clear communication, and reliability. Helping others and maintaining professionalism also builds trust."
+    },
+    {
+      "id": 54,
+      "question": "What inspires you to do better?",
+      "difficulty": "Easy",
+      "type": "Motivation",
+      "answer": "Continuous learning, challenging goals, and achieving results inspire me. Seeing positive impact from my work also motivates me."
+    },
+    {
+      "id": 55,
+      "question": "How do you handle failure?",
+      "difficulty": "Medium",
+      "type": "Mindset",
+      "answer": "I treat failure as a chance to learn and improve. I analyze what went wrong and apply lessons in future situations."
+    },
+    {
+      "id": 56,
+      "question": "What would you do in your first 30 days here?",
+      "difficulty": "Hard",
+      "type": "Planning",
+      "answer": "In the first 30 days, I would focus on understanding processes, team goals, and expectations. I would also begin contributing quickly while learning the company culture."
+    },
+    {
+      "id": 57,
+      "question": "How do you stay motivated during routine work?",
+      "difficulty": "Medium",
+      "type": "Motivation",
+      "answer": "I stay motivated by focusing on the value of the task and maintaining quality standards. I also set small goals to keep progress engaging."
+    },
+    {
+      "id": 58,
+      "question": "How do you respond when priorities suddenly change?",
+      "difficulty": "Hard",
+      "type": "Adaptability",
+      "answer": "I remain flexible and quickly reassess tasks based on new priorities. Clear communication and planning help me adjust effectively."
+    },
+    {
+      "id": 59,
+      "question": "What is your work ethic?",
+      "difficulty": "Easy",
+      "type": "Professionalism",
+      "answer": "My work ethic is based on responsibility, honesty, and consistency. I believe in giving my best effort and meeting commitments."
+    },
+    {
+      "id": 60,
+      "question": "Why should we trust you with responsibility?",
+      "difficulty": "Medium",
+      "type": "Trustworthiness",
+      "answer": "I take ownership of my work and complete tasks with honesty and commitment. I am dependable, accountable, and focused on delivering consistent results."
+    },
+    {
+      "id": 61,
+      "question": "How do you react when someone disagrees with you?",
+      "difficulty": "Medium",
+      "type": "Conflict Resolution",
+      "answer": "I listen carefully to understand their viewpoint and stay respectful during discussions. I focus on facts and finding the best solution together."
+    },
+    {
+      "id": 62,
+      "question": "Describe a time you exceeded expectations.",
+      "difficulty": "Hard",
+      "type": "Achievements",
+      "answer": "I once completed a project earlier than expected while improving quality standards. My manager appreciated the initiative and efficiency shown."
+    },
+    {
+      "id": 63,
+      "question": "How do you maintain work-life balance?",
+      "difficulty": "Medium",
+      "type": "Personal Management",
+      "answer": "I plan my schedule properly and prioritize important tasks during work hours. This helps me stay productive while keeping personal time balanced."
+    },
+    {
+      "id": 64,
+      "question": "What does professionalism mean to you?",
+      "difficulty": "Easy",
+      "type": "Professionalism",
+      "answer": "Professionalism means being responsible, respectful, and dependable in the workplace. It also includes honesty, punctuality, and quality work."
+    },
+    {
+      "id": 65,
+      "question": "How do you handle confidential information?",
+      "difficulty": "Medium",
+      "type": "Integrity",
+      "answer": "I handle confidential information carefully and only share it with authorized people. I understand trust and data security are very important."
+    },
+    {
+      "id": 66,
+      "question": "What would you do if you made an unpopular decision?",
+      "difficulty": "Hard",
+      "type": "Leadership",
+      "answer": "I would clearly explain the reasons behind the decision and how it benefits the organization. I would also listen to concerns and address them professionally."
+    },
+    {
+      "id": 67,
+      "question": "How do you keep yourself motivated after setbacks?",
+      "difficulty": "Medium",
+      "type": "Resilience",
+      "answer": "I focus on lessons learned and treat setbacks as temporary challenges. Staying positive and taking action helps me move forward quickly."
+    },
+    {
+      "id": 68,
+      "question": "Describe your communication style.",
+      "difficulty": "Easy",
+      "type": "Communication",
+      "answer": "My communication style is clear, respectful, and professional. I believe in active listening and sharing information effectively."
+    },
+    {
+      "id": 69,
+      "question": "How do you deal with difficult coworkers?",
+      "difficulty": "Hard",
+      "type": "Conflict Resolution",
+      "answer": "I remain calm, respectful, and focus on work-related solutions. Building understanding and maintaining professionalism usually resolves issues."
+    },
+    {
+      "id": 70,
+      "question": "What are you most proud of professionally?",
+      "difficulty": "Medium",
+      "type": "Achievements",
+      "answer": "I am proud of consistently delivering quality work and helping projects succeed. Being trusted with responsibilities is something I value greatly."
+    },
+    {
+      "id": 71,
+      "question": "How do you respond to tight deadlines?",
+      "difficulty": "Medium",
+      "type": "Time Management",
+      "answer": "I stay calm, prioritize tasks, and focus on the most critical work first. Good planning and communication help me meet deadlines successfully."
+    },
+    {
+      "id": 72,
+      "question": "What do you do when you do not know something?",
+      "difficulty": "Easy",
+      "type": "Learning Ability",
+      "answer": "I honestly acknowledge it and immediately work to learn the answer. I use reliable resources and ask the right people when needed."
+    },
+    {
+      "id": 73,
+      "question": "How do you measure your own success?",
+      "difficulty": "Medium",
+      "type": "Mindset",
+      "answer": "I measure success through results achieved, skills improved, and value created. Continuous growth and positive impact are important to me."
+    },
+    {
+      "id": 74,
+      "question": "Describe a time you took initiative.",
+      "difficulty": "Hard",
+      "type": "Leadership",
+      "answer": "I noticed an inefficient process and proposed a better workflow. After implementation, it improved speed and reduced errors."
+    },
+    {
+      "id": 75,
+      "question": "How do you stay positive in stressful situations?",
+      "difficulty": "Medium",
+      "type": "Resilience",
+      "answer": "I focus on solutions instead of problems and break tasks into manageable steps. Staying calm helps me think clearly under pressure."
+    },
+    {
+      "id": 76,
+      "question": "What kind of company culture do you prefer?",
+      "difficulty": "Easy",
+      "type": "Culture Fit",
+      "answer": "I prefer a culture that values teamwork, learning, and respect. A positive environment where performance is appreciated motivates me."
+    },
+    {
+      "id": 77,
+      "question": "How do you ensure quality in your work?",
+      "difficulty": "Medium",
+      "type": "Quality Focus",
+      "answer": "I review my work carefully, follow standards, and pay attention to details. I also seek feedback to improve quality continuously."
+    },
+    {
+      "id": 78,
+      "question": "What would you do if given multiple urgent tasks?",
+      "difficulty": "Hard",
+      "type": "Prioritization",
+      "answer": "I would assess urgency, impact, and deadlines before prioritizing tasks. Then I would communicate clearly and manage time efficiently."
+    },
+    {
+      "id": 79,
+      "question": "How do you handle rejection or disappointment?",
+      "difficulty": "Medium",
+      "type": "Emotional Intelligence",
+      "answer": "I accept it professionally and focus on learning from the experience. Then I move forward with a better plan and stronger mindset."
+    },
+    {
+      "id": 80,
+      "question": "Why do you want to grow your career now?",
+      "difficulty": "Medium",
+      "type": "Career Goals",
+      "answer": "I have built a strong foundation of skills and experience, and now I am ready for greater responsibilities. I want to grow further while contributing more value to an organization."
+    },
+    {
+      "id": 81,
+      "question": "How do you handle unexpected challenges?",
+      "difficulty": "Medium",
+      "type": "Problem Solving",
+      "answer": "I stay calm, assess the situation quickly, and focus on practical solutions. I adapt fast and take action while keeping priorities clear."
+    },
+    {
+      "id": 82,
+      "question": "What motivates you to stay long-term in a company?",
+      "difficulty": "Medium",
+      "type": "Retention",
+      "answer": "Growth opportunities, meaningful work, and a positive culture motivate me to stay long-term. I value organizations that appreciate performance and development."
+    },
+    {
+      "id": 83,
+      "question": "Describe a time you learned something quickly.",
+      "difficulty": "Hard",
+      "type": "Learning Ability",
+      "answer": "I once had to learn a new tool for an urgent project within a short time. Through focused practice and research, I became productive quickly and delivered results."
+    },
+    {
+      "id": 84,
+      "question": "How do you react to constructive criticism?",
+      "difficulty": "Easy",
+      "type": "Feedback",
+      "answer": "I welcome constructive criticism because it helps me improve. I listen carefully, reflect on it, and apply the feedback positively."
+    },
+    {
+      "id": 85,
+      "question": "What would you do if you noticed a process inefficiency?",
+      "difficulty": "Hard",
+      "type": "Initiative",
+      "answer": "I would analyze the issue, identify possible improvements, and suggest practical solutions. If approved, I would help implement the better process."
+    },
+    {
+      "id": 86,
+      "question": "How do you stay productive during slow periods?",
+      "difficulty": "Medium",
+      "type": "Productivity",
+      "answer": "I use slow periods to organize tasks, improve skills, and prepare for upcoming priorities. Staying proactive helps maintain productivity."
+    },
+    {
+      "id": 87,
+      "question": "What role do you usually take in a team?",
+      "difficulty": "Easy",
+      "type": "Teamwork",
+      "answer": "I usually take a dependable and collaborative role focused on achieving team goals. I contribute ideas while supporting others whenever needed."
+    },
+    {
+      "id": 88,
+      "question": "How do you handle accountability?",
+      "difficulty": "Medium",
+      "type": "Responsibility",
+      "answer": "I take full ownership of my tasks and outcomes. If mistakes happen, I address them honestly and work quickly to resolve them."
+    },
+    {
+      "id": 89,
+      "question": "What is your biggest career lesson so far?",
+      "difficulty": "Medium",
+      "type": "Reflection",
+      "answer": "My biggest lesson is that continuous learning and adaptability are essential for growth. Success comes from consistency and a positive attitude."
+    },
+    {
+      "id": 90,
+      "question": "How do you handle working with different personalities?",
+      "difficulty": "Hard",
+      "type": "Interpersonal Skills",
+      "answer": "I respect individual differences and adjust my communication style when needed. Building understanding and professionalism helps create smooth collaboration."
+    },
+    {
+      "id": 91,
+      "question": "What would you do if assigned a task outside your comfort zone?",
+      "difficulty": "Hard",
+      "type": "Adaptability",
+      "answer": "I would treat it as a learning opportunity and start understanding the requirements. I would seek guidance if needed and give my best effort."
+    },
+    {
+      "id": 92,
+      "question": "How do you define leadership?",
+      "difficulty": "Easy",
+      "type": "Leadership",
+      "answer": "Leadership means guiding others toward goals through clarity, support, and accountability. A good leader inspires trust and encourages growth."
+    },
+    {
+      "id": 93,
+      "question": "What would make you leave a company?",
+      "difficulty": "Medium",
+      "type": "Career Change",
+      "answer": "I value stability, so I would only consider leaving for limited growth opportunities or major misalignment in goals. I prefer long-term contribution where mutual value exists."
+    },
+    {
+      "id": 94,
+      "question": "How do you keep improving professionally?",
+      "difficulty": "Medium",
+      "type": "Growth Mindset",
+      "answer": "I keep improving through learning new skills, seeking feedback, and staying updated with industry trends. I believe development should be continuous."
+    },
+    {
+      "id": 95,
+      "question": "Describe a time you helped a coworker succeed.",
+      "difficulty": "Hard",
+      "type": "Teamwork",
+      "answer": "I once helped a teammate understand a difficult task and shared resources to speed progress. Our collaboration helped the project finish successfully."
+    },
+    {
+      "id": 96,
+      "question": "How do you respond when priorities conflict?",
+      "difficulty": "Hard",
+      "type": "Prioritization",
+      "answer": "I evaluate urgency, deadlines, and business impact before deciding priorities. I also communicate clearly with stakeholders to align expectations."
+    },
+    {
+      "id": 97,
+      "question": "What is your approach to decision-making?",
+      "difficulty": "Medium",
+      "type": "Decision Making",
+      "answer": "I make decisions based on facts, analysis, and potential outcomes. I also consider team input when necessary for better results."
+    },
+    {
+      "id": 98,
+      "question": "How do you maintain consistency in your work?",
+      "difficulty": "Medium",
+      "type": "Quality",
+      "answer": "I follow structured processes and review my work regularly. Consistency comes from discipline and attention to detail."
+    },
+    {
+      "id": 99,
+      "question": "What does teamwork success mean to you?",
+      "difficulty": "Easy",
+      "type": "Teamwork",
+      "answer": "Teamwork success means achieving shared goals through collaboration and mutual support. It reflects strong communication and trust among members."
+    },
+    {
+      "id": 100,
+      "question": "Do you have any questions for us?",
+      "difficulty": "Easy",
+      "type": "Closing",
+      "answer": "Yes, I would like to know more about team structure, growth opportunities, and expectations for this role. This helps me understand how I can contribute effectively."
+    }
+]

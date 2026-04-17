@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, CheckCircle, ArrowRight, AlertCircle, Sun, Moon, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import { useTheme } from '../theme-context';
@@ -16,6 +16,98 @@ export default function ForgotPassword() {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const [resendTimer, setResendTimer] = useState(0);
+    const [isResending, setIsResending] = useState(false);
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const globalSpeechTokenRef = useRef(0);
+
+    const speak = (text: string) => {
+        if (typeof window === 'undefined') return;
+        const myId = ++globalSpeechTokenRef.current;
+        if (audioRef.current) {
+            try {
+                const oldAudio = audioRef.current;
+                audioRef.current = null;
+                oldAudio.onended = null;
+                oldAudio.pause();
+                oldAudio.src = "";
+            } catch (e) { }
+        }
+        try { window.speechSynthesis.cancel(); } catch (e) { }
+
+        setIsSpeaking(true);
+        const playFallback = async () => {
+            if (myId !== globalSpeechTokenRef.current) return;
+            try {
+                const response = await fetch("/api/tts", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text }),
+                });
+                if (!response.ok) throw new Error();
+                const blob = await response.blob();
+                const audioUrl = URL.createObjectURL(blob);
+                if (myId !== globalSpeechTokenRef.current) return;
+                const audio = new Audio(audioUrl);
+                audioRef.current = audio;
+                audio.onended = () => setIsSpeaking(false);
+                audio.onerror = () => browserFallback();
+                await audio.play();
+            } catch (err) { browserFallback(); }
+        };
+        const browserFallback = () => {
+            try {
+                const utt = new SpeechSynthesisUtterance(text);
+                const voices = window.speechSynthesis.getVoices();
+                const maleVoice = voices.find(v =>
+                    v.name.toLowerCase().includes('david') || v.name.toLowerCase().includes('james') ||
+                    v.name.toLowerCase().includes('google us english') ||
+                    (v.name.toLowerCase().includes('male') && !v.name.toLowerCase().includes('female'))
+                );
+                if (maleVoice) utt.voice = maleVoice;
+                utt.rate = 0.9;
+                utt.pitch = 0.85;
+                utt.onend = () => setIsSpeaking(false);
+                window.speechSynthesis.speak(utt);
+            } catch (e) { setIsSpeaking(false); }
+        };
+        playFallback();
+    };
+
+    useEffect(() => {
+        let timer: any;
+        if (resendTimer > 0) {
+            timer = setInterval(() => {
+                setResendTimer(prev => prev - 1);
+            }, 1000);
+        }
+        return () => clearInterval(timer);
+    }, [resendTimer]);
+
+    const handleResendOtp = async () => {
+        if (resendTimer > 0 || isResending) return;
+        setIsResending(true);
+        setError('');
+        try {
+            const res = await fetch('http://localhost:5000/api/auth/resend-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                setMessage(data.message);
+                setResendTimer(30);
+            } else {
+                setError(data.message || "Failed to resend code.");
+            }
+        } catch {
+            setError("Connection failure.");
+        } finally {
+            setIsResending(false);
+        }
+    };
 
     const handleEmailSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,8 +125,11 @@ export default function ForgotPassword() {
             if (data.status === 'success') {
                 setMessage(data.message);
                 setStep(2);
+                speak("Security code sent. Please check your email and enter the six digit code below.");
             } else {
-                setError(data.message || "Failed to send code. Check email.");
+                const msg = data.message || "Failed to send code. Check email.";
+                setError(msg);
+                speak(msg);
             }
         } catch (err) {
             setError("Connection failed. Is the server running?");
@@ -58,8 +153,11 @@ export default function ForgotPassword() {
             if (data.status === 'success') {
                 setStep(3);
                 setMessage('');
+                speak("Identity verified. You can now set a new secure password for your account.");
             } else {
-                setError(data.message || "Invalid verification code.");
+                const msg = data.message || "Invalid verification code.";
+                setError(msg);
+                speak(msg);
             }
         } catch (err) {
             setError("Verification failed.");
@@ -84,8 +182,11 @@ export default function ForgotPassword() {
 
             if (data.status === 'success') {
                 setStep(4); // Success
+                speak("Password successfully updated. You can now log in with your new credentials.");
             } else {
-                setError(data.message || "Failed to reset password.");
+                const msg = data.message || "Failed to reset password.";
+                setError(msg);
+                speak(msg);
             }
         } catch (err) {
             setError("Network error.");
@@ -169,6 +270,16 @@ export default function ForgotPassword() {
                             >
                                 Verify Code
                             </button>
+                            <div className="text-center">
+                                <button
+                                    type="button"
+                                    onClick={handleResendOtp}
+                                    disabled={resendTimer > 0 || isResending}
+                                    className={`text-sm font-bold tracking-tight transition-all ${resendTimer > 0 ? 'text-slate-400 cursor-not-allowed' : 'text-blue-600 hover:text-blue-700'}`}
+                                >
+                                    {resendTimer > 0 ? `Resend Code in ${resendTimer}s` : isResending ? 'Sending...' : 'Resend Verification Code'}
+                                </button>
+                            </div>
                         </form>
                     )}
 

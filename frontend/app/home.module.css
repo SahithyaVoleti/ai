@@ -2,14 +2,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-    --primary: #6366f1;
-    --primary-dark: #4f46e5;
-    --secondary: #ec4899;
-    --accent: #8b5cf6;
-    --background: #ffffff;
+    --primary: #2563eb;                     /* Professional Blue */
+    --primary-dark: #1e3a8a;                /* Deep Navy */
+    --secondary: #64748b;
+    --accent: #dbeafe;                      /* Very light blue */
+    --background: #f8faff;                  /* Same as global.css */
     --foreground: #0f172a;
-    --card-bg: #f8fafc;
-    --glass-border: rgba(0, 0, 0, 0.05);
+    --card-bg: #ffffff;
+    --glass-border: rgba(37, 99, 235, 0.1);
     --text-main: #1e293b;
     --text-muted: #64748b;
     --border: #e2e8f0;
@@ -32,39 +32,45 @@
 .heroSection {
     display: flex;
     flex-direction: row;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     text-align: left;
-    padding: 170px 80px 120px 80px;
+    padding: 100px 4%;
     position: relative;
     width: 100%;
-    gap: 120px;
+    max-width: 1600px;
+    margin: 0 auto;
+    gap: 60px;
     background: var(--background);
-    min-height: 100vh;
+    min-height: 800px;
+    overflow-x: visible;
 }
 
 .heroContent {
     flex: 1.2;
-    max-width: 700px;
+    max-width: 850px;
+    z-index: 10;
 }
 
 .heroImageContainer {
-    flex: 0.8;
+    flex: 1;
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
     align-items: center;
     animation: float 6s ease-in-out infinite, imageFadeIn 1s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    position: relative;
 }
 
 .heroImage {
     width: 100%;
-    max-width: 520px;
+    min-width: 500px;
+    max-width: 750px;
     border-radius: 40px;
     box-shadow:
-        0 20px 50px -10px rgba(79, 70, 229, 0.3),
+        0 40px 100px -20px rgba(15, 23, 42, 0.3),
         0 0 0 1px rgba(255, 255, 255, 0.5) inset;
     transform: perspective(1000px) rotateY(-5deg);
-    transition: transform 0.3s ease;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .heroImage:hover {
@@ -72,15 +78,15 @@
 }
 
 .badge {
-    background: rgba(79, 70, 229, 0.1);
-    color: var(--primary);
+    background: rgba(37, 99, 235, 0.08);
+    color: #2563eb;
     padding: 6px 14px;
     border-radius: 30px;
-    font-weight: 600;
+    font-weight: 700;
     font-size: 0.85rem;
     margin-bottom: 20px;
     display: inline-block;
-    border: 1px solid rgba(79, 70, 229, 0.2);
+    border: 1px solid rgba(37, 99, 235, 0.15);
     animation: fadeInDown 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
@@ -133,6 +139,10 @@
     }
 }
 
+.floating {
+    animation: float 6s ease-in-out infinite;
+}
+
 @keyframes imageFadeIn {
     from {
         opacity: 0;
@@ -145,9 +155,47 @@
     }
 }
 
+@keyframes heroFloat {
+    0%, 100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(-25px) rotate(-3deg); }
+}
+
+@keyframes rotateSlow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes breathe {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.05); opacity: 1; }
+}
+
+.breathing {
+    animation: breathe 3s ease-in-out infinite;
+}
+
+.rotating {
+    animation: rotateSlow 20s linear infinite;
+}
+
 @keyframes marquee {
     0% { transform: translateX(0); }
     100% { transform: translateX(-50%); }
+}
+
+@keyframes floatSubtle {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    33% { transform: translateY(-3px) rotate(1deg); }
+    66% { transform: translateY(-1px) rotate(-1deg); }
+}
+
+.floatingImg {
+    animation: floatSubtle 4s ease-in-out infinite;
+}
+
+.benefitCard:hover .floatingImg {
+    animation-play-state: paused;
+    transform: scale(1.15) rotate(2deg);
 }
 
 .infrastructureSection {
@@ -245,28 +293,28 @@
 }
 
 .heroTitle {
-    font-size: clamp(2.5rem, 5.5vw + 1rem, 4.2rem);
+    font-size: clamp(3.5rem, 6vw + 1rem, 6rem); /* INCREASED TO MASSIVE SCALE (Up to 96px) */
     font-weight: 900;
-    line-height: 1.2;
-    letter-spacing: -0.04em;
-    margin-bottom: 36px;
+    line-height: 1.1;
+    letter-spacing: -0.05em;
+    margin-bottom: 40px;
     color: var(--foreground);
     animation: fadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.2s backwards;
 }
 
 .gradientText {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 50%, #60a5fa 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
 .heroSubtitle {
-    font-size: 1.15rem;
+    font-size: clamp(1.2rem, 2vw + 0.5rem, 1.8rem); /* INCREASED TO 28px */
     color: var(--text-muted);
-    max-width: 580px;
-    margin-bottom: 48px;
-    line-height: 1.8;
+    max-width: 800px; /* Relaxed for big text */
+    margin-bottom: 60px;
+    line-height: 1.7;
     animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s backwards;
     font-weight: 500;
 }
@@ -279,16 +327,16 @@
 
 /* BUTTONS */
 .btnPrimary {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    background: #2563eb;
     color: white;
-    padding: 14px 34px;
+    padding: 20px 48px; /* MASSIVE PILL BOX PADDING */
     border-radius: 50px;
     border: none;
-    font-size: 1.1rem;
-    font-weight: 700;
+    font-size: 1.4rem; /* INCREASED TO 22.4px */
+    font-weight: 800;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.4);
+    box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
 }
 
 .btnPrimary:hover {
@@ -299,11 +347,11 @@
 .btnSecondary {
     background: var(--card-bg);
     color: var(--foreground);
-    padding: 14px 34px;
+    padding: 20px 48px; /* MASSIVE PILL BOX PADDING */
     border-radius: 50px;
     border: 1px solid var(--border);
-    font-size: 1.1rem;
-    font-weight: 700;
+    font-size: 1.4rem; /* INCREASED TO 22.4px */
+    font-weight: 800;
     cursor: pointer;
     transition: all 0.3s ease;
 }
@@ -311,7 +359,8 @@
 .btnSecondary:hover {
     background: var(--background);
     transform: translateY(-2px);
-    border-color: var(--primary);
+    border-color: #2563eb;
+    color: #2563eb;
 }
 
 .btnPrimary {
@@ -449,6 +498,10 @@
     line-height: 1.6;
 }
 
+.benefitCard:hover .benefitLabel {
+    color: #2563eb;
+}
+
 /* PRICING SECTION - REMASTO RISE */
 .pricingSection {
     background: #fdfdfd;
@@ -520,10 +573,10 @@
     left: 80px;
     width: 0;
     height: 3px;
-    background: linear-gradient(to right, #6366f1, #a855f7);
+    background: linear-gradient(to right, #2563eb, #94a3b8);
     z-index: 1;
     transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 10px rgba(15, 23, 42, 0.2);
 }
 
 .stepStage0::after {
@@ -611,31 +664,31 @@
 
 .stepActive .stepCircle,
 .stepNode:hover .stepCircle {
-    border-color: #6366f1;
-    color: #6366f1;
+    border-color: #2563eb;
+    color: #2563eb;
     transform: scale(1.15);
-    background: #f5f3ff;
-    box-shadow: 0 15px 35px rgba(99, 102, 241, 0.25);
+    background: #eff6ff;
+    box-shadow: 0 15px 35px rgba(37, 99, 235, 0.25);
     animation: activePulse 2s infinite;
 }
 
 @keyframes activePulse {
     0% {
-        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
     }
 
     70% {
-        box-shadow: 0 0 0 15px rgba(99, 102, 241, 0);
+        box-shadow: 0 0 0 15px rgba(37, 99, 235, 0);
     }
 
     100% {
-        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
     }
 }
 
 .stepActive .stepTitle,
 .stepNode:hover .stepTitle {
-    color: #6366f1;
+    color: #2563eb;
     transform: translateY(-5px);
     transition: all 0.4s ease;
 }
@@ -665,7 +718,7 @@
 
 .stepActive .stepBadge,
 .stepNode:hover .stepBadge {
-    background: #6366f1;
+    background: #2563eb;
     color: white;
     transform: scale(1.1);
 }
@@ -788,8 +841,8 @@
 }
 
 .priceCardActive {
-    border: 2px solid #7c3aed;
-    box-shadow: 0 20px 40px rgba(124, 58, 237, 0.1);
+    border: 2px solid #2563eb;
+    box-shadow: 0 20px 40px rgba(37, 99, 235, 0.15);
 }
 
 .tierName {

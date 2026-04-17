@@ -96,7 +96,7 @@ def generate_sample():
     filename = os.path.join(reports_dir, "Sample_Interview_Report.pdf")
     
     print(f"📄 Building PDF: {filename}")
-    success = manager.generate_pdf_report(filename)
+    success = manager.generate_pdf_report(filename, plan_id=4)
     
     if success:
         print(f"✅ Sample Report Generated Successfully at: {os.path.abspath(filename)}")

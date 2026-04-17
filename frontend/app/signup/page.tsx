@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Send, User, ChevronRight, ShieldCheck, CheckCircle, Sun, Moon, Camera, RefreshCw, ArrowRight, Sparkles, FileText } from 'lucide-react';
+import { Send, User, ChevronRight, ShieldCheck, CheckCircle, Sun, Moon, Camera, RefreshCw, ArrowRight, Sparkles, FileText, Eye, EyeOff } from 'lucide-react';
 import { useTheme } from '../theme-context';
 
 // --- Assets ---
@@ -104,7 +104,7 @@ export default function Signup() {
     const [isTyping, setIsTyping] = useState(false);
 
     // Added 'phone', 'year' and 'college_name' to state
-    const [userData, setUserData] = useState({ name: '', email: '', phone: '', year: '', college_name: '', role: 'Student', password: '', photo: '' });
+    const [userData, setUserData] = useState({ name: '', email: '', phone: '', year: '', branch: '', domain: '', college_name: '', role: 'Student', password: '', photo: '' });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
@@ -113,6 +113,10 @@ export default function Signup() {
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
+
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const globalSpeechTokenRef = useRef(0);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -140,11 +144,103 @@ export default function Signup() {
         }
     };
 
+    // --- TTS Logic (Masculine Identity) ---
+    const speak = (text: string) => {
+        if (typeof window === 'undefined') return;
+
+        // 1. Generate new unique ID for this speech request
+        const myId = ++globalSpeechTokenRef.current;
+
+        // 2. Stop everything previously running
+        if (audioRef.current) {
+            try {
+                const oldAudio = audioRef.current;
+                audioRef.current = null;
+                oldAudio.onended = null;
+                oldAudio.onerror = null;
+                oldAudio.pause();
+                oldAudio.src = "";
+            } catch (e) { }
+        }
+        try { window.speechSynthesis.cancel(); } catch (e) { }
+
+        setIsSpeaking(true);
+
+        const playFallback = async () => {
+            if (myId !== globalSpeechTokenRef.current) return;
+
+            console.log("🔊 Atlas Speaking:", text.slice(0, 50));
+
+            try {
+                // Call the masculine-hardened backend proxy
+                const response = await fetch("/api/tts", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text }),
+                });
+
+                if (!response.ok) throw new Error("Backend TTS failed");
+
+                const blob = await response.blob();
+                const audioUrl = URL.createObjectURL(blob);
+
+                if (myId !== globalSpeechTokenRef.current) return;
+
+                const audio = new Audio(audioUrl);
+                audioRef.current = audio;
+
+                audio.onended = () => {
+                    setIsSpeaking(false);
+                };
+
+                audio.onerror = () => {
+                    console.warn("⚠️ Audio playback error, using browser fallback.");
+                    browserFallback();
+                };
+
+                await audio.play();
+            } catch (err) {
+                browserFallback();
+            }
+        };
+
+        const browserFallback = () => {
+            try {
+                const utt = new SpeechSynthesisUtterance(text);
+                const voices = window.speechSynthesis.getVoices();
+                // Strictly prioritize Male voices for Atlas
+                const maleVoice = voices.find(v =>
+                    v.name.toLowerCase().includes('david') ||
+                    v.name.toLowerCase().includes('james') ||
+                    v.name.toLowerCase().includes('google us english') ||
+                    (v.name.toLowerCase().includes('male') && !v.name.toLowerCase().includes('female'))
+                );
+                if (maleVoice) utt.voice = maleVoice;
+                utt.rate = 0.9;
+                utt.pitch = 0.85; // Lower pitch for masculine feel
+                utt.onend = () => setIsSpeaking(false);
+                window.speechSynthesis.speak(utt);
+            } catch (e) {
+                setIsSpeaking(false);
+            }
+        };
+
+        playFallback();
+    };
+
+    // Watch for new bot messages and speak them
+    useEffect(() => {
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage && lastMessage.sender === 'bot' && typeof lastMessage.text === 'string') {
+            speak(lastMessage.text);
+        }
+    }, [messages]);
+
     useEffect(() => {
         if (hasStarted) {
             scrollToBottom();
 
-            if (!isTyping && !isSubmitting && chatStep !== 7 && chatStep !== 6 && chatStep !== 4) {
+            if (!isTyping && !isSubmitting && chatStep !== 9 && chatStep !== 8 && chatStep !== 4) {
                 inputRef.current?.focus();
             }
         }
@@ -154,7 +250,7 @@ export default function Signup() {
         let isStopped = false;
 
         const syncCamera = async () => {
-            if (chatStep === 7 && !capturedImage && !streamRef.current) {
+            if (chatStep === 9 && !capturedImage && !streamRef.current) {
                 try {
                     console.log("📸 Requesting camera access...");
                     let stream: MediaStream;
@@ -203,7 +299,7 @@ export default function Signup() {
         syncCamera();
 
         // If camera is active and video element just mounted/updated
-        if (chatStep === 7 && streamRef.current && videoRef.current && !videoRef.current.srcObject) {
+        if (chatStep === 9 && streamRef.current && videoRef.current && !videoRef.current.srcObject) {
             videoRef.current.srcObject = streamRef.current;
             videoRef.current.play().catch(e => {
                 if (e.name !== 'AbortError') console.error("Camera mount play failed:", e);
@@ -272,6 +368,19 @@ export default function Signup() {
         processStep(chatStep, inputValue);
     };
 
+    const handleOptionSelect = (val: string) => {
+        const userMsg: Message = {
+            id: Date.now() + Math.random(),
+            sender: 'user',
+            text: val,
+            time: getCurrentTime()
+        };
+        setMessages(prev => [...prev, userMsg]);
+        setInputValue('');
+        setIsTyping(true);
+        processStep(chatStep, val);
+    };
+
     const processStep = async (currentStep: number, value: string) => {
         let responseText = '';
         let nextStep = currentStep + 1;
@@ -332,30 +441,47 @@ export default function Signup() {
 
                 currentData.phone = phoneClean;
                 setUserData(prev => ({ ...prev, phone: phoneClean }));
-                currentData.phone = phoneClean;
-                setUserData(prev => ({ ...prev, phone: phoneClean }));
+                responseText = (
+                    <div className="flex flex-col gap-3">
+                        <span>Got it! 📱 Now, what is your educational domain?</span>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            {['B.Tech', 'B.Pharmacy', 'Agriculture', 'Degree', 'MBA/PG', 'Others'].map(opt => (
+                                <button 
+                                    key={opt}
+                                    onClick={() => handleOptionSelect(opt)}
+                                    className="px-4 py-2 bg-white text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 text-xs font-bold transition-all"
+                                >
+                                    {opt}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                );
+                break;
+
+            case 4: // Domain Input
+                currentData.domain = value;
+                setUserData(prev => ({ ...prev, domain: value }));
+                responseText = `Excellent! 🎓 Within ${value}, what is your specialization or branch? (e.g. CSE, ECE, Pharmacology, Agronomy)`;
+                break;
+
+            case 5: // Branch Input
+                currentData.branch = value;
+                setUserData(prev => ({ ...prev, branch: value }));
                 responseText = "For the stats, which year are you in? (e.g. 2nd Year, 3rd Year, 4th Year)";
                 break;
 
-            case 4: // Year Input
-                // Simple validation or normalization
+            case 6: // Year Input
                 let yearVal = value.trim();
-                // Map common inputs to standardized format
                 if (['2', '2nd', 'second', 'ii'].some(x => yearVal.toLowerCase().includes(x))) yearVal = "2nd Year";
                 else if (['3', '3rd', 'third', 'iii'].some(x => yearVal.toLowerCase().includes(x))) yearVal = "3rd Year";
                 else if (['4', '4th', 'fourth', 'iv'].some(x => yearVal.toLowerCase().includes(x))) yearVal = "4th Year";
-                else {
-                    // Default just save what they typed if ambiguous, or ask again. 
-                    // For smoother UX, let's accept it but nudge.
-                    // Actually, let's just save it.
-                }
-
                 currentData.year = yearVal;
                 setUserData(prev => ({ ...prev, year: yearVal }));
-                responseText = "Great! 🎓 Which college or university are you currently attending?";
+                responseText = "Great! Which college or university are you currently attending?";
                 break;
 
-            case 5: // University Input
+            case 7: // University Input
                 if (value.length < 3) {
                     setIsTyping(false);
                     setMessages(prev => [...prev, { id: Date.now() + Math.random(), sender: 'bot', text: "Please enter your university name.", time: getCurrentTime() }]);
@@ -366,23 +492,22 @@ export default function Signup() {
                 responseText = "Thanks! Now, please create a secure password.";
                 break;
 
-            case 6: // Password Input
+            case 8: // Password Input
                 if (value.length < 6) {
                     setIsTyping(false);
                     setMessages(prev => [...prev, { id: Date.now() + Math.random(), sender: 'bot', text: "Please use a stronger password (at least 6 characters). Try again.", time: getCurrentTime() }]);
-                    return; // Loop
+                    return;
                 }
                 currentData.password = value;
                 setUserData(prev => ({ ...prev, password: value }));
                 responseText = "Password secure! 🔒 Now, strictly for proctoring verification, I need to capture a live photo of you. This will be used to verify your identity during the interview.";
-                // Go to Camera Step
                 break;
 
             default:
                 break;
         }
 
-        if (currentStep !== 7) {
+        if (currentStep !== 9) {
             // Normal flow (Skip for camera step, handled separately)
             setTimeout(() => {
                 setMessages(prev => [...prev, { id: Date.now() + Math.random(), sender: 'bot', text: responseText, time: getCurrentTime() }]);
@@ -448,14 +573,17 @@ export default function Signup() {
         setMessages(prev => [...prev, { id: Date.now() + Math.random(), sender: 'user', text: "Photo captured.", time: getCurrentTime() }]);
         setMessages(prev => [...prev, { id: Date.now() + Math.random(), sender: 'bot', text: "Photo verified. Creating your secure account... 🛠️", time: getCurrentTime() }]);
         setIsTyping(true);
-        setChatStep(8); // Moving to processing step
+        setChatStep(10); // Moving to processing step
+
+        // Capture data at this moment to avoid closure stale state
+        const submissionData = { ...userData, photo: capturedImage };
 
         setTimeout(async () => {
             try {
                 const res = await fetch('http://localhost:5000/api/auth/signup', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(userData)
+                    body: JSON.stringify(submissionData)
                 });
                 const data = await res.json();
 
@@ -467,7 +595,7 @@ export default function Signup() {
                         time: getCurrentTime()
                     }]);
                     setIsTyping(false);
-                    setChatStep(7); // Success state
+                    setChatStep(11); // Success state
                 } else if (data.message && (data.message.toLowerCase().includes("exist") || data.message.toLowerCase().includes("already"))) {
                     setIsTyping(false);
                     setMessages(prev => [...prev, {
@@ -486,7 +614,7 @@ export default function Signup() {
                                     <button
                                         onClick={() => {
                                             setUserData(prev => ({ ...prev, email: '', phone: '' }));
-                                            setChatStep(2);
+                                            setChatStep(2); // Restart from email
                                             // Add a bot prompt to restart the flow visually
                                             setMessages(m => [...m, {
                                                 id: Date.now(),
@@ -851,10 +979,7 @@ export default function Signup() {
                                             <button
                                                 key={y}
                                                 type="button"
-                                                onClick={() => {
-                                                    setInputValue(y);
-                                                    setTimeout(() => processStep(chatStep, y), 100);
-                                                }}
+                                                onClick={() => handleOptionSelect(y)}
                                                 className="bg-[var(--card-bg)] border border-[var(--border)] hover:border-blue-500 hover:bg-blue-500/10 text-[var(--foreground)] font-bold py-4 rounded-2xl transition-all shadow-sm active:scale-95"
                                             >
                                                 {y}

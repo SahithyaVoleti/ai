@@ -1,0 +1,523 @@
+{
+  "behavioral_questions": [
+    {
+      "id": 1,
+      "question": "Tell me about yourself.",
+      "answer": "I am a final-year Computer Science student with a strong interest in software development and problem-solving. I have worked on projects like a lung cancer detection system using machine learning and an attendance management system using the MERN stack. Through these projects, I developed skills in Python, JavaScript, and data analysis. I enjoy learning new technologies and continuously improving my coding skills. I am now looking for an opportunity where I can apply my knowledge, contribute to real-world projects, and grow as a software developer."
+    },
+    {
+      "id": 2,
+      "question": "Describe a challenge you faced.",
+      "answer": "In my machine learning project, we faced a challenge with low model accuracy. My task was to improve the performance of the model. I analyzed the dataset, identified issues like imbalance and noise, and experimented with different algorithms such as Random Forest and SVM. I also tuning hyperparameters and improved feature selection. As a result, the model accuracy improved significantly, and the project was successfully completed. This experience taught me the importance of patience and experimentation."
+    },
+    {
+      "id": 3,
+      "question": "Tell me about teamwork.",
+      "answer": "In my MERN stack project, I worked as part of a team of four members. My responsibility was to handle backend development and API integration. We coordinated regularly, divided tasks efficiently, and supported each other during challenges. Whenever someone faced issues, we collaborated to solve them. As a result, we successfully completed the project on time with good performance. This experience strengthened my teamwork and communication skills."
+    },
+    {
+      "id": 4,
+      "question": "Describe leadership.",
+      "answer": "During a college project, I took the initiative to lead a team of four members. My role was to assign tasks based on each member’s strengths, monitor progress, and ensure deadlines were met. I also motivated the team and resolved any conflicts that arose. As a result, we completed the project successfully and received positive feedback from our faculty. This experience helped me develop leadership and responsibility."
+    },
+    {
+      "id": 5,
+      "question": "Tell me about a failure.",
+      "answer": "In one of my early projects, we failed to meet expectations due to poor planning and lack of clarity. My responsibility was to manage part of the implementation, but I realized we had not properly structured our approach. I took the initiative to reorganize the plan, clarified tasks, and improved coordination among team members. As a result, we were able to complete the project successfully. This taught me the importance of planning and clear communication."
+    },
+    {
+      "id": 6,
+      "question": "How do you handle stress?",
+      "answer": "When I face stress, I first analyze the situation and break the task into smaller, manageable parts. I prioritize tasks based on importance and deadlines. For example, during exams and project submissions, I created a schedule and followed it strictly. By staying organized and focused, I was able to complete all tasks on time without feeling overwhelmed."
+    },
+    {
+      "id": 7,
+      "question": "Conflict with teammate?",
+      "answer": "During a team project, a teammate and I had different approaches to solving a problem. Instead of arguing, I suggested we discuss both approaches and evaluate their pros and cons. After analyzing, we combined the best parts of both ideas. As a result, we achieved a better solution and maintained a positive team environment."
+    },
+    {
+      "id": 8,
+      "question": "Tight deadline example.",
+      "answer": "In one instance, I had to complete a project within two days due to a deadline change. I analyzed the requirements, prioritized key tasks, and focused on completing essential features first. I minimized distractions and worked efficiently. As a result, I was able to complete the project on time with good quality."
+    },
+    {
+      "id": 9,
+      "question": "Goal achievement.",
+      "answer": "My goal was to complete multiple academic projects and improve my technical skills. I created a plan, allocated time daily for learning and coding, and worked consistently. As a result, I successfully completed projects in machine learning and web development, which improved my confidence and skills."
+    },
+    {
+      "id": 10,
+      "question": "Quick learning example.",
+      "answer": "During a project, I needed to learn React quickly. I took responsibility to handle frontend development. I followed online tutorials, practiced daily, and built small components. Within a short time, I was able to contribute effectively to the project. This experience improved my ability to learn quickly."
+    },
+    {
+      "id": 11,
+      "question": "Initiative example.",
+      "answer": "In a project, I noticed inefficiency in how tasks were being managed. I took initiative to suggest a better workflow using task division and tracking. After implementing it, the team worked more efficiently and completed tasks faster."
+    },
+    {
+      "id": 12,
+      "question": "Mistake handling.",
+      "answer": "I once made an error in coding that caused issues in the project. I identified the mistake, fixed it, and tested thoroughly. I also ensured I learned from it to avoid similar mistakes in the future."
+    },
+    {
+      "id": 13,
+      "question": "Helping others.",
+      "answer": "I helped my teammates debug issues during our project. I explained concepts clearly and supported them until the problem was resolved. This improved teamwork and productivity."
+    },
+    {
+      "id": 14,
+      "question": "Handling criticism.",
+      "answer": "When I receive criticism, I listen carefully and take it as an opportunity to improve. For example, after feedback on my coding style, I worked on writing cleaner and more efficient code."
+    },
+    {
+      "id": 15,
+      "question": "Problem-solving.",
+      "answer": "In my ML project, I faced an issue with incorrect predictions. I analyzed logs, checked data preprocessing steps, and identified the root cause. After fixing it, the model performed better."
+    },
+    {
+      "id": 16,
+      "question": "Adapt to change.",
+      "answer": "When project requirements changed suddenly, I quickly adjusted my approach and modified my work accordingly. This ensured smooth progress without delays."
+    },
+    {
+      "id": 17,
+      "question": "Multitasking.",
+      "answer": "I managed academics, projects, and tutoring by creating a schedule and prioritizing tasks. This helped me handle multiple responsibilities effectively."
+    },
+    {
+      "id": 18,
+      "question": "Pressure handling.",
+      "answer": "During deadlines, I stayed calm and focused on completing tasks step by step instead of panicking. This helped me deliver good results under pressure."
+    },
+    {
+      "id": 19,
+      "question": "Exceeded expectations.",
+      "answer": "In a project, I completed assigned tasks early and added extra features that improved functionality, which was appreciated by my team."
+    },
+    {
+      "id": 20,
+      "question": "Disagreement with manager.",
+      "answer": "I once had a different opinion on an approach. I respectfully explained my reasoning and listened to feedback. We agreed on the best solution collaboratively."
+    }
+  ]
+}
+---
+{
+  "behavioral_questions": [
+    {
+      "id": 21,
+      "question": "Motivating others.",
+      "answer": "During a team project, I noticed some members losing motivation due to workload. I encouraged them by setting small achievable goals, appreciating their efforts, and maintaining a positive environment. This helped improve team morale and productivity."
+    },
+    {
+      "id": 22,
+      "question": "Difficult situation.",
+      "answer": "In one project, we faced unexpected technical issues close to the deadline. I stayed calm, analyzed the problem step-by-step, and worked extra hours with my team to resolve it. We successfully completed the project on time."
+    },
+    {
+      "id": 23,
+      "question": "Creativity.",
+      "answer": "While working on a project, I suggested a unique feature that improved user experience. Instead of a basic interface, I implemented an interactive design which made the application more engaging and user-friendly."
+    },
+    {
+      "id": 24,
+      "question": "Process improvement.",
+      "answer": "In a team project, I noticed repetitive manual work. I proposed automating certain tasks using scripts, which reduced time consumption and improved overall efficiency."
+    },
+    {
+      "id": 25,
+      "question": "Quick decision.",
+      "answer": "During a project, we had to choose between two approaches with limited time. I quickly evaluated pros and cons and suggested the most efficient solution, which helped us stay on schedule."
+    },
+    {
+      "id": 26,
+      "question": "Difficult person.",
+      "answer": "I once worked with a teammate who had different opinions. Instead of arguing, I listened to their perspective, stayed professional, and focused on common goals, which helped us collaborate effectively."
+    },
+    {
+      "id": 27,
+      "question": "Persuasion.",
+      "answer": "In a project discussion, I proposed using a new technology. Initially, my team was unsure, so I explained its benefits and showed examples. Eventually, they agreed, and it improved our project outcome."
+    },
+    {
+      "id": 28,
+      "question": "Responsibility.",
+      "answer": "I always take ownership of my tasks. In a project, I ensured my module was completed on time and also helped teammates when needed, ensuring overall success."
+    },
+    {
+      "id": 29,
+      "question": "Learning from feedback.",
+      "answer": "After receiving feedback on my coding style, I worked on improving readability and structure. This helped me write cleaner and more efficient code in future projects."
+    },
+    {
+      "id": 30,
+      "question": "Work without supervision.",
+      "answer": "During self-learning projects, I managed tasks independently, set deadlines, and completed them without supervision, which improved my discipline and confidence."
+    },
+    {
+      "id": 31,
+      "question": "Managing conflict.",
+      "answer": "When conflicts arose in my team, I ensured everyone had a chance to express their views. I helped find a balanced solution that satisfied everyone and kept the project on track."
+    },
+    {
+      "id": 32,
+      "question": "Problem-solving skills.",
+      "answer": "I approach problems logically by breaking them into smaller parts. For example, while debugging code, I isolate the issue step-by-step, which helps in finding effective solutions."
+    },
+    {
+      "id": 33,
+      "question": "Handling failure.",
+      "answer": "In one project, I failed to meet initial expectations. I analyzed what went wrong, improved my approach, and worked harder, which helped me succeed in later stages."
+    },
+    {
+      "id": 34,
+      "question": "Limited resources.",
+      "answer": "During a project with limited tools, I utilized free resources and open-source libraries efficiently to complete the work successfully."
+    },
+    {
+      "id": 35,
+      "question": "Leadership without authority.",
+      "answer": "Even without a formal leadership role, I guided my teammates by sharing knowledge, helping with tasks, and ensuring smooth coordination."
+    },
+    {
+      "id": 36,
+      "question": "Customer complaint.",
+      "answer": "While tutoring, a student struggled to understand concepts. I listened patiently, adapted my teaching method, and ensured they understood clearly."
+    },
+    {
+      "id": 37,
+      "question": "Taking responsibility.",
+      "answer": "If I make a mistake, I take full responsibility, fix it immediately, and learn from it to avoid repeating it in the future."
+    },
+    {
+      "id": 38,
+      "question": "Prioritizing tasks.",
+      "answer": "I prioritize tasks based on importance and deadlines. This helps me manage multiple responsibilities effectively without compromising quality."
+    },
+    {
+      "id": 39,
+      "question": "Achievement.",
+      "answer": "One of my key achievements is completing multiple academic projects successfully, including machine learning models, which improved my technical skills."
+    },
+    {
+      "id": 40,
+      "question": "Team project.",
+      "answer": "In my team projects, I actively collaborated, communicated effectively, and contributed to both technical and coordination tasks, ensuring project success."
+    }
+  ]
+}
+---
+[
+  {
+    "id": 41,
+    "question": "Handled pressure.",
+    "answer": "I handled pressure during tight project deadlines by prioritizing tasks, staying focused, and completing work efficiently on time."
+  },
+  {
+    "id": 42,
+    "question": "Teamwork experience.",
+    "answer": "I worked in a team for my MERN project where I contributed to backend development and coordinated with teammates to complete the project successfully."
+  },
+  {
+    "id": 43,
+    "question": "Difficult problem solved.",
+    "answer": "I improved low model accuracy in my ML project by experimenting with different algorithms and tuning parameters."
+  },
+  {
+    "id": 44,
+    "question": "Leadership example.",
+    "answer": "I showed leadership by dividing tasks and guiding my team during a project to ensure timely completion."
+  },
+  {
+    "id": 45,
+    "question": "Failure.",
+    "answer": "I once selected an inefficient approach in a project but corrected it after analysis, which helped me learn better decision-making."
+  },
+  {
+    "id": 46,
+    "question": "Learned quickly.",
+    "answer": "I learned the MERN stack quickly using online resources and applied it to successfully build a project."
+  },
+  {
+    "id": 47,
+    "question": "Handled criticism.",
+    "answer": "I accepted feedback on my code positively and improved its quality by making necessary changes."
+  },
+  {
+    "id": 48,
+    "question": "Time management.",
+    "answer": "I managed my time effectively by planning schedules during exams and project deadlines, ensuring both were completed successfully."
+  },
+  {
+    "id": 49,
+    "question": "Helped someone.",
+    "answer": "I helped a classmate understand Python basics, which improved their confidence and performance."
+  },
+  {
+    "id": 50,
+    "question": "Initiative taken.",
+    "answer": "I took initiative to improve my project’s UI, making it more user-friendly and visually appealing."
+  },
+  {
+    "id": 51,
+    "question": "Adaptability.",
+    "answer": "I adapted to changing project requirements by modifying code and adjusting plans quickly."
+  },
+  {
+    "id": 52,
+    "question": "Met deadline.",
+    "answer": "I completed assignments under tight deadlines by focusing on important tasks and managing time properly."
+  },
+  {
+    "id": 53,
+    "question": "Decision making.",
+    "answer": "I selected the best ML model by comparing performance metrics and choosing the most accurate one."
+  },
+  {
+    "id": 54,
+    "question": "Worked independently.",
+    "answer": "I independently developed a project by handling coding, testing, and implementation on my own."
+  },
+  {
+    "id": 55,
+    "question": "Handled conflict.",
+    "answer": "I resolved team conflicts by discussing ideas openly and finding a solution acceptable to everyone."
+  },
+  {
+    "id": 56,
+    "question": "Improved process.",
+    "answer": "I improved project efficiency by automating repetitive tasks, saving time and effort."
+  },
+  {
+    "id": 57,
+    "question": "Responsibility.",
+    "answer": "I handled an important project module responsibly by testing thoroughly and ensuring error-free output."
+  },
+  {
+    "id": 58,
+    "question": "Multitasking.",
+    "answer": "I managed academics and tutoring by planning my schedule and maintaining consistency."
+  },
+  {
+    "id": 59,
+    "question": "Learned from mistake.",
+    "answer": "I learned from coding mistakes by debugging and understanding errors to avoid repeating them."
+  },
+  {
+    "id": 60,
+    "question": "Why should we hire you?",
+    "answer": "I have strong technical skills, practical project experience, and a willingness to learn, making me a good fit for the role."
+  }
+]
+---
+[
+  {
+    "id": 61,
+    "question": "Strength.",
+    "answer": "My strength is my ability to learn quickly and adapt to new technologies, which helps me improve continuously."
+  },
+  {
+    "id": 62,
+    "question": "Weakness.",
+    "answer": "My weakness is that I sometimes focus too much on details, but I am learning to balance quality with time management."
+  },
+  {
+    "id": 63,
+    "question": "Motivation.",
+    "answer": "I stay motivated by setting clear goals and continuously learning new skills in technology."
+  },
+  {
+    "id": 64,
+    "question": "Biggest challenge.",
+    "answer": "One of my biggest challenges was improving ML model accuracy, which I overcame through experimentation and learning."
+  },
+  {
+    "id": 65,
+    "question": "Proud moment.",
+    "answer": "I feel proud when I successfully complete projects and see my work functioning as expected."
+  },
+  {
+    "id": 66,
+    "question": "Handle stress.",
+    "answer": "I handle stress by staying organized, breaking tasks into smaller parts, and focusing on one task at a time."
+  },
+  {
+    "id": 67,
+    "question": "Work under pressure.",
+    "answer": "I can work under pressure by staying calm, prioritizing tasks, and maintaining focus on deadlines."
+  },
+  {
+    "id": 68,
+    "question": "Career goal.",
+    "answer": "My career goal is to become a skilled software developer and work in a reputed company where I can grow and contribute."
+  },
+  {
+    "id": 69,
+    "question": "Learn new technology.",
+    "answer": "I learn new technologies through online courses, documentation, and by practicing hands-on projects."
+  },
+  {
+    "id": 70,
+    "question": "Team role.",
+    "answer": "In a team, I take responsibility for my tasks, communicate clearly, and support my teammates when needed."
+  },
+  {
+    "id": 71,
+    "question": "Handle deadline pressure.",
+    "answer": "I handle deadline pressure by planning tasks in advance and focusing on high-priority work first."
+  },
+  {
+    "id": 72,
+    "question": "Conflict resolution.",
+    "answer": "I resolve conflicts by listening to all viewpoints and suggesting solutions that benefit the team."
+  },
+  {
+    "id": 73,
+    "question": "Innovation.",
+    "answer": "I try to bring innovation by improving existing solutions and adding useful features to projects."
+  },
+  {
+    "id": 74,
+    "question": "Work ethic.",
+    "answer": "My work ethic is based on consistency, responsibility, and continuous improvement."
+  },
+  {
+    "id": 75,
+    "question": "Handling failure.",
+    "answer": "I treat failure as a learning opportunity and analyze mistakes to improve in the future."
+  },
+  {
+    "id": 76,
+    "question": "Adapt to new environment.",
+    "answer": "I adapt to new environments by observing, learning quickly, and communicating with others."
+  },
+  {
+    "id": 77,
+    "question": "Time you went beyond.",
+    "answer": "I went beyond my responsibilities by adding extra features to my project to improve user experience."
+  },
+  {
+    "id": 78,
+    "question": "Attention to detail.",
+    "answer": "I ensure attention to detail by reviewing my work carefully and testing thoroughly before submission."
+  },
+  {
+    "id": 79,
+    "question": "Communication skills.",
+    "answer": "I communicate clearly by explaining ideas in simple terms and actively listening to others."
+  },
+  {
+    "id": 80,
+    "question": "Future plans.",
+    "answer": "My future plan is to enhance my technical skills, gain industry experience, and grow into a strong software professional."
+  }
+]
+---
+[
+  {
+    "id": 80,
+    "question": "Future plans.",
+    "answer": "My future plan is to enhance my technical skills, gain industry experience, and grow into a strong software professional."
+  },
+  {
+    "id": 81,
+    "question": "Why IT field?",
+    "answer": "I chose IT because I enjoy problem-solving, coding, and building solutions that make tasks easier and more efficient."
+  },
+  {
+    "id": 82,
+    "question": "Favorite subject.",
+    "answer": "My favorite subject is programming because it allows me to apply logic and create real-world solutions."
+  },
+  {
+    "id": 83,
+    "question": "Least favorite subject.",
+    "answer": "I found some theoretical subjects less interesting, but I still worked hard to understand and perform well."
+  },
+  {
+    "id": 84,
+    "question": "Describe yourself in one word.",
+    "answer": "Adaptable, because I can quickly learn and adjust to new situations and technologies."
+  },
+  {
+    "id": 85,
+    "question": "Risk taken.",
+    "answer": "I took a risk by trying a new technology for a project, which helped me gain valuable knowledge and experience."
+  },
+  {
+    "id": 86,
+    "question": "Outside comfort zone.",
+    "answer": "I stepped out of my comfort zone by presenting my project, which improved my confidence and communication skills."
+  },
+  {
+    "id": 87,
+    "question": "Handle rejection.",
+    "answer": "I handle rejection by staying positive, learning from feedback, and improving myself for future opportunities."
+  },
+  {
+    "id": 88,
+    "question": "Work preference.",
+    "answer": "I am comfortable working both independently and in a team, depending on project requirements."
+  },
+  {
+    "id": 89,
+    "question": "Short-term goal.",
+    "answer": "My short-term goal is to secure a role in a reputed company and strengthen my technical skills."
+  },
+  {
+    "id": 90,
+    "question": "Long-term goal.",
+    "answer": "My long-term goal is to become an expert in software development and take on leadership roles."
+  },
+  {
+    "id": 91,
+    "question": "Biggest learning.",
+    "answer": "My biggest learning is that consistent practice and patience are key to mastering technical skills."
+  },
+  {
+    "id": 92,
+    "question": "Work environment preference.",
+    "answer": "I prefer a collaborative and growth-oriented environment where I can learn and contribute."
+  },
+  {
+    "id": 93,
+    "question": "What makes you unique?",
+    "answer": "My combination of technical skills, quick learning ability, and dedication makes me unique."
+  },
+  {
+    "id": 94,
+    "question": "How do you prioritize work?",
+    "answer": "I prioritize work based on deadlines and importance, focusing first on high-impact tasks."
+  },
+  {
+    "id": 95,
+    "question": "Handle repetitive tasks.",
+    "answer": "I stay consistent and focused while performing repetitive tasks and look for ways to improve efficiency."
+  },
+  {
+    "id": 96,
+    "question": "What do you do in free time?",
+    "answer": "In my free time, I practice coding, explore new technologies, and sometimes teach students."
+  },
+  {
+    "id": 97,
+    "question": "Do you have any questions for us?",
+    "answer": "Yes, I would like to know about the learning opportunities and growth path in this role."
+  },
+  {
+    "id": 98,
+    "question": "How do you handle feedback?",
+    "answer": "I take feedback positively, analyze it, and use it to improve my performance."
+  },
+  {
+    "id": 99,
+    "question": "Describe your ideal job.",
+    "answer": "My ideal job is one where I can apply my skills, learn continuously, and contribute to meaningful projects."
+  },
+  {
+    "id": 100,
+    "question": "Are you willing to relocate?",
+    "answer": "Yes, I am open to relocation as it provides better learning and career opportunities."
+  }
+]
