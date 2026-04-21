@@ -1817,18 +1817,38 @@ except Exception as e:
                 tts = gTTS(text=text, lang='en')
                 tts.save(filename_mp3)
 
-        audio_file = filename_wav if os.path.exists(filename_wav) else filename_mp3
-
-
-
-        # Return audio fallback
+        # --- FALLBACK LOGIC ---
+        audio_file = None
+        
+        # Try primary (pyttsx3)
         if os.path.exists(filename_wav) and os.path.getsize(filename_wav) > 0:
-            return send_file(filename_wav, mimetype="audio/wav", as_attachment=False)
-        return send_file(filename_mp3, mimetype="audio/mpeg", as_attachment=False)
+            audio_file = filename_wav
+            mimetype = "audio/wav"
+        else:
+            # Fallback to gTTS if all neural/local options failed or missing
+            if not os.path.exists(filename_mp3) or os.path.getsize(filename_mp3) == 0:
+                try:
+                    from gtts import gTTS
+                    tts = gTTS(text=text, lang='en')
+                    tts.save(filename_mp3)
+                    print(f"✅ [TTS] Generated gTTS fallback: {filename_mp3}")
+                except Exception as final_e:
+                    print(f"❌ [TTS] All engines failed: {final_e}")
+            
+            if os.path.exists(filename_mp3) and os.path.getsize(filename_mp3) > 0:
+                audio_file = filename_mp3
+                mimetype = "audio/mpeg"
+
+        if audio_file:
+            return send_file(os.path.abspath(audio_file), mimetype=mimetype, as_attachment=False)
+        else:
+            return jsonify({"status": "error", "message": "Failed to generate any audio version"}), 500
 
     except Exception as e:
-        print(f"TTS Error: {e}")
-        return jsonify({"error": str(e)}), 500
+        import traceback
+        traceback.print_exc()
+        print(f"❌ [TTS ERROR] Critical failure: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 

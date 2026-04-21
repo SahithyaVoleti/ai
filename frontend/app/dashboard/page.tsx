@@ -116,8 +116,7 @@ export default function Dashboard() {
     const fetchUserPayments = async () => {
         if (!user?.id) return;
         try {
-            const baseUrl = typeof window !== 'undefined' ? `http://${window.location.hostname}:5000` : 'http://localhost:5000';
-            const res = await fetch(`${baseUrl}/api/user/payments/${user.id}`);
+            const res = await fetch(getApiUrl(`/api/user/payments/${user.id}`));
             const data = await res.json();
             if (data.status === 'success') {
                 setUserPayments(data.payments);
@@ -827,15 +826,10 @@ export default function Dashboard() {
         e.preventDefault();
         setSaving(true);
         try {
-            const res = await fetch(getApiUrl('/api/user/settings'), {
+            const res = await fetch(getApiUrl('/api/user/profile/update'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    id: user?.id,
-                    register_no: profileData.register_no,
-                    branch: profileData.branch,
-                    domain: profileData.domain
-                })
+                body: JSON.stringify({ id: user?.id, ...profileData })
             });
             const data = await res.json();
             if (data.status === 'success') {

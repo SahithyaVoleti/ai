@@ -15,7 +15,9 @@ export async function POST(req: Request) {
     console.log("🔊 Proxying TTS request to Masculine Backend:", text.slice(0, 50), "...");
 
     // Call the hardened Flask backend which prioritizes Male voices (pyttsx3/edge-tts)
-    const backendUrl = `http://localhost:5000/api/tts?text=${encodeURIComponent(text)}`;
+    const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    const cleanBase = base.endsWith('/') ? base.slice(0, -1) : base;
+    const backendUrl = `${cleanBase}/api/tts?text=${encodeURIComponent(text)}`;
     const response = await fetch(backendUrl);
 
     if (!response.ok) {
