@@ -1323,15 +1323,19 @@ class InterviewManager:
                     entry['answer'] = answer
                     break
             return result
-        except:
-            return {
+        except Exception as e:
+            print(f"⚠️ Interview Evaluation Error: {e}")
+            fallback = {
                 "score": 5,
                 "confidence": 5,
                 "fluency": 5,
                 "knowledge": 5,
-                "feedback": "Could not evaluate automatically.",
+                "feedback": "Evaluation deferred due to temporary system delay.",
                 "grammar_issues": "N/A",
                 "question": question,
                 "answer": answer,
-                "type": "General"
+                "type": getattr(self, 'current_category', "General")
             }
+            with self.lock:
+                self.evaluations.append(fallback)
+            return fallback

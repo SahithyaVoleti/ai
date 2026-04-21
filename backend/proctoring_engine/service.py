@@ -379,9 +379,9 @@ class ProctoringService:
                 if not match and "Identity Error:" in feedback:
                     return False, 1.0, feedback, False
                 
-                # Relaxed tolerance for face-recognition to handle lighting/pose variance (increased from 0.65 to 0.75)
-                if match or dist < 0.75: 
-                    return True, dist, "Identity Verified (Primary)", False
+                # STRICT TOLERANCE for initial authentication
+                if match or dist < 0.55: 
+                    return True, dist, "Identity Verified (Primary Biometrics)", False
                 elif "STAGE_FAILED_" not in feedback:
                     print(f"DEBUG: face-recognition mismatch at dist: {dist:.4f}")
             except Exception as e:
@@ -402,51 +402,21 @@ class ProctoringService:
                     dist = result.get('distance', 1.0)
                     threshold = result.get('threshold', 0.3) # Usually 0.3 or 0.4
                     
-                    # VERY PERMISSIVE: 0.58 cosine distance for Facenet512 matches (increased from 0.45)
-                    if dist < 0.58:
+                    # STRICT BIOMETRICS: 0.35 cosine distance for Facenet512
+                    if dist < 0.35:
                         print(f"✅ DeepFace Biometric Match: (dist: {dist:.4f})")
                         return True, dist, "Identity Verified (DeepFace)", False
                     else:
-                        print(f"DEBUG: DeepFace Mismatch: (dist: {dist:.4f} > th: 0.45 limit)")
+                        print(f"DEBUG: DeepFace Mismatch: (dist: {dist:.4f} > 0.35 limit)")
                 except Exception as e:
                     print(f"DeepFace Stage Error: {e}")
 
 
-        # STAGE 2.5: Vision AI Fallback (Llama 3.2 Vision)
-        # Use LLM-based side-by-side comparison for edge cases (poor lighting, accessories)
-        if self.client:
-            try:
-                 print("DEBUG: STAGE 2.5: Attempting Vision AI Verification...")
-                 v_match, v_dist, v_msg = self._compare_groq_vision(profile_frame, live_frame)
-                 if v_match:
-                     return True, v_dist, f"Identity Verified (Vision AI: {v_msg})", False
-                 else:
-                     print(f"DEBUG: Vision AI Mismatch: {v_msg}")
-            except Exception as e:
-                 print(f"Vision AI Stage Failed: {e}")
-
-        # STAGE 3: Face Marking (Landmark Geometry Consistency - Requirement)
-        # This is the "Face Marking" part requested by the user.
-        # It compares the ratio of distances between facial landmarks to ensure structural identity.
-        try:
-            print("DEBUG: Checking Face Marking (Geometrical Consistency)...")
-            landmarks_match, marking_score = self._compare_landmarks(profile_frame, live_frame)
-            if landmarks_match:
-                return True, (1.0 - marking_score), "Identity Verified (Face Marking Match)", False
-            else:
-                print(f"DEBUG: Face Marking failed with score: {marking_score:.4f}")
+            # Threshold: 0.15 (Strict identity geometry check)
+            return (avg_diff < 0.15), (1.0 - avg_diff)
         except Exception as e:
             print(f"Face Marking Logic Failed: {e}")
-
-        # STAGE 4: CV2 Histogram Analysis (Final Last Resort)
-        # If biometrics are borderline or failing due to extreme conditions, check general color consistency
-        try:
-            h_match, h_score = self._compare_cv2_basic(profile_frame, live_frame)
-            if h_match and h_score > 0.15: # Highly inclusive fallback (lowered from 0.40)
-                return True, (1.0 - h_score), "Identity Verified (Visual Consistency)", False
-        except Exception as e:
-            print(f"Histogram Fallback Failed: {e}")
-
+        
         # Final check: If high-quality face but still mismatch
         q_res = self.analyze_face_quality(live_frame)
         quality_ok, quality_msg = q_res[0], q_res[1]
@@ -454,7 +424,7 @@ class ProctoringService:
         if not quality_ok:
             return False, 1.0, f"Verification Failed: {quality_msg}. Please improve lighting.", False
 
-        return False, 1.0, "Identity Not Matched: The person in front of the camera does not match the registered profile photo.", False
+        return False, 1.0, "Identity Mismatch: The person in front of the camera does not match the registered profile photo.", False
 
     def _get_landmarks_ratios(self, frame):
         """Helper to get facial geometry ratios using MediaPipe"""

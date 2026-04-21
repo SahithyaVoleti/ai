@@ -1258,6 +1258,10 @@ def serve_static(filename):
 def finish_interview():
     """Called when the user clicks End Interview / Generate Report."""
     try:
+        # Give background evaluation threads a brief moment to finish before calculating final scores
+        import time as _t
+        _t.sleep(2.0)
+        
         data = request.json or {}
         user_id = data.get('user_id')
 
