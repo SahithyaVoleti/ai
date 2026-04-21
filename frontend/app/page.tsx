@@ -1590,11 +1590,13 @@ function HomeContent() {
       // Verification failures should stay on verification page, not trigger termination
       if (stage === 'verification') return;
 
-      // EXTENSION CHECK
+      /* 
+      // EXTENSION CHECK - Disabled to prevent false terminations for standard tools like Grammarly
       if (detectExtensions() && (stage === 'interview' || stage === 'code')) {
         handleTermination("Security Violation: Browser extensions (like Grammarly or Translate) detected. Please disable all extensions to continue.");
         return;
       }
+      */
 
       // poll every 2s for backend-triggered termination (ID fraud)
       try {

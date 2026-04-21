@@ -192,6 +192,23 @@ class InterviewManager:
             self.current_step += 1
             return category
 
+    def reset(self):
+        """Full state reset for a new interview session."""
+        with self.lock:
+            self.history = []
+            self.evaluations = []
+            self.submitted_solutions = []
+            self.violations = []
+            self.proctor_score = 100
+            self.evidence_path = None
+            self.start_time = datetime.datetime.now()
+            self.asked_topics = []
+            self.icebreaker_count = 0
+            self.icebreaker_stage = 'start'
+            self.current_step = 0 
+            self.session_id = str(int(time.time()))
+            print("🔄 [MANAGER] Global state reset complete.")
+
     def generate_icebreaker_response(self, user_reply):
         """Generate a polite, brief acknowledgement to user's small talk"""
         if not self.client: return "That's good to hear. Let's proceed."

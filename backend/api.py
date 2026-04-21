@@ -1469,22 +1469,30 @@ def proctor_status():
 
 @app.route('/proctor/reset', methods=['POST'])
 def proctor_reset():
-    proctor_service.initial_nose = None
-    proctor_service.prev_gray = None
-    proctor_service.consecutive_no_face = 0
+    # STRIKE COUNTERS (CRITICAL RESET)
+    proctor_service.multi_face_strike_count = 0
+    proctor_service.no_face_strike_count = 0
+    proctor_service.gadget_counts = 0
+    proctor_service.identity_mismatch_counts = 0
+    proctor_service.high_conf_matches = 0
+    proctor_service.consecutive_multi_face = 0
     proctor_service.consecutive_phone = 0
+    proctor_service.consecutive_no_face = 0
+    proctor_service.consecutive_yolo_people = 0
+    proctor_service.consecutive_looking_away = 0
+    proctor_service.consecutive_identity_mismatch = 0
+    
+    # State reset
     proctor_service.should_terminate = False
     proctor_service.termination_reason = None
     proctor_service.violations = []
-    # Fully reset manager as well (generates new session_id)
+    
+    # Session Reset
     manager.reset()
-    # Sync new session_id to proctor_service
     proctor_service.session_id = manager.session_id
-    if hasattr(proctor_service, 'consecutive_yolo_people'): proctor_service.consecutive_yolo_people = 0
-    if hasattr(proctor_service, 'consecutive_multi_face'): proctor_service.consecutive_multi_face = 0
-    if hasattr(proctor_service, 'consecutive_looking_away'): proctor_service.consecutive_looking_away = 0
-    if hasattr(proctor_service, 'consecutive_identity_mismatch'): proctor_service.consecutive_identity_mismatch = 0
-    return jsonify({"status": "success", "message": "Proctoring and Interview state reset/re-calibrated"})
+    
+    print(f"🔄 [PROCTOR] Full Hard Reset Complete for new session: {manager.session_id}")
+    return jsonify({"status": "success", "message": "Proctoring service hard reset."})
 
 @app.route('/api/interview/reset', methods=['POST'])
 def interview_reset_api():
