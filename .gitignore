@@ -179,3 +179,7 @@ logs/
 latest_otp.txt
 debug_error.log
 
+
+*.wav
+*.mp3
+*.webm
