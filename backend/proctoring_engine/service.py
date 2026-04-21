@@ -59,12 +59,14 @@ class ProctoringService:
         self.prev_gray = None
         self.silhouette_violation_count = 0
             
-        self.should_terminate = False
-        self.termination_reason = None
-        self.current_stage = 'interview'
-        self.session_id = "default" # Isolation for multi-user reports
-
-        # Caching for Identity Verification
+        self.session_id = "default" 
+        
+        # Strike Counters (Must be reset per session)
+        self.multi_face_strike_count = 0
+        self.no_face_strike_count = 0
+        self.gadget_counts = 0
+        self.identity_mismatch_counts = 0
+        self.high_conf_matches = 0
         self.active_profile_encoding = None
         self.active_profile_id = None
         
@@ -128,8 +130,9 @@ class ProctoringService:
         self.consecutive_multi_face = 0
         self.consecutive_phone = 0
         self.consecutive_identity_mismatch = 0
-        self.consecutive_looking_away = 0
         self.multi_face_counts = 0
+        self.multi_face_strike_count = 0
+        self.no_face_strike_count = 0
         self.gadget_counts = 0
         self.identity_mismatch_counts = 0
         self.high_conf_matches = 0
@@ -670,13 +673,12 @@ class ProctoringService:
                             if not hasattr(self, 'multi_face_strike_count'): self.multi_face_strike_count = 0
                             self.multi_face_strike_count += 1
                             self.consecutive_multi_face = 0 # RESET for next window
-                            
-                            if self.multi_face_strike_count >= 1:
+                            if self.multi_face_strike_count >= 3:
                                 self.record_event("TERMINATION_MULTIPLE_FACES", "Security Violation: Multiple people detected in frame. Interview terminated.", "CRITICAL", frame)
                                 result["current_warning"] = "TERMINATION: Multiple people detected!"
                             else:
-                                self.record_event("MULTIPLE_FACES", f"Security Warning ({self.multi_face_strike_count}/1): Multiple people detected in frame.", "HIGH", frame)
-                                result["current_warning"] = f"🔴 WARNING: Only one person allowed in frame!"
+                                self.record_event("MULTIPLE_FACES", f"Security Warning ({self.multi_face_strike_count}/3): Multiple people detected in frame.", "HIGH", frame)
+                                result["current_warning"] = f"🔴 WARNING: Only one person allowed in frame! ({self.multi_face_strike_count}/3)"
                     else:
                         if self.consecutive_multi_face > 0: self.consecutive_multi_face -= 1
                         
@@ -885,12 +887,12 @@ class ProctoringService:
                         self.consecutive_phone = 0 # Reset frame counter, increment event counter
                         self.record_event("GADGET_DETECTED", f"Warning {self.gadget_counts}/3: {detected_label} detected.", "HIGH", frame, boxes=detected_boxes)
                         
-                        if self.gadget_counts >= 1:
-                            self.termination_reason = f"Unauthorized {detected_label} detected."
-                            self.record_event("CHEATING_DEVICE", f"Prohibited {detected_label} confirmed.", "CRITICAL", frame, boxes=detected_boxes)
+                        if self.gadget_counts >= 3:
+                            self.termination_reason = f"Unauthorized {detected_label} detected after multiple warnings."
+                            self.record_event("CHEATING_DEVICE", f"Prohibited {detected_label} confirmed. 3/3 violations.", "CRITICAL", frame, boxes=detected_boxes)
                             self.should_terminate = True
                         else:
-                            result["current_warning"] = f"🔴 Warning: {detected_label} detected!"
+                            result["current_warning"] = f"🔴 Warning {self.gadget_counts}/3: {detected_label} detected!"
                 else:
                     if self.consecutive_phone > 0: self.consecutive_phone -= 1
             
