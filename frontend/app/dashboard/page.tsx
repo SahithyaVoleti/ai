@@ -304,7 +304,7 @@ export default function Dashboard() {
             }
         } catch (e) {
             console.warn(e);
-            alert("⚠️ Connection to server failed. Please ensure the backend is running at http://localhost:5000");
+            alert(`⚠️ Connection to server failed. Please ensure the backend is running at ${getApiUrl("/")}`);
         } finally {
             setIsLoadingData(false);
         }
@@ -846,7 +846,7 @@ export default function Dashboard() {
         if (confirmAgain !== 'DELETE') return;
         setSaving(true);
         try {
-            const res = await fetch(`${typeof window !== 'undefined' ? `http://${window.location.hostname}:5000` : 'http://localhost:5000'}/api/user/delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: user?.id }) });
+            const res = await fetch(getApiUrl("/api/user/delete"), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: user?.id }) });
             const data = await res.json();
             if (data.status === 'success') { logout(); router.push('/'); }
             else setMessage('❌ Failed to delete');
@@ -859,7 +859,7 @@ export default function Dashboard() {
         await new Promise(resolve => setTimeout(resolve, 2000));
 
         try {
-            const res = await fetch('http://localhost:5000/api/user/pay', {
+            const res = await fetch(getApiUrl("/api/user/pay"), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ user_id: user?.id, plan_id: 4 }) // Default to Diamond for dashboard upgrade
@@ -946,7 +946,7 @@ export default function Dashboard() {
                 
                 // Auto-save photo logic to make it active instantly
                 try {
-                    const res = await fetch(`${typeof window !== 'undefined' ? `http://${window.location.hostname}:5000` : 'http://localhost:5000'}/api/user/profile/update`, {
+                    const res = await fetch(getApiUrl("/api/user/profile/update"), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ id: user?.id, ...profileData, photo: photoSrc })
@@ -963,7 +963,7 @@ export default function Dashboard() {
         if (!user) return;
         setIsAnalyzing(true);
         try {
-            const res = await fetch(`http://localhost:5000/api/analyze_resume_ats?user_id=${user.id}`);
+            const res = await fetch(getApiUrl(`/api/analyze_resume_ats?user_id=${user.id}`));
             const data = await res.json();
             if (data.status === 'success') {
                 setAtsAnalysis(data.report);

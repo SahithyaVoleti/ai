@@ -275,11 +275,34 @@ class InterviewManager:
         except: pass
 
     def verify_candidate_match(self, name, resume_text):
-        """Checks if registration name matches resume content."""
+        """Checks if registration name matches resume content with high tolerance."""
         if not name or not resume_text: return False, "Missing info"
-        if name.lower() in resume_text.lower(): return True, name
+        
+        name_clean = name.lower().strip()
+        resume_clean = resume_text.lower()
+        
+        # 1. Direct Substring Match (Case Insensitive)
+        if name_clean in resume_clean: return True, name
+        
+        # 2. Reverse Substring Match (If resume name is shorter than profile name)
+        # We split the profile name and see if the first/last parts are in the resume
+        name_parts = [p for p in name_clean.split() if len(p) > 2]
+        if any(part in resume_clean for part in name_parts):
+            print(f" ✅ [MANAGER] Partial Token Match Found: '{name}' matches tokens in resume.")
+            return True, name
+
+        # 3. LLM Fuzzy Check (If simple string ops fail)
         if not self.client: return False, "Unknown"
-        prompt = f"Does '{name}' match any name in this resume? Snippet: {resume_text[:400]}. Return 'YES: [Name]' or 'NO'."
+        # Increased snippet size for better name extraction (names are usually at the top)
+        prompt = f"""
+        Does the name '{name}' belong to the person who owns this resume?
+        Resume Snippet:
+        ---
+        {resume_text[:1000]}
+        ---
+        Check for partial matches, middle names, or common variations.
+        Return strictly 'YES: [Full Name on Resume]' or 'NO'.
+        """
         try:
             res = self.client.chat.completions.create(model=self.model_name, messages=[{"role": "user", "content": prompt}]).choices[0].message.content
             if 'YES' in res.upper():

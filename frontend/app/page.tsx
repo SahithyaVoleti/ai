@@ -1167,7 +1167,7 @@ function HomeContent() {
   const fetchNextQuestion = async (cat: string) => {
     setFetchingQuestion(true);
     try {
-      const apiUrl = `http://localhost:5000/api/interview/question?category=${cat}&user_id=${user?.id || ''}&section=${searchParams?.get('section') || ''}&mode=${searchParams?.get('mode') || ''}`;
+      const apiUrl = getApiUrl(`/api/interview/question?category=${cat}&user_id=${user?.id || ''}&section=${searchParams?.get('section') || ''}&mode=${searchParams?.get('mode') || ''}`);
       const res = await fetch(apiUrl);
       if (res.status === 403) {
         const errData = await res.json().catch(() => ({}));
