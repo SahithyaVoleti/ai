@@ -2037,14 +2037,14 @@ function HomeContent() {
     if (bypass) formData.append('bypass_name_check', 'true');
 
     try {
-      const res = await fetch(getApiUrl(''), {
+      const res = await fetch(getApiUrl('/api/upload_resume'), {
         method: 'POST',
         body: formData
       });
       const data = await res.json();
       if (data.status === 'success') {
         // Start proctoring
-        await fetch(getApiUrl(''), { method: 'POST' });
+        await fetch(getApiUrl('/proctor/start'), { method: 'POST' });
 
         // Enter fullscreen BEFORE changing stage — prevents speak() deferral race condition
         // (when stage becomes 'verification', the fullscreen enforcement kicks in and speak() gets deferred
