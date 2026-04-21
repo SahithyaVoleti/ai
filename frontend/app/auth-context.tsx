@@ -93,7 +93,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.removeItem('resume_uploaded');
 
         // 2. Fire backend logout in background (don't await — don't block redirect)
-        fetch('http://localhost:5000/api/auth/logout', { method: 'POST' }).catch(() => {});
+        fetch(getApiUrl(''), { method: 'POST' }).catch(() => {});
 
         // 3. Redirect to home
         window.location.href = '/';

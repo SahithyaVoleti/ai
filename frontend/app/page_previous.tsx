@@ -1756,14 +1756,14 @@ function HomeContent() {
     if (user) formData.append('user_id', String(user.id));
 
     try {
-      const res = await fetch('http://localhost:5000/api/upload_resume', {
+      const res = await fetch(getApiUrl(''), {
         method: 'POST',
         body: formData
       });
       const data = await res.json();
       if (data.status === 'success') {
         // Start proctoring
-        await fetch('http://localhost:5000/proctor/start', { method: 'POST' });
+        await fetch(getApiUrl(''), { method: 'POST' });
 
         // Enter fullscreen BEFORE changing stage GÇö prevents speak() deferral race condition
         // (when stage becomes 'verification', the fullscreen enforcement kicks in and speak() gets deferred

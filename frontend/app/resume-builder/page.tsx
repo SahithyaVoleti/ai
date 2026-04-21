@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { getApiUrl } from './api-utils';
+import { getApiUrl } from '../../api-utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../auth-context';
 import { 

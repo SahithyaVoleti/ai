@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { getApiUrl } from './api-utils';
+import { getApiUrl } from '../api-utils';
 import { useAuth } from '../auth-context';
 import { useRouter } from 'next/navigation';
 import { Search, Bell, User as UserIcon, Play, Filter, Calendar, LayoutDashboard, Settings, LogOut, Sun, Moon, BarChart, BarChart3, Camera, Upload, Download, X, Smartphone, School, FileText, Shield, PieChart as PieChartIcon, Activity, Award, CheckCircle, Star, TrendingUp, Flame, Lock, Zap, ArrowRight, Home, ArrowLeft, FileSearch, CheckCircle2, AlertCircle, ExternalLink, Brain, Layout, MessageSquare, Check, ChevronRight, Loader, CreditCard, ShieldAlert, Sparkles, FileSignature, Folder, Terminal, Crown, Video, Plus, Clock, MoreVertical, Target, Unlock, ChevronDown, History, Briefcase, GraduationCap, BookOpen, Code } from 'lucide-react';
@@ -276,7 +276,7 @@ export default function Dashboard() {
     const fetchDrills = async () => {
         setIsDrillsLoading(true);
         try {
-            const res = await fetch(`${typeof window !== 'undefined' ? `http://${window.location.hostname}:5000` : 'http://localhost:5000'}/api/prep_drills`);
+            const res = await fetch(getApiUrl('/api/prep_drills'));
             const data = await res.json();
             if (data.status === 'success') {
                 setDrills({
@@ -297,7 +297,7 @@ export default function Dashboard() {
         if (!user?.id) return;
         setIsLoadingData(true);
         try {
-            const res = await fetch(`${typeof window !== 'undefined' ? `http://${window.location.hostname}:5000` : 'http://localhost:5000'}/api/user/dashboard/${user.id}`);
+            const res = await fetch(getApiUrl(`/api/user/dashboard/${user.id}`));
             const data = await res.json();
             if (data.status === 'success') {
                 setInterviews(data.interviews);
@@ -827,10 +827,15 @@ export default function Dashboard() {
         e.preventDefault();
         setSaving(true);
         try {
-            const res = await fetch(`${typeof window !== 'undefined' ? `http://${window.location.hostname}:5000` : 'http://localhost:5000'}/api/user/profile/update`, {
+            const res = await fetch(getApiUrl('/api/user/settings'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: user?.id, ...profileData })
+                body: JSON.stringify({
+                    id: user?.id,
+                    register_no: profileData.register_no,
+                    branch: profileData.branch,
+                    domain: profileData.domain
+                })
             });
             const data = await res.json();
             if (data.status === 'success') {

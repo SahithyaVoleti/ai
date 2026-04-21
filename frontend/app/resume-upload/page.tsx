@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import { getApiUrl } from './api-utils';
+import { getApiUrl } from '../../api-utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../auth-context';
 import { Upload, FileText, CheckCircle, AlertCircle, Loader, Sun, Moon, ChevronRight } from 'lucide-react';

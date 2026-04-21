@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { getApiUrl } from './api-utils';
+import { getApiUrl } from '../../api-utils';
 import { useRouter } from 'next/navigation';
 import {
     ChevronLeft, BookOpen, Monitor, Mic, Shield,
@@ -13,7 +13,7 @@ import { useTheme } from '../theme-context';
 import { useAuth } from '../auth-context';
 
 import { Suspense, useState, useRef, useEffect } from 'react';
-import { getApiUrl } from './api-utils';
+import { getApiUrl } from '../../api-utils';
 
 function InnerInstructions() {
     const router = useRouter();

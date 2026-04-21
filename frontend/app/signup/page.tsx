@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { getApiUrl } from './api-utils';
+import { getApiUrl } from '../../api-utils';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Send, User, ChevronRight, ShieldCheck, CheckCircle, Sun, Moon, Camera, RefreshCw, ArrowRight, Sparkles, FileText, Eye, EyeOff } from 'lucide-react';
