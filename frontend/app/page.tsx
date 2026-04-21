@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useRef, Suspense } from 'react';
+import { getApiUrl } from './api-utils';
 import styles from './home.module.css';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -8,6 +9,7 @@ import { useAuth } from './auth-context';
 import { Sun, Moon, Shield, ShieldAlert, Camera, Mic, Monitor, User, CheckCircle, Check, AlertCircle, LogOut, Sparkles, FileText, BarChart, ArrowRight, ArrowLeft, Volume2, ChevronRight, Brain, LayoutDashboard, Play, Terminal, Video, Zap, Globe, Lock, Database, Loader } from 'lucide-react';
 import { useTheme } from './theme-context';
 import Editor from "@monaco-editor/react";
+import { getApiUrl } from './api-utils';
 
 function HomeContent() {
   const { user, logout, loading: authLoading } = useAuth();
@@ -587,7 +589,7 @@ function HomeContent() {
         if (interviewId) formData.append('interview_id', String(interviewId));
 
         try {
-          const res = await fetch("http://localhost:5000/api/upload_video", {
+          const res = await fetch(getApiUrl("/api/upload_video"), {
             method: "POST",
             body: formData
           });
@@ -1039,7 +1041,7 @@ function HomeContent() {
 
           try {
             console.log("⏳ Sending audio to Whisper for high-accuracy processing...");
-            const transRes = await fetch("http://localhost:5000/api/transcribe", {
+            const transRes = await fetch(getApiUrl("/api/transcribe"), {
               method: "POST",
               body: formData
             });
@@ -1085,7 +1087,7 @@ function HomeContent() {
     const isIcebreaker = ['warmup', 'general', 'intro'].includes(phase);
 
     try {
-      const res = await fetch("http://localhost:5000/api/interview/answer", {
+      const res = await fetch(getApiUrl("/api/interview/answer"), {
         method: "POST",
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1201,7 +1203,7 @@ function HomeContent() {
   const startCodingRound = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/get_problems");
+      const res = await fetch(getApiUrl("/api/get_problems"));
       const data = await res.json();
       if (data.status === 'success' && data.problems.length > 0) {
         // Select 2 random coding questions dynamically
@@ -1283,7 +1285,7 @@ function HomeContent() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:5000/api/submit_code", {
+      const res = await fetch(getApiUrl("/api/submit_code"), {
         method: "POST",
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1320,7 +1322,7 @@ function HomeContent() {
 
     console.log(isManual ? "📥 Manual report request..." : "📥 Auto-downloading report...");
 
-    let url = "http://localhost:5000/api/download_report";
+    let url = getApiUrl("/api/download_report");
     if (interviewId) {
       url += `?id=${interviewId}`;
     }
@@ -1354,7 +1356,7 @@ function HomeContent() {
       // Generate report in backend before showing termination screen
       try {
         const videoPath = await stopAndUploadVideo();
-        const res = await fetch("http://localhost:5000/api/interview/finish", {
+        const res = await fetch(getApiUrl("/api/interview/finish"), {
           method: "POST",
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: user?.id, video_path: videoPath })
@@ -1367,7 +1369,7 @@ function HomeContent() {
             setInterviewId(data.interview_id);
           }
           setStage("results");
-          fetch("http://localhost:5000/proctor/stop", { method: "POST" }).catch(() => {});
+          fetch(getApiUrl("/proctor/stop"), { method: "POST" }).catch(() => {});
         }
       } catch (e) { console.error("Error finishing interview:", e); }
 
@@ -1417,7 +1419,7 @@ function HomeContent() {
 
         fullscreenWarnCountRef.current += 1;
 
-        fetch("http://localhost:5000/proctor/event", {
+        fetch(getApiUrl("/proctor/event"), {
           method: "POST", headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: "FULLSCREEN_EXIT",
@@ -1455,7 +1457,7 @@ function HomeContent() {
       if (isHidden) {
         if (showTabSwitchWarnRef.current) return;
         tabSwitchCountRef.current += 1;
-        fetch("http://localhost:5000/proctor/event", {
+        fetch(getApiUrl("/proctor/event"), {
           method: "POST", headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: "TAB_SWITCH",
@@ -1596,7 +1598,7 @@ function HomeContent() {
 
       // poll every 2s for backend-triggered termination (ID fraud)
       try {
-        const res = await fetch("http://localhost:5000/proctor/status");
+        const res = await fetch(getApiUrl("/proctor/status"));
         const data = await res.json();
         const activeProctoringStages = ['calibration', 'instructions', 'interview', 'code'];
         if (data.should_terminate && activeProctoringStages.includes(stage)) {
@@ -1619,7 +1621,7 @@ function HomeContent() {
       canvas.getContext('2d')?.drawImage(activeVideo, 0, 0, 640, 480);
       const img = canvas.toDataURL('image/jpeg', 0.8);
       try {
-        const res = await fetch("http://localhost:5000/proctor/process_frame", {
+        const res = await fetch(getApiUrl("/proctor/process_frame"), {
           method: "POST", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: img })
         });
         const data = await res.json();
@@ -1680,7 +1682,7 @@ function HomeContent() {
               audioViolationCountRef.current += 1;
               
               if (audioViolationCountRef.current > 60) { // ~3 seconds of continuous loud sound
-                fetch("http://localhost:5000/proctor/event", {
+                fetch(getApiUrl("/proctor/event"), {
                   method: "POST", headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     type: "MULTIPLE_VOICES",
@@ -1699,7 +1701,8 @@ function HomeContent() {
         } catch (e) { }
     };
     const t = setInterval(poll, 1000); // 1s poll for faster warnings
-    const f = setInterval(sendFrame, 500); // Increased frequency (2 FPS) for faster detection
+    const f = setInterval(sendFrame, 1000); // Optimized for scale: 1 FPS reduces server load by 50%
+
     return () => { clearInterval(t); clearInterval(f); };
   }, [stage]);
 
@@ -2112,7 +2115,7 @@ function HomeContent() {
 
     try {
       setVerifyStatus("Comparing with database records...");
-      const res = await fetch("http://localhost:5000/api/auth/verify_face", {
+      const res = await fetch(getApiUrl("/api/auth/verify_face"), {
         method: "POST", headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: user?.id, image: img })
       });
@@ -2127,7 +2130,7 @@ function HomeContent() {
         }, true);
 
         // Signal proctoring reset
-        fetch("http://localhost:5000/proctor/reset", { method: "POST" }).catch(() => { });
+        fetch(getApiUrl("/proctor/reset"), { method: "POST" }).catch(() => { });
 
         setTimeout(() => {
           setStage('calibration');
@@ -2178,7 +2181,7 @@ function HomeContent() {
       const finalUserAns = (transcript.trim() + " " + interimTranscript.trim()).trim();
       if (finalUserAns && finalUserAns.length > 5 && (stage === 'interview' || stage === 'code')) {
         console.log("📝 Submitting final partial answer before ending...");
-        await fetch("http://localhost:5000/api/interview/answer", {
+        await fetch(getApiUrl("/api/interview/answer"), {
           method: "POST",
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ question: question, answer: finalUserAns })
@@ -2187,7 +2190,7 @@ function HomeContent() {
 
       // 2. Conclude the interview session
       const videoPath = await stopAndUploadVideo();
-      const res = await fetch("http://localhost:5000/api/interview/finish", {
+      const res = await fetch(getApiUrl("/api/interview/finish"), {
         method: "POST",
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: user?.id, video_path: videoPath })
@@ -2200,7 +2203,7 @@ function HomeContent() {
         // 3. Professional Closing
         speak("Thank you for your time. The interview session is now concluded. Your performance report is being finalized.", () => {
           setStage('results');
-          fetch("http://localhost:5000/proctor/stop", { method: "POST" }).catch(() => {});
+          fetch(getApiUrl("/proctor/stop"), { method: "POST" }).catch(() => {});
           if (document.fullscreenElement) {
             document.exitFullscreen().catch(() => { });
           }
@@ -2210,7 +2213,7 @@ function HomeContent() {
         // Fallback for stage change
         setTimeout(() => {
           setStage('results');
-          fetch("http://localhost:5000/proctor/stop", { method: "POST" }).catch(() => {});
+          fetch(getApiUrl("/proctor/stop"), { method: "POST" }).catch(() => {});
           if (document.fullscreenElement) {
             document.exitFullscreen().catch(() => { });
           }
@@ -3285,8 +3288,8 @@ function HomeContent() {
 
                     // Step 2: Set up interview state
                     hasStartedRef.current = true;
-                    fetch("http://localhost:5000/proctor/reset", { method: "POST" }).catch(() => { });
-                    fetch("http://localhost:5000/api/interview/reset", { method: "POST" }).catch(() => { });
+                    fetch(getApiUrl("/proctor/reset"), { method: "POST" }).catch(() => { });
+                    fetch(getApiUrl("/api/interview/reset"), { method: "POST" }).catch(() => { });
 
                     const freshPhases = [
                       'greeting',

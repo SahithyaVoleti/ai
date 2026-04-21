@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { getApiUrl } from './api-utils';
 import { useRouter } from 'next/navigation';
 import { Check, CheckCircle, Shield, Zap, Star, Crown, ArrowRight, Sparkles, Moon, Sun, ChevronLeft, CreditCard, Lock, ShieldCheck, X, LogOut } from 'lucide-react';
 import { useAuth } from '../auth-context';

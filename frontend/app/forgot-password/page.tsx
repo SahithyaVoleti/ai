@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import { getApiUrl } from './api-utils';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, CheckCircle, ArrowRight, AlertCircle, Sun, Moon, ChevronRight, Eye, EyeOff } from 'lucide-react';
 import { useTheme } from '../theme-context';

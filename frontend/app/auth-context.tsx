@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { getApiUrl } from './api-utils';
 
 type User = {
     id: number;

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { getApiUrl } from './api-utils';
 import { CreditCard, CheckCircle, AlertCircle, ArrowLeft, Zap, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../auth-context';

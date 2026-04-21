@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from 'react';
+import { getApiUrl } from './api-utils';
 import { useRouter } from 'next/navigation';
 import {
     LayoutDashboard,
