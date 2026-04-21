@@ -671,12 +671,12 @@ class ProctoringService:
                             self.multi_face_strike_count += 1
                             self.consecutive_multi_face = 0 # RESET for next window
                             
-                            if self.multi_face_strike_count >= 3:
-                                self.record_event("TERMINATION_MULTIPLE_FACES", "Security Violation: Multiple people detected in frame after multiple warnings. Interview terminated.", "CRITICAL", frame)
-                                result["current_warning"] = "TERMINATION: Multiple people detected (3 strikes achieved)!"
+                            if self.multi_face_strike_count >= 1:
+                                self.record_event("TERMINATION_MULTIPLE_FACES", "Security Violation: Multiple people detected in frame. Interview terminated.", "CRITICAL", frame)
+                                result["current_warning"] = "TERMINATION: Multiple people detected!"
                             else:
-                                self.record_event("MULTIPLE_FACES", f"Security Warning ({self.multi_face_strike_count}/3): Multiple people detected in frame.", "HIGH", frame)
-                                result["current_warning"] = f"🔴 WARNING {self.multi_face_strike_count}/3: Only one person allowed in frame!"
+                                self.record_event("MULTIPLE_FACES", f"Security Warning ({self.multi_face_strike_count}/1): Multiple people detected in frame.", "HIGH", frame)
+                                result["current_warning"] = f"🔴 WARNING: Only one person allowed in frame!"
                     else:
                         if self.consecutive_multi_face > 0: self.consecutive_multi_face -= 1
                         
@@ -870,7 +870,7 @@ class ProctoringService:
                     if not hasattr(self, 'consecutive_yolo_people'): self.consecutive_yolo_people = 0
                     self.consecutive_yolo_people += 1
                     
-                    if self.consecutive_yolo_people >= 3: # Reduced from 10 for truly immediate response
+                    if self.consecutive_yolo_people >= 1: 
                         self.record_event("TERMINAL_MULTIPLE_PEOPLE", f"Security Violation: Detected {person_count} people in frame (YOLO). Interview terminated.", "CRITICAL", frame, boxes=detected_boxes)
                         self.termination_reason = f"Security Violation: Multiple people detected ({person_count})"
                         self.should_terminate = True
@@ -885,12 +885,12 @@ class ProctoringService:
                         self.consecutive_phone = 0 # Reset frame counter, increment event counter
                         self.record_event("GADGET_DETECTED", f"Warning {self.gadget_counts}/3: {detected_label} detected.", "HIGH", frame, boxes=detected_boxes)
                         
-                        if self.gadget_counts >= 3:
-                            self.termination_reason = f"Unauthorized {detected_label} detected 3 times."
-                            self.record_event("CHEATING_DEVICE", f"Prohibited {detected_label} confirmed 3 times.", "CRITICAL", frame, boxes=detected_boxes)
+                        if self.gadget_counts >= 1:
+                            self.termination_reason = f"Unauthorized {detected_label} detected."
+                            self.record_event("CHEATING_DEVICE", f"Prohibited {detected_label} confirmed.", "CRITICAL", frame, boxes=detected_boxes)
                             self.should_terminate = True
                         else:
-                            result["current_warning"] = f"🔴 Warning {self.gadget_counts}/3: {detected_label} detected!"
+                            result["current_warning"] = f"🔴 Warning: {detected_label} detected!"
                 else:
                     if self.consecutive_phone > 0: self.consecutive_phone -= 1
             

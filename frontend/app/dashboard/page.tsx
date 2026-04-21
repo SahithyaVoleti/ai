@@ -29,7 +29,10 @@ export default function Dashboard() {
         college_name: user?.college_name || '',
         year: user?.year || '',
         photo: user?.photo || '',
-        resume: ''
+        resume: '',
+        register_no: user?.register_no || '',
+        branch: user?.branch || '',
+        domain: user?.domain || ''
     });
     const [isSidebarOpen, setSidebarOpen] = useState(true);
     const [activeTab, setActiveTab] = useState<string>('Dashboard');
@@ -56,6 +59,7 @@ export default function Dashboard() {
     const [userResumes, setUserResumes] = useState<any[]>([]);
     const [isResumeBuilderOpen, setIsResumeBuilderOpen] = useState(false);
     const [isSavingResume, setIsSavingResume] = useState(false);
+    const [userPayments, setUserPayments] = useState<any[]>([]);
     const [resumeForm, setResumeForm] = useState({
         id: '',
         name: '',
@@ -71,6 +75,23 @@ export default function Dashboard() {
     });
 
     useEffect(() => {
+        if (user) {
+            setProfileData(prev => ({
+                ...prev,
+                name: user.name || '',
+                email: user.email || '',
+                phone: user.phone || '',
+                college_name: user.college_name || '',
+                year: user.year || '',
+                photo: user.photo || '',
+                register_no: user.register_no || '',
+                branch: user.branch || '',
+                domain: user.domain || ''
+            }));
+        }
+    }, [user]);
+
+    useEffect(() => {
         if (!authLoading && !user) {
             router.push('/');
         }
@@ -78,6 +99,7 @@ export default function Dashboard() {
             fetchInterviews();
             fetchDrills();
             fetchUserResumes();
+            fetchUserPayments();
         }
 
         // --- REAL-TIME SYNC ---
@@ -88,6 +110,20 @@ export default function Dashboard() {
         window.addEventListener('focus', handleFocus);
         return () => window.removeEventListener('focus', handleFocus);
     }, [user, authLoading, router]);
+
+    const fetchUserPayments = async () => {
+        if (!user?.id) return;
+        try {
+            const baseUrl = typeof window !== 'undefined' ? `http://${window.location.hostname}:5000` : 'http://localhost:5000';
+            const res = await fetch(`${baseUrl}/api/user/payments/${user.id}`);
+            const data = await res.json();
+            if (data.status === 'success') {
+                setUserPayments(data.payments);
+            }
+        } catch (err) {
+            console.error("Failed to fetch payments:", err);
+        }
+    };
 
     const fetchUserResumes = async () => {
         if (!user?.id) return;
@@ -1836,7 +1872,7 @@ export default function Dashboard() {
                                         </thead>
                                         <tbody className="divide-y divide-slate-50">
                                             {interviews.length === 0 ? (
-                                                <tr><td colSpan={4} className="p-20 text-center text-slate-500 font-bold uppercase tracking-widest">No assessment records found.</td></tr>
+                                                <tr><td colSpan={5} className="p-20 text-center text-slate-500 font-bold uppercase tracking-widest">No assessment records found. Complete an interview to generate your first report.</td></tr>
                                             ) : (
                                                 interviews.slice(0, 5).map((inv, i) => (
                                                     <tr key={i} className="hover:bg-white/50 transition-all cursor-default group/row">
@@ -2037,6 +2073,20 @@ export default function Dashboard() {
                                                     <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
                                                 </div>
                                             </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Reg Number</label>
+                                                    <input type="text" value={profileData.register_no} onChange={e => setProfileData({ ...profileData, register_no: e.target.value })} className="w-full bg-slate-50 border border-slate-50 rounded-2xl px-6 py-4.5 text-sm font-bold focus:bg-white focus:border-blue-400 outline-none transition-all shadow-inner" placeholder="ID No." />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Branch</label>
+                                                    <input type="text" value={profileData.branch} onChange={e => setProfileData({ ...profileData, branch: e.target.value })} className="w-full bg-slate-50 border border-slate-50 rounded-2xl px-6 py-4.5 text-sm font-bold focus:bg-white focus:border-blue-400 outline-none transition-all shadow-inner" placeholder="CS, ME..." />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase text-slate-400 ml-1 tracking-widest">Career Domain</label>
+                                                <input type="text" value={profileData.domain} onChange={e => setProfileData({ ...profileData, domain: e.target.value })} className="w-full bg-slate-50 border border-slate-50 rounded-2xl px-6 py-4.5 text-sm font-bold focus:bg-white focus:border-blue-400 outline-none transition-all shadow-inner" placeholder="e.g. Full Stack Development" />
+                                            </div>
                                             <div className="relative p-6 bg-blue-50/40 rounded-3xl border border-blue-100/50 flex items-center justify-between group/resume shadow-inner">
                                                 <div className="flex items-center gap-4">
                                                     <div className="p-3 bg-white text-blue-600 rounded-2xl shadow-sm border border-blue-50"><FileText size={20} /></div>
@@ -2060,6 +2110,68 @@ export default function Dashboard() {
                                     <button type="button" onClick={logout} className="flex-1 py-6 bg-slate-100 text-slate-600 rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs hover:bg-rose-50 hover:text-rose-600 transition-all flex items-center justify-center gap-3 active:scale-95">
                                         <LogOut size={16} /> Sign Out Securely
                                     </button>
+                                </div>
+
+                                {/* Transaction History Section */}
+                                <div className="mt-8 bg-white border border-slate-100 rounded-[3rem] p-10 shadow-soft hover:border-blue-100 transition-colors">
+                                    <h3 className="text-xl font-bold flex items-center gap-4 text-slate-800 mb-8">
+                                        <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><CreditCard size={20} /></div> Transaction History
+                                    </h3>
+                                    
+                                    {userPayments.length > 0 ? (
+                                        <div className="overflow-hidden rounded-3xl border border-slate-100 bg-slate-50/30 shadow-inner">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead>
+                                                    <tr className="bg-slate-50/80 border-b border-slate-100">
+                                                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Subscribed Plan</th>
+                                                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Amount Paid</th>
+                                                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Timestamp</th>
+                                                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Method</th>
+                                                        <th className="px-8 py-5 text-[10px] font-black uppercase text-slate-400 tracking-widest">Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100 bg-white">
+                                                    {userPayments.map((p, idx) => {
+                                                        const planNames: any = { "1": "Starter", "2": "ATS Pro", "3": "Proctor Elite", "4": "Ultimate Bundle" };
+                                                        return (
+                                                            <tr key={idx} className="hover:bg-blue-50/30 transition-colors">
+                                                                <td className="px-8 py-6">
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-sm font-black text-slate-800">{planNames[p.plan_id] || "Premium Tier"}</span>
+                                                                        <span className="text-[10px] font-bold text-slate-400 tracking-tight uppercase">{p.payment_id}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-8 py-6">
+                                                                    <span className="text-base font-black text-blue-600">₹{p.amount}</span>
+                                                                </td>
+                                                                <td className="px-8 py-6">
+                                                                    <span className="text-xs font-bold text-slate-500">{new Date(p.created_at).toLocaleString()}</span>
+                                                                </td>
+                                                                <td className="px-8 py-6">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className={`w-2 h-2 rounded-full ${p.payment_mode === 'Razorpay' ? 'bg-blue-400' : 'bg-slate-400'}`}></div>
+                                                                        <span className="text-xs font-black text-slate-600 uppercase tracking-tighter">{p.payment_mode}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-8 py-6">
+                                                                    <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm ${p.status === 'paid' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
+                                                                        {p.status}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ) : (
+                                        <div className="py-20 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-[2.5rem] bg-slate-50/20">
+                                            <div className="w-20 h-20 rounded-[2rem] bg-white text-slate-200 flex items-center justify-center shadow-soft mb-4 group-hover:scale-110 transition-transform">
+                                                <CreditCard size={32} />
+                                            </div>
+                                            <p className="text-slate-400 font-black text-sm uppercase tracking-widest">No transaction history detected</p>
+                                        </div>
+                                    )}
                                 </div>
                             </form>
 

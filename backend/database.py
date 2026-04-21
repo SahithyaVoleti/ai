@@ -112,6 +112,8 @@ def init_db(app):
                 order_id TEXT NOT NULL,
                 payment_id TEXT,
                 amount REAL,
+                plan_id TEXT,
+                payment_mode TEXT,
                 status TEXT DEFAULT 'pending',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -243,6 +245,20 @@ def init_db(app):
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                order_id TEXT NOT NULL,
+                payment_id TEXT,
+                amount REAL,
+                plan_id TEXT,
+                payment_mode TEXT,
+                status TEXT DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
         
         # Add ats_score migration for SQLite
         try:
@@ -334,12 +350,12 @@ def authenticate_user(identifier, password):
              }
     return None
 
-def create_order_log(user_id, order_id, amount):
+def create_order_log(user_id, order_id, amount, plan_id=None):
     conn, db_type = get_db_connection()
     c = conn.cursor()
     try:
-        query = "INSERT INTO orders (user_id, order_id, amount, status) VALUES (?, ?, ?, ?)"
-        params = (user_id, order_id, amount, 'pending')
+        query = "INSERT INTO orders (user_id, order_id, amount, plan_id, status) VALUES (?, ?, ?, ?, ?)"
+        params = (user_id, order_id, amount, plan_id, 'pending')
         if db_type == 'postgres':
             query = query.replace('?', '%s')
         c.execute(query, params)
@@ -349,13 +365,13 @@ def create_order_log(user_id, order_id, amount):
     finally:
         conn.close()
 
-def finalize_order(user_id, order_id, payment_id, credits_to_add, plan_id):
+def finalize_order(user_id, order_id, payment_id, credits_to_add, plan_id, payment_mode='Online'):
     conn, db_type = get_db_connection()
     c = conn.cursor()
     try:
         # 1. Update Order Status
-        q1 = "UPDATE orders SET payment_id=?, status=? WHERE order_id=?"
-        p1 = (payment_id, 'paid', order_id)
+        q1 = "UPDATE orders SET payment_id=?, status=?, payment_mode=?, plan_id=? WHERE order_id=?"
+        p1 = (payment_id, 'paid', payment_mode, plan_id, order_id)
         
         # 2. Update User Plan & Credits
         q2 = "UPDATE users SET plan_id=?, interviews_remaining = interviews_remaining + ? WHERE id=?"
@@ -462,7 +478,7 @@ def update_user_plan(user_id, plan_id):
     finally:
         conn.close()
 
-def update_user_profile(user_id, name, email, phone, college_name, year, photo=None, resume_path=None, register_no=None, branch=None):
+def update_user_profile(user_id, name, email, phone, college_name, year, photo=None, resume_path=None, register_no=None, branch=None, domain=None):
     conn, db_type = get_db_connection()
     c = conn.cursor()
     try:
@@ -529,6 +545,7 @@ def get_user_by_id(user_id):
              "year": u.get('year', 'N/A'),
              "register_no": u.get('register_no'),
              "branch": u.get('branch'),
+             "domain": u.get('domain'),
              "plan_id": u.get('plan_id', '1'),
              "interviews_remaining": u.get('interviews_remaining', 0)
         }
@@ -1218,5 +1235,24 @@ def delete_resume(resume_id, user_id):
     except Exception as e:
         print(f"Error deleting resume: {e}")
         return False
+    finally:
+        conn.close()
+
+def get_user_payments(user_id):
+    """Fetches all payment records for a specific user."""
+    conn, db_type = get_db_connection()
+    try:
+        if db_type == 'postgres':
+            c = conn.cursor(cursor_factory=RealDictCursor)
+        else:
+            c = conn.cursor()
+            
+        query = "SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC"
+        if db_type == 'postgres':
+            query = query.replace('?', '%s')
+            
+        c.execute(query, (user_id,))
+        rows = c.fetchall()
+        return [dict(r) for r in rows]
     finally:
         conn.close()

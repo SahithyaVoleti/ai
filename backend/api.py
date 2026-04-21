@@ -70,7 +70,7 @@ database.init_db(app)
 # Configure upload settings
 UPLOAD_FOLDER = os.path.join(current_dir, 'resumes')
 ALLOWED_EXTENSIONS = {'pdf'}
-MAX_CONTENT_LENGTH = 20 * 1024 * 1024  # 20MB
+MAX_CONTENT_LENGTH = 500 * 1024 * 1024  # 500MB
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
 if not os.path.exists(UPLOAD_FOLDER):
@@ -364,7 +364,7 @@ def create_payment_order():
         order = rzp_client.order.create(data=order_data)
         
         # Log to DB
-        database.create_order_log(user_id, order['id'], amount)
+        database.create_order_log(user_id, order['id'], amount, plan_id=data.get('plan_id'))
         
         return jsonify({
             "status": "success",
@@ -392,7 +392,7 @@ def verify_payment():
         credits_to_add = 1
         
         # Update User in DB
-        database.finalize_order(user_id, order_id or "sim_order", "sim_pay", credits_to_add, plan_id)
+        database.finalize_order(user_id, order_id or "sim_order", "sim_pay", credits_to_add, plan_id, payment_mode='Simulator')
         updated_user = database.get_user_by_id(int(user_id))
         
         # Send subscription confirmation email
@@ -433,7 +433,7 @@ def verify_payment():
         credits_to_add = 1
         
         # Update User in DB
-        database.finalize_order(user_id, razorpay_order_id, razorpay_payment_id, credits_to_add, plan_id)
+        database.finalize_order(user_id, razorpay_order_id, razorpay_payment_id, credits_to_add, plan_id, payment_mode='Razorpay')
         
         # Fetch updated user to sync frontend context immediately
         updated_user = database.get_user_by_id(int(user_id))
@@ -768,6 +768,14 @@ def reset_password():
     else:
          return jsonify({"status": "error", "message": "Email not found"}), 404
 
+@app.route('/api/user/payments/<int:user_id>', methods=['GET'])
+def get_user_payments(user_id):
+    try:
+        payments = database.get_user_payments(user_id)
+        return jsonify({"status": "success", "payments": payments})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @app.route('/api/user/profile/update', methods=['POST'])
 def update_profile():
     try:
@@ -804,8 +812,9 @@ def update_profile():
 
         register_no = data.get('register_no')
         branch = data.get('branch')
+        domain = data.get('domain')
 
-        success, error = database.update_user_profile(user_id, name, email, phone, college_name, year, photo, resume_path, register_no, branch)
+        success, error = database.update_user_profile(user_id, name, email, phone, college_name, year, photo, resume_path, register_no, branch, domain)
         if success:
             updated_user = database.get_user_by_id(user_id)
             if not updated_user:
@@ -1252,21 +1261,15 @@ def finish_interview():
         data = request.json or {}
         user_id = data.get('user_id')
 
-        # 1. Stop proctoring and sync violations (Plan 3+ Only)
-        user_data = database.get_user_by_id(user_id) if user_id else None
-        plan_id = int(user_data.get('plan_id', 0)) if user_data else 0
-
-        if plan_id >= 3:
-            try:
-                events = proctor_service.stop()
-                if events:
-                    for ev in events:
-                        if ev not in manager.violations:
-                            manager.violations.append(ev)
-            except Exception:
-                pass
-        else:
-            print(f"ℹ️ Skipping Proctoring Sync for Plan {plan_id}")
+        # 1. Stop proctoring and sync violations (All plans)
+        try:
+            events = proctor_service.stop()
+            if events:
+                for ev in events:
+                    if ev not in manager.violations:
+                        manager.violations.append(ev)
+        except Exception as e:
+            print(f"⚠️ Proctor Stop Error: {e}")
 
         # Find the Identity Verified image if it exists
         identity_image = None
@@ -1344,6 +1347,34 @@ def finish_interview():
                 'module_name': getattr(manager, 'module_topic', None)
             }
             interview_id_db = database.save_interview(user_id, score, details, video_path, interview_id)
+            
+            # --- AGGRESSIVE CLEANUP (Disk Space Optimization) ---
+            # 1. Delete evidence images (already encoded in details['evidence_b64'])
+            for img_path in _seen_ev:
+                try:
+                    if os.path.exists(img_path):
+                        os.remove(img_path)
+                        print(f"🗑️ [Disk Optimization] Deleted evidence image: {img_path}")
+                except Exception as e:
+                    print(f"⚠️ Cleanup error (img): {e}")
+
+            # 2. Delete the user's uploaded resume (already analyzed)
+            if user_id:
+                user_data = database.get_user_by_id(user_id)
+                if user_data and user_data.get('resume_path'):
+                    res_path = user_data.get('resume_path')
+                    if not os.path.isabs(res_path):
+                        res_path = os.path.join(os.getcwd(), res_path)
+                    try:
+                        if os.path.exists(res_path):
+                            os.remove(res_path)
+                            print(f"🗑️ [Disk Optimization] Deleted resume: {res_path}")
+                            database.update_resume_path(user_id, None) # Clear link in DB
+                    except Exception as e:
+                        print(f"⚠️ Cleanup error (resume): {e}")
+
+            # 3. Wipe memory-resident evidence paths
+            manager.cleanup_session()
 
         print(f"\n{'='*60}")
         print(f"Success: Interview Finished: {manager.candidate_name} | Score: {score}% | ID: {interview_id}")
@@ -1369,19 +1400,10 @@ def finish_interview():
 @app.route('/api/start_monitoring', methods=['POST'])
 def start_proctoring():
     try:
-        # 1. Check Plan (Only Plan 3+ allowed proctoring)
-        data = request.json or {}
-        user_id = data.get('user_id')
-        user_data = database.get_user_by_id(user_id) if user_id else None
-        plan_id = int(user_data.get('plan_id', 0)) if user_data else 0
-
-        if plan_id < 3:
-            print(f"ℹ️ Skipping Proctoring Start for Plan {plan_id}")
-            return jsonify({"status": "success", "simulated": True, "message": "Proctoring skipped for this plan."})
-
         # Sync session ID from manager for evidence isolation
         proctor_service.session_id = manager.session_id
         proctor_service.start()
+        print(f"✅ Proctoring Monitoring Started for all plans (Session: {manager.session_id})")
         return jsonify({"status": "success", "message": f"Proctoring service started for session {manager.session_id}"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -2286,33 +2308,44 @@ def manage_resumes():
         elif request.method == 'POST':
             data = request.json
             user_id = data.get('user_id')
-            resume_data = data.get('resume_data')
             resume_id = data.get('id')
             
-            if not user_id or not resume_data:
+            if not user_id:
                 return jsonify({"error": "User ID required"}), 400
             
             # Calculate ATS Score based on the built content
-            full_text = f"{resume_data.get('summary', '')} "
-            for exp in resume_data.get('experience', []):
+            full_text = f"{data.get('summary', '')} "
+            for exp in data.get('experience', []):
                 full_text += f"{exp.get('role', '')} {exp.get('company', '')} {exp.get('desc', '')} "
-            for proj in resume_data.get('projects', []):
+            for proj in data.get('projects', []):
                 full_text += f"{proj.get('name', '')} {proj.get('desc', '')} "
-            for edu in resume_data.get('education', []):
+            for edu in data.get('education', []):
                 full_text += f"{edu.get('degree', '')} {edu.get('school', '')} "
-            full_text += " ".join(resume_data.get('skills', []))
+                
+            skills_data = data.get('skills', [])
+            skills_arr = []
+            for s in skills_data:
+                if isinstance(s, dict):
+                    skills_arr.append(f"{s.get('category', '')}: {s.get('list', '')}")
+                else:
+                    skills_arr.append(str(s))
+            full_text += " ".join(skills_arr)
             
-            analysis = resume_analyzer.analyze_resume_ats(full_text, resume_data.get('skills', []))
-            resume_data['ats_score'] = analysis['score']
+            try:
+                analysis = resume_analyzer.analyze_resume_ats(full_text, skills_arr)
+                data['ats_score'] = analysis['score']
+            except Exception as e:
+                print(f"ATS Score logic skipped/failed: {e}")
+                data['ats_score'] = 0.0
 
             # Save/Update builder data
-            new_id = database.save_resume(user_id, resume_data, resume_id)
+            new_id = database.save_resume(user_id, data, resume_id)
             
             return jsonify({
                 "status": "success", 
                 "id": new_id, 
                 "message": "Resume saved successfully", 
-                "score": analysis['score']
+                "score": data.get('ats_score', 0.0)
             })
 
         elif request.method == 'PUT':

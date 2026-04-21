@@ -644,11 +644,14 @@ class InterviewManager:
         from reportlab.lib.units import inch
         from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
         import datetime
+        import os
+        import uuid
 
         margin = 0.6 * inch
         doc = SimpleDocTemplate(filename, pagesize=A4, topMargin=margin, bottomMargin=margin, leftMargin=margin, rightMargin=margin)
         styles = getSampleStyleSheet()
         story = []
+        temp_files = [] # To clean up charts
         
         # CORPORATE PALETTE
         C_MAIN = colors.HexColor('#1E293B')   # Navy Slate
@@ -736,26 +739,93 @@ class InterviewManager:
             doc.build(story)
             return True
 
-        # DETAILED LOG (For Plan 2+)
-        story.append(PageBreak())
-        story.append(safe_para("DETAILED BEHAVIORAL INTERACTION", s_head))
-        # Limit log for Plan 2 to keep it roughly within 2 pages if possible, or just build and return
-        for i, ev in enumerate(evals_copy, 1):
-            story.append(Spacer(1, 0.1 * inch))
-            story.append(safe_para(f'ROUND {i:02d} • {ev.get("type", "General").upper()}', s_subtitle))
-            story.append(safe_para(f"<b>Q:</b> {ev.get('question', '')}", s_norm, True))
-            a_row = Table([[safe_para(f"{ev.get('answer', '')}", s_norm, True)]], colWidths=[7 * inch])
-            a_row.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,-1), C_BG_LIGHT), ('LEFTPADDING', (0,0), (-1,-1), 15), ('TOPPADDING', (0,0), (-1,-1), 10), ('BOTTOMPADDING', (0,0), (-1,-1), 10), ('BOX', (0,0), (-1,-1), 0.5, C_BORDER)]))
-            story.append(a_row)
-            story.append(safe_para(f"Segment Score: {ev.get('score', 0)}/10", ParagraphStyle('Sc', fontSize=9, alignment=TA_RIGHT, textColor=C_ACCENT, fontName='Helvetica-Bold')))
-            story.append(Spacer(1, 0.1 * inch))
-            story.append(HRFlowable(width="100%", thickness=0.5, color=C_BORDER))
+        # PAGE 2: PERFORMANCE VISUALIZATION (Plan 2+)
+        try:
+            story.append(PageBreak())
+            story.append(safe_para("PERFORMANCE ANALYTICS", s_head))
+            chart_file = f"temp_perf_{uuid.uuid4().hex}.png"
+            if self.create_performance_chart(chart_file):
+                story.append(Image(chart_file, width=6.5*inch, height=3.2 * inch))
+                temp_files.append(chart_file)
+            
+            story.append(Spacer(1, 0.2*inch))
+            story.append(safe_para("DETAILED BEHAVIORAL LOG", s_head))
+            for i, ev in enumerate(evals_copy[:8], 1): # Limit log slightly for Page 2
+                story.append(safe_para(f'ROUND {i:02d} • {ev.get("type", "General").upper()}', s_subtitle))
+                story.append(safe_para(f"<b>Q:</b> {ev.get('question', '')}", s_norm, True))
+                story.append(safe_para(f"<b>A:</b> {ev.get('answer', '')}", s_norm, True))
+                story.append(safe_para(f"Segment Score: {ev.get('score', 0)}/10 | Fluency: {ev.get('fluency', 0)}/10", ParagraphStyle('Sc', fontSize=8, alignment=TA_RIGHT, textColor=C_ACCENT)))
+                story.append(HRFlowable(width="100%", thickness=0.3, color=C_BORDER, spaceAfter=8))
+        except: pass
+
+        if int(plan_id) <= 1: # Basic fallback
+            doc.build(story)
+            for f in temp_files: 
+                try: os.remove(f)
+                except: pass
+            return True
+
+        # PAGE 3: ATS & RESUME INSIGHTS (Plan 2+)
+        if int(plan_id) >= 2:
+            story.append(PageBreak())
+            story.append(safe_para("ATS & RESUME OPTIMIZATION", s_head))
+            res_data = [
+                [safe_para("ATS SCORE", s_subtitle), safe_para("RECOGNIZED FIELD", s_subtitle), safe_para("EXP LEVEL", s_subtitle)],
+                [safe_para(f"{self.resume_score or 0}/100", s_title), safe_para(getattr(self, 'resume_analysis_results', {}).get('field', 'General'), s_title), safe_para(getattr(self, 'resume_analysis_results', {}).get('level', 'N/A'), s_title)]
+            ]
+            res_tab = Table(res_data, colWidths=[2.4*inch]*3)
+            story.append(res_tab)
+            story.append(Spacer(1, 0.2*inch))
+            
+            check = getattr(self, 'resume_analysis_results', {}).get('checklist', [])
+            if check:
+                story.append(safe_para("ATS COMPLIANCE CHECKLIST", s_subtitle))
+                check_rows = []
+                for item in check:
+                    status = "YES" if item.get('found') else "NO"
+                    color = C_SUCCESS if item.get('found') else C_DANGER
+                    check_rows.append([safe_para(item.get('item'), s_norm), safe_para(status, ParagraphStyle('St', textColor=color, fontName='Helvetica-Bold'))])
+                check_tab = Table(check_rows, colWidths=[5.5*inch, 1.2*inch])
+                check_tab.setStyle(TableStyle([('GRID', (0,0), (-1,-1), 0.5, C_BORDER), ('PADDING', (0,0), (-1,-1), 5)]))
+                story.append(check_tab)
 
         if int(plan_id) <= 2:
             doc.build(story)
+            for f in temp_files: 
+                try: os.remove(f)
+                except: pass
             return True
 
-        # PROCTORING (For Plan 3+)
+        # PAGE 4-5: CODING ANALYSIS (Plan 3+)
+        if int(plan_id) >= 3 and self.submitted_solutions:
+            story.append(PageBreak())
+            story.append(safe_para("PRACTICAL CODING ANALYSIS", s_head))
+            c_chart = f"temp_code_{uuid.uuid4().hex}.png"
+            if self.create_coding_chart(c_chart):
+                story.append(Image(c_chart, width=5.5*inch, height=3*inch))
+                temp_files.append(c_chart)
+            
+            s_chart = f"temp_skills_{uuid.uuid4().hex}.png"
+            if self.create_coding_skills_chart(s_chart):
+                story.append(Image(s_chart, width=5.5*inch, height=3*inch))
+                temp_files.append(s_chart)
+            
+            for sol in self.submitted_solutions:
+                story.append(PageBreak())
+                story.append(safe_para(f"SOLUTION: {sol.get('title', 'Unknown')}", s_head))
+                story.append(safe_para(f"Language: {sol.get('language', 'N/A')} | Status: {sol.get('status', 'Completed')}", s_subtitle))
+                code_bg = Table([[safe_para(f"<code>{sol.get('code', '')[:1500]}...</code>", ParagraphStyle('Code', fontName='Courier', fontSize=8, leading=10), True)]], colWidths=[7*inch])
+                code_bg.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#F1F5F9')), ('PADDING', (0,0), (-1,-1), 10)]))
+                story.append(code_bg)
+                
+                # AI Feedback for code
+                feedback = sol.get('analysis', {})
+                if feedback:
+                    story.append(safe_para("AI EVALUATION FEEDBACK", s_subtitle))
+                    story.append(safe_para(feedback.get('feedback', ''), s_norm))
+                    story.append(safe_para("<b>Key Improvements:</b> " + ", ".join(feedback.get('improvements', [])), s_norm, True))
+
+        # PAGE 6-8: PROCTORING & SECURITY (Plan 3+)
         if int(plan_id) >= 3:
             self.collect_evidence()
             if self.evidence_images:
@@ -780,6 +850,10 @@ class InterviewManager:
                 story.append(ev_tab)
 
         doc.build(story)
+        # Cleanup
+        for f in temp_files:
+            try: os.remove(f)
+            except: pass
         return True
 
     def collect_evidence(self):
@@ -809,30 +883,36 @@ class InterviewManager:
             return []
 
     def cleanup_session(self):
-        """Removes sensitive files (resume, proctoring images) from the server to save space and ensure privacy."""
+        """Removes sensitive files (resume, proctored images) from the server to save space and ensure privacy."""
         # 1. Delete Candidate Resume
         if hasattr(self, 'resume_path') and self.resume_path and os.path.exists(self.resume_path):
             try:
-                # Close any potential hooks if any library was holding it (unlikely but safe)
                 os.remove(self.resume_path)
-                print(f"🗑️ [CLEANUP] Deleted resume: {os.path.basename(self.resume_path)}")
-                self.resume_path = None
+                print(f"🗑️ [CLEANUP] Deleted resume: {self.resume_path}")
             except Exception as e:
                 print(f"⚠️ [CLEANUP] Could not delete resume: {e}")
+            finally:
+                self.resume_path = None
         
-        # 2. Delete Procting Evidence Folder
+        # 2. Delete Proctoring Evidence (Directory or Specific Image)
         if hasattr(self, 'evidence_path') and self.evidence_path and os.path.exists(self.evidence_path):
             try:
-                import shutil
-                shutil.rmtree(self.evidence_path)
-                print(f"🗑️ [CLEANUP] Deleted evidence folder: {self.evidence_path}")
-                self.evidence_path = None
+                if os.path.isdir(self.evidence_path):
+                    import shutil
+                    shutil.rmtree(self.evidence_path)
+                    print(f"🗑️ [CLEANUP] Deleted evidence folder: {self.evidence_path}")
+                else:
+                    os.remove(self.evidence_path)
+                    print(f"🗑️ [CLEANUP] Deleted specific evidence image: {self.evidence_path}")
             except Exception as e:
-                print(f"⚠️ [CLEANUP] Could not delete evidence: {e}")
+                print(f"⚠️ [CLEANUP] Could not delete evidence at {self.evidence_path}: {e}")
+            finally:
+                self.evidence_path = None
         
-        # 3. Clear transient image data
+        # 3. Clear transient data
         self.evidence_images = []
         self.candidate_photo = None
+        self.violations = [] # Clear violations so next session starts fresh
     def analyze_coding_submission(self, submission):
         """
         Generates deep analysis for a coding submission using LLM.
@@ -880,7 +960,8 @@ class InterviewManager:
             response = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[{"role": "user", "content": prompt}],
-                temperature=0.2
+                temperature=0.2,
+                timeout=18.0
             )
             json_str = re.search(r"\{.*\}", response.choices[0].message.content, re.DOTALL).group()
             return json.loads(json_str)
@@ -1112,7 +1193,8 @@ class InterviewManager:
                         model=self.model_name,
                         messages=[{"role": "user", "content": prompt}],
                         temperature=0.85, # Slightly higher for more variety
-                        max_tokens=150
+                        max_tokens=150,
+                        timeout=10.0
                     )
                     question_text = response.choices[0].message.content.strip().strip('"').strip()
                     # Prefix cleanup
