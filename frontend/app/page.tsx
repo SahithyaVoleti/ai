@@ -9,7 +9,7 @@ import { useAuth } from './auth-context';
 import { Sun, Moon, Shield, ShieldAlert, Camera, Mic, Monitor, User, CheckCircle, Check, AlertCircle, LogOut, Sparkles, FileText, BarChart, ArrowRight, ArrowLeft, Volume2, ChevronRight, Brain, LayoutDashboard, Play, Terminal, Video, Zap, Globe, Lock, Database, Loader } from 'lucide-react';
 import { useTheme } from './theme-context';
 import Editor from "@monaco-editor/react";
-import { getApiUrl } from './api-utils';
+
 
 function HomeContent() {
   const { user, logout, loading: authLoading } = useAuth();

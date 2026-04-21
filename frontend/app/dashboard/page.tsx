@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Search, Bell, User as UserIcon, Play, Filter, Calendar, LayoutDashboard, Settings, LogOut, Sun, Moon, BarChart, BarChart3, Camera, Upload, Download, X, Smartphone, School, FileText, Shield, PieChart as PieChartIcon, Activity, Award, CheckCircle, Star, TrendingUp, Flame, Lock, Zap, ArrowRight, Home, ArrowLeft, FileSearch, CheckCircle2, AlertCircle, ExternalLink, Brain, Layout, MessageSquare, Check, ChevronRight, Loader, CreditCard, ShieldAlert, Sparkles, FileSignature, Folder, Terminal, Crown, Video, Plus, Clock, MoreVertical, Target, Unlock, ChevronDown, History, Briefcase, GraduationCap, BookOpen, Code } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, AreaChart, Area, XAxis, YAxis, CartesianGrid, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import { useRef } from 'react';
-import { getApiUrl } from './api-utils';
+
 import Link from 'next/link';
 import { useTheme } from '../theme-context';
 
