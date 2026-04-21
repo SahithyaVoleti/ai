@@ -2813,7 +2813,7 @@ function HomeContent() {
             <div className="w-full lg:w-96 bg-[#1e293b] border-b lg:border-r border-slate-700 p-4 lg:p-6 flex flex-col gap-6 justify-between overflow-y-auto max-h-[30vh] lg:max-h-full">
               <div>
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="px-3 py-1 bg-indigo-600 rounded-lg text-xs font-black uppercase tracking-widest">Coding Round</div>
+                  <div className="px-3 py-1 bg-blue-600 rounded-lg text-xs font-black uppercase tracking-widest">Coding Round</div>
                   <h2 className="text-xl font-bold text-slate-200">Problem {currentCodingIdx + 1} of {codingProblems.length}</h2>
                 </div>
 
@@ -2823,12 +2823,12 @@ function HomeContent() {
                     <span>{Math.round(((currentCodingIdx + 1) / codingProblems.length) * 100)}%</span>
                   </div>
                   <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden mb-4">
-                    <div className="h-full bg-indigo-500 transition-all duration-500 shadow-[0_0_10px_rgba(79,70,229,0.5)]" style={{ width: `${((currentCodingIdx + 1) / codingProblems.length) * 100}%` }}></div>
+                    <div className="h-full bg-blue-500 transition-all duration-500 shadow-[0_0_10px_rgba(79,70,229,0.5)]" style={{ width: `${((currentCodingIdx + 1) / codingProblems.length) * 100}%` }}></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
                       <span className="text-[8px] font-black text-slate-500 uppercase block mb-1">Elapsed</span>
-                      <span className="text-sm font-black text-indigo-400 font-mono tracking-tighter">{formatTime(elapsedTime)}</span>
+                      <span className="text-sm font-black text-blue-400 font-mono tracking-tighter">{formatTime(elapsedTime)}</span>
                     </div>
                     <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
                       <span className="text-[8px] font-black text-slate-500 uppercase block mb-1">Clock</span>
@@ -2858,7 +2858,7 @@ function HomeContent() {
                       <div className="space-y-3">
                         {codingProblems[currentCodingIdx].test_cases.slice(0, 2).map((tc: any, i: number) => (
                           <div key={i} className="bg-black/40 border border-slate-800 p-3 rounded-xl font-mono text-xs">
-                            <div className="text-indigo-400 mb-1">Input: {tc.input}</div>
+                            <div className="text-blue-400 mb-1">Input: {tc.input}</div>
                             <div className="text-green-400">Output: {tc.output}</div>
                           </div>
                         ))}
@@ -2866,8 +2866,8 @@ function HomeContent() {
                     </div>
                   )}
 
-                  <div className="bg-indigo-500/5 p-4 rounded-2xl border border-indigo-500/10 text-xs">
-                    <div className="flex gap-2 items-center text-indigo-400 mb-2 font-black uppercase tracking-tighter">
+                  <div className="bg-blue-500/5 p-4 rounded-2xl border border-blue-500/10 text-xs">
+                    <div className="flex gap-2 items-center text-blue-400 mb-2 font-black uppercase tracking-tighter">
                       <Shield size={14} /> Security Active
                     </div>
                     Plagiarism detection and tab-switching monitoring are active during this stage.
@@ -2889,7 +2889,7 @@ function HomeContent() {
                         id="language_select"
                         value={codingLanguage}
                         onChange={(e) => setCodingLanguage(e.target.value as any)}
-                        className="bg-[#0f172a] text-slate-300 text-xs font-mono px-3 py-1.5 rounded-md border border-slate-700 outline-none focus:border-indigo-500/50 transition-colors"
+                        className="bg-[#0f172a] text-slate-300 text-xs font-mono px-3 py-1.5 rounded-md border border-slate-700 outline-none focus:border-blue-500/50 transition-colors"
                       >
                         <option value="python">Python</option>
                         <option value="java">Java</option>
@@ -2970,7 +2970,7 @@ function HomeContent() {
                     <button
                       onClick={handleSubmitCode}
                       disabled={loading}
-                      className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-black rounded-xl shadow-xl shadow-indigo-500/20 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                      className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-black rounded-xl shadow-xl shadow-blue-500/20 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
                     >
                       {loading ? "Submitting..." : (currentCodingIdx === codingProblems.length - 1 ? "Submit Final" : "Next Problem")}
                     </button>
@@ -2988,7 +2988,7 @@ function HomeContent() {
           <main className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[var(--background)] overflow-hidden">
             {/* Back Button */}
             <div className="absolute top-24 left-8 z-50">
-              <button onClick={() => setStage('upload')} className={`flex items-center gap-2 ${theme === 'dark' ? 'text-white hover:text-indigo-400' : 'text-slate-600 hover:text-indigo-600'} transition-colors font-bold text-sm bg-transparent border-none cursor-pointer group`}>
+              <button onClick={() => setStage('upload')} className={`flex items-center gap-2 ${theme === 'dark' ? 'text-white hover:text-blue-400' : 'text-slate-600 hover:text-blue-600'} transition-colors font-bold text-sm bg-transparent border-none cursor-pointer group`}>
                 <ChevronRight size={18} className="rotate-180 group-hover:-translate-x-1 transition-transform" /> Back
               </button>
             </div>
@@ -3082,7 +3082,7 @@ function HomeContent() {
                 <button
                   onClick={captureAndVerify}
                   disabled={verifying}
-                  className="mt-8 w-full max-w-sm py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-xl hover:shadow-2xl hover:shadow-blue-500/40 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3 group relative overflow-hidden"
+                  className="mt-8 w-full max-w-sm py-5 bg-gradient-to-r from-blue-600 to-blue-600 text-white rounded-2xl font-black text-xl hover:shadow-2xl hover:shadow-blue-500/40 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3 group relative overflow-hidden"
                 >
                   <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                   <Camera className="group-hover:rotate-12 transition-transform" size={24} />
@@ -3092,7 +3092,7 @@ function HomeContent() {
                 <div className="mt-6 flex flex-col items-center gap-2">
                   <button
                     onClick={restartCamera}
-                    className="text-xs font-bold text-indigo-500 hover:text-indigo-400 underline underline-offset-4 flex items-center gap-1.5 transition-colors"
+                    className="text-xs font-bold text-blue-500 hover:text-blue-400 underline underline-offset-4 flex items-center gap-1.5 transition-colors"
                   >
                     <AlertCircle size={14} /> Video still black? Restart Camera hardware
                   </button>
@@ -3115,17 +3115,17 @@ function HomeContent() {
           <main className="min-h-screen flex items-center justify-center p-4 md:p-8 bg-[var(--background)] relative">
             {/* Back Button */}
             <div className="absolute top-24 left-4 md:left-8 z-50">
-              <button onClick={() => setStage('verification')} className={`flex items-center gap-2 ${theme === 'dark' ? 'text-white hover:text-indigo-400' : 'text-slate-600 hover:text-indigo-600'} transition-colors font-bold text-sm bg-transparent border-none cursor-pointer group`}>
+              <button onClick={() => setStage('verification')} className={`flex items-center gap-2 ${theme === 'dark' ? 'text-white hover:text-blue-400' : 'text-slate-600 hover:text-blue-600'} transition-colors font-bold text-sm bg-transparent border-none cursor-pointer group`}>
                 <ChevronRight size={18} className="rotate-180 group-hover:-translate-x-1 transition-transform" /> Back
               </button>
             </div>
             <div className="w-full max-w-3xl bg-[var(--card-bg)] p-6 md:p-12 rounded-[2.5rem] md:rounded-[3.3rem] border border-[var(--border)] shadow-2xl text-center">
-              <div className="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner ring-4 ring-indigo-50">
+              <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner ring-4 ring-blue-50">
                 <Shield size={40} className="animate-pulse" />
               </div>
               <h1 className="text-4xl font-black mb-6 tracking-tight text-slate-800">Environment Security Mode</h1>
               <p className="text-lg text-slate-500 font-medium mb-10 leading-relaxed max-w-xl mx-auto">
-                Identity Verified. Activating <span className="text-indigo-600 font-black">Atlas Security Pro</span>.
+                Identity Verified. Activating <span className="text-blue-600 font-black">Atlas Security Pro</span>.
                 We are now scanning your environment for unauthorized gadgets or individuals.
               </p>
 
@@ -3144,8 +3144,8 @@ function HomeContent() {
                   className="w-full h-full object-cover transform scale-x-[-1]"
                 />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-72 h-72 border-2 border-indigo-400/50 rounded-full border-dashed animate-pulse ring-8 ring-indigo-500/10"></div>
-                  <div className="absolute w-2 h-2 bg-indigo-500 rounded-full"></div>
+                  <div className="w-72 h-72 border-2 border-blue-400/50 rounded-full border-dashed animate-pulse ring-8 ring-blue-500/10"></div>
+                  <div className="absolute w-2 h-2 bg-blue-500 rounded-full"></div>
                 </div>
 
                 <div className="absolute top-6 left-6 flex flex-col gap-2">
@@ -3154,7 +3154,7 @@ function HomeContent() {
                     <span className="text-[10px] font-black text-white uppercase tracking-widest">Person Tracking: Active</span>
                   </div>
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-lg border border-white/10">
-                    <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                     <span className="text-[10px] font-black text-white uppercase tracking-widest">Gadget Shield: Scanning</span>
                   </div>
                 </div>
@@ -3180,7 +3180,7 @@ function HomeContent() {
                     speak("Calibration complete. Please review the interview instructions carefully before we begin.");
                     setStage('instructions');
                   }}
-                  className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xl hover:bg-indigo-700 transition-all shadow-xl hover:shadow-indigo-500/30 flex items-center justify-center gap-3 active:scale-95"
+                  className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-xl hover:bg-blue-700 transition-all shadow-xl hover:shadow-blue-500/30 flex items-center justify-center gap-3 active:scale-95"
                 >
                   <CheckCircle size={24} /> I&apos;m Ready to Start
                 </button>
@@ -3196,13 +3196,13 @@ function HomeContent() {
           <main className="min-h-screen flex items-center justify-center p-4 md:p-8 bg-[var(--background)] relative">
             {/* Back Button */}
             <div className="absolute top-24 left-8 z-50">
-              <button onClick={() => setStage('calibration')} className={`flex items-center gap-2 ${theme === 'dark' ? 'text-white hover:text-indigo-400' : 'text-slate-600 hover:text-indigo-600'} transition-colors font-bold text-sm bg-transparent border-none cursor-pointer group`}>
+              <button onClick={() => setStage('calibration')} className={`flex items-center gap-2 ${theme === 'dark' ? 'text-white hover:text-blue-400' : 'text-slate-600 hover:text-blue-600'} transition-colors font-bold text-sm bg-transparent border-none cursor-pointer group`}>
                 <ChevronRight size={18} className="rotate-180 group-hover:-translate-x-1 transition-transform" /> Back
               </button>
             </div>
             <div className="w-full max-w-4xl bg-[var(--card-bg)] p-8 md:p-10 rounded-[2.5rem] border border-[var(--border)] shadow-2xl relative overflow-hidden flex flex-col">
               <div className="text-center mb-8">
-                <div className="w-14 h-14 bg-indigo-500/10 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <div className="w-14 h-14 bg-blue-500/10 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Sparkles size={28} />
                 </div>
                 <h1 className="text-3xl md:text-4xl font-black mb-2 tracking-tight">Interview Guidelines</h1>
@@ -3320,7 +3320,7 @@ function HomeContent() {
                       }, 300);
                     }, 500);
                   }}
-                  className="flex-[2] py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xl shadow-xl shadow-indigo-500/20 transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3"
+                  className="flex-[2] py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-xl shadow-xl shadow-blue-500/20 transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3"
                 >
                   Start Final Interview <ArrowRight size={24} />
                 </button>
@@ -3353,14 +3353,14 @@ function HomeContent() {
 
               {/* Right: Upload Form */}
               <div className={`${styles.glassCard} w-full max-w-xl p-6 md:p-12 rounded-[2rem] md:rounded-[2.5rem] border border-[var(--border)] shadow-2xl relative overflow-hidden`}>
-                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
 
                 <h2 className="text-4xl font-black mb-4">Interview Setup</h2>
                 <p className="text-[var(--text-muted)] mb-8 font-medium italic">&quot;Preparation is the key to success. Let&apos;s get you ready.&quot;</p>
 
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-xl font-bold mb-4">Welcome, <span className="text-indigo-600">{name || 'Candidate'}</span>!</h3>
+                    <h3 className="text-xl font-bold mb-4">Welcome, <span className="text-blue-600">{name || 'Candidate'}</span>!</h3>
                   </div>
 
                   {/* Name Input Field */}
@@ -3371,15 +3371,15 @@ function HomeContent() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Enter your full name"
-                      className="w-full px-4 py-3 rounded-xl border-2 border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:border-indigo-500 outline-none transition-all font-bold"
+                      className="w-full px-4 py-3 rounded-xl border-2 border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:border-blue-500 outline-none transition-all font-bold"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-bold mb-2 ml-1">Upload Resume (PDF)</label>
-                    <div className="relative group cursor-pointer h-32 border-2 border-dashed border-[var(--border)] rounded-2xl flex flex-center hover:border-indigo-500 transition-colors bg-[var(--background)]">
+                    <div className="relative group cursor-pointer h-32 border-2 border-dashed border-[var(--border)] rounded-2xl flex flex-center hover:border-blue-500 transition-colors bg-[var(--background)]">
                       <input type="file" onChange={e => setFile(e.target.files?.[0] || null)} className="absolute inset-0 opacity-0 cursor-pointer" />
-                      <div className="w-full h-full flex flex-col items-center justify-center text-[var(--text-muted)] group-hover:text-indigo-600 transition-colors">
+                      <div className="w-full h-full flex flex-col items-center justify-center text-[var(--text-muted)] group-hover:text-blue-600 transition-colors">
                         <img src="/resume_icon.svg" alt="Resume" className="w-14 h-14 mb-2 opacity-90 group-hover:opacity-100 transition-opacity" />
                         <span className="font-bold">{file ? file.name : "Click to select file"}</span>
                       </div>
@@ -3399,14 +3399,14 @@ function HomeContent() {
                           unlockAudio();
                           speak("Checking audio system. If you can hear this, you are ready to proceed with the interview.");
                         }}
-                        className="text-xs font-bold text-indigo-500 hover:text-indigo-400 flex items-center gap-2"
+                        className="text-xs font-bold text-blue-500 hover:text-blue-400 flex items-center gap-2"
                       >
                         <Mic size={14} /> 1. Click to Unlock Audio
                       </button>
 
                       <button
                         onClick={() => speak("Verification successful. Audio is working perfectly.")}
-                        className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1"
+                        className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"
                       >
                         <Volume2 size={14} /> 2. Test Voice
                       </button>
@@ -3436,7 +3436,7 @@ function HomeContent() {
                   <button
                     onClick={handleBeginInterview}
                     disabled={loading}
-                    className={`w-full py-5 ${nameWarning ? 'bg-slate-200 text-slate-500 cursor-not-allowed opacity-50' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl hover:shadow-indigo-500/30'} rounded-2xl font-black text-xl transition-all`}
+                    className={`w-full py-5 ${nameWarning ? 'bg-slate-200 text-slate-500 cursor-not-allowed opacity-50' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-xl hover:shadow-blue-500/30'} rounded-2xl font-black text-xl transition-all`}
                   >
                     {loading ? "Analyzing Resume..." : "Begin Interview"}
                   </button>
@@ -3487,7 +3487,7 @@ function HomeContent() {
                     {/* Wav2Lip Overlay Removed */}
 
                     {/* Glow ring when speaking */}
-                    <div className={`absolute inset-0 transition-all duration-500 pointer-events-none rounded-inherit z-20 ${isSpeaking ? 'shadow-[inset_0_0_60px_rgba(99,102,241,0.15)]' : ''}`} />
+                    <div className={`absolute inset-0 transition-all duration-500 pointer-events-none rounded-inherit z-20 ${isSpeaking ? 'shadow-[inset_0_0_60px_rgba(37,99,235,0.15)]' : ''}`} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
 
                     {/* LIP SYNC BARS — driven by Web Audio API analyser, directly updated via DOM ref */}
@@ -3505,7 +3505,7 @@ function HomeContent() {
                               height: '3px',        // starts flat — RAF loop updates this
                               borderRadius: '3px 3px 0 0',
                               background: isSpeaking
-                                ? 'rgba(99,102,241,0.85)'   // indigo when speaking
+                                ? 'rgba(37,99,235,0.85)'   // blue when speaking
                                 : 'rgba(160,160,160,0.3)',   // grey when silent
                               transition: 'background 0.3s',
                               transformOrigin: 'bottom',
@@ -3517,7 +3517,7 @@ function HomeContent() {
 
                     {/* "SPEAKING" indicator badge */}
                     <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 z-30 transition-all duration-300 ${isSpeaking ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
-                      <div className="flex items-center gap-2 bg-indigo-600/90 backdrop-blur-md text-white px-5 py-2 rounded-full shadow-xl border border-white/20">
+                      <div className="flex items-center gap-2 bg-blue-600/90 backdrop-blur-md text-white px-5 py-2 rounded-full shadow-xl border border-white/20">
                         <div className="flex gap-[3px] items-end h-4">
                           {[0, 1, 2, 3, 4].map((i) => (
                             <div
@@ -3589,8 +3589,8 @@ function HomeContent() {
                     {question ? (
                       <div className="bg-white/95 backdrop-blur-xl border border-white/50 pt-8 pb-12 px-10 rounded-[2.5rem] shadow-2xl pointer-events-auto transition-all animate-in slide-in-from-bottom-5 duration-500 flex flex-col items-center text-center">
                         <div className="flex items-center gap-2 mb-3">
-                          <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
-                          <span className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Current Question</span>
+                          <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                          <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Current Question</span>
                         </div>
                         <p className="text-lg md:text-xl font-bold text-slate-800 leading-snug">
                           {question}
@@ -3599,7 +3599,7 @@ function HomeContent() {
                     ) : (
                       <div className="w-full max-w-xl mx-auto bg-white/90 backdrop-blur-md border border-slate-100 py-10 px-10 rounded-[2.5rem] shadow-2xl flex flex-col items-center justify-center gap-3">
                         <div className="flex gap-2">
-                          {[0, 1, 2].map(i => <div key={i} className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }}></div>)}
+                          {[0, 1, 2].map(i => <div key={i} className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }}></div>)}
                         </div>
                       </div>
                     )}
@@ -3616,11 +3616,11 @@ function HomeContent() {
                         isManualStopRef.current = false;
                         safeStartRecognition();
                       }}
-                      className="absolute -top-14 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white text-[8px] font-black px-4 py-2 rounded-full uppercase tracking-[0.1em] hover:bg-indigo-600 transition-all shadow-2xl border border-white/10 whitespace-nowrap hidden group-hover:block"
+                      className="absolute -top-14 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white text-[8px] font-black px-4 py-2 rounded-full uppercase tracking-[0.1em] hover:bg-blue-600 transition-all shadow-2xl border border-white/10 whitespace-nowrap hidden group-hover:block"
                     >
                       Reset Voice Engine
                     </button>
-                    <div className="absolute inset-0 animate-ping bg-indigo-500/10 rounded-full"></div>
+                    <div className="absolute inset-0 animate-ping bg-blue-500/10 rounded-full"></div>
                     <button
                       onClick={() => {
                         if (isListening) {
@@ -3633,11 +3633,11 @@ function HomeContent() {
                           setIsListening(true);
                         }
                       }}
-                      className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-[0_15px_30px_rgba(0,0,0,0.15)] relative ${isListening ? 'bg-red-500 text-white scale-110' : 'bg-white text-slate-600 hover:text-indigo-600'}`}>
+                      className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-[0_15px_30px_rgba(0,0,0,0.15)] relative ${isListening ? 'bg-red-500 text-white scale-110' : 'bg-white text-blue-600 hover:text-blue-500'}`}>
                       <Mic size={28} strokeWidth={2.5} className={isListening && audioLevel > 5 ? 'scale-110' : ''} />
                       {/* Audio Pulse Ring */}
                       {isListening && (
-                        <div className="absolute -inset-4 border-2 border-indigo-500/20 rounded-full animate-pulse transition-transform" style={{ scale: `${1 + (audioLevel / 50)}` }}></div>
+                        <div className="absolute -inset-4 border-2 border-blue-500/20 rounded-full animate-pulse transition-transform" style={{ scale: `${1 + (audioLevel / 50)}` }}></div>
                       )}
                     </button>
                   </div>
@@ -3649,7 +3649,7 @@ function HomeContent() {
 
                 {/* Agent Profile Card */}
                 <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                  <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
                     <img src="/robot_avatar_new.png" alt="Agent" className="w-full h-full object-cover rounded-2xl" />
                   </div>
                   <div className="flex-1">
@@ -3665,7 +3665,7 @@ function HomeContent() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm text-center">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Time Elapsed</span>
-                    <span className="text-2xl font-black text-indigo-600 font-mono tracking-tighter">{formatTime(elapsedTime)}</span>
+                    <span className="text-2xl font-black text-blue-600 font-mono tracking-tighter">{formatTime(elapsedTime)}</span>
                   </div>
                   <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm text-center">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Local Time</span>
@@ -3674,7 +3674,7 @@ function HomeContent() {
                 </div>
                 <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm text-center">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">Status</span>
-                  <div className="inline-block px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[9px] font-black uppercase tracking-widest">Round 1</div>
+                  <div className="inline-block px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[9px] font-black uppercase tracking-widest">Round 1</div>
                 </div>
 
                 {/* Transcript Card */}
@@ -3700,7 +3700,7 @@ function HomeContent() {
                       <div className="w-full h-auto py-4 text-base font-bold text-slate-800 leading-relaxed text-center whitespace-pre-wrap">
                         {transcript}
                         {interimTranscript && (
-                          <span className="text-indigo-500 opacity-70">
+                          <span className="text-blue-500 opacity-70">
                             {transcript ? " " : ""}{interimTranscript}
                           </span>
                         )}
@@ -3709,9 +3709,9 @@ function HomeContent() {
                     )}
                   </div>
 
-                  <div className="bg-indigo-50 py-3 mx-4 mb-2 rounded-xl text-center">
-                    <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest flex items-center justify-center gap-2">
-                      <div className={`w-1.5 h-1.5 bg-indigo-500 rounded-full transition-all duration-75 ${audioLevel > 5 ? 'scale-[2.5] bg-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.8)]' : 'animate-pulse'}`}></div>
+                  <div className="bg-blue-50 py-3 mx-4 mb-2 rounded-xl text-center">
+                    <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest flex items-center justify-center gap-2">
+                      <div className={`w-1.5 h-1.5 bg-blue-500 rounded-full transition-all duration-75 ${audioLevel > 5 ? 'scale-[2.5] bg-blue-400 shadow-[0_0_10px_rgba(37,99,235,0.8)]' : 'animate-pulse'}`}></div>
                       {audioLevel > 5 ? "Capturing your voice..." : "Interviewer is listening"}
                     </span>
                   </div>
@@ -3722,13 +3722,13 @@ function HomeContent() {
                       {new Array(30).fill(0).map((_, i) => (
                         <div
                           key={i}
-                          className={`h-full flex-1 transition-all duration-100 ${audioLevel > (i * 3) ? 'bg-indigo-500' : 'bg-slate-200 opacity-30'}`}
+                          className={`h-full flex-1 transition-all duration-100 ${audioLevel > (i * 3) ? 'bg-blue-500' : 'bg-slate-200 opacity-30'}`}
                         />
                       ))}
                     </div>
                     <div className="flex justify-between mt-1 px-1">
                       <span className="text-[7px] font-black text-slate-300 uppercase tracking-tighter">Silence</span>
-                      <span className="text-[7px] font-black text-indigo-400 uppercase tracking-tighter">Voice Peak</span>
+                      <span className="text-[7px] font-black text-blue-400 uppercase tracking-tighter">Voice Peak</span>
                     </div>
                   </div>
                 </div>
@@ -3736,10 +3736,10 @@ function HomeContent() {
                 {/* AI Evaluation Card */}
                 <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Sparkles size={16} className="text-indigo-500" />
+                    <Sparkles size={16} className="text-blue-500" />
                     <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">AI Evaluation Active</span>
                   </div>
-                  <div className="w-2 h-2 bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]"></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(37,99,235,0.5)]"></div>
                 </div>
 
                 {/* Auto-Submit Alert Card */}
@@ -3760,7 +3760,7 @@ function HomeContent() {
                   <button
                     onClick={handleSubmitAnswer}
                     disabled={loading || isSpeaking || fetchingQuestion || isTranscribing}
-                    className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-2xl font-black text-base transition-all shadow-xl shadow-indigo-600/20 active:scale-95 flex items-center justify-center gap-3 uppercase tracking-widest"
+                    className="w-full py-5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-2xl font-black text-base transition-all shadow-xl shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-3 uppercase tracking-widest"
                   >
                     {isTranscribing ? (
                       <div className="flex items-center gap-2">
@@ -3793,7 +3793,7 @@ function HomeContent() {
                   <p className="text-slate-500 mb-10 font-medium">This will end the interview and analyze your performance. You will receive a detailed PDF with score breakdowns.</p>
 
                   <div className="flex flex-col gap-4">
-                    <button onClick={confirmEndInterview} className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.5rem] font-black text-xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all">Generate My Report</button>
+                    <button onClick={confirmEndInterview} className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-[1.5rem] font-black text-xl shadow-xl shadow-blue-600/20 active:scale-95 transition-all">Generate My Report</button>
 
                     <button
                       onClick={() => router.push('/dashboard')}
@@ -3816,7 +3816,7 @@ function HomeContent() {
         stage === 'results' && (
           <main className="min-h-screen flex items-center justify-center p-4 md:p-8 bg-[var(--background)]">
             <div className="w-full max-w-2xl bg-[var(--card-bg)] p-6 md:p-12 rounded-[2.5rem] md:rounded-[3.5rem] border border-[var(--border)] shadow-[0_30px_100px_rgba(0,0,0,0.2)] text-center relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-indigo-600 to-purple-600"></div>
+              <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-blue-600 to-purple-600"></div>
 
               <div className="w-20 h-20 bg-green-500/10 text-green-500 rounded-3xl flex items-center justify-center mx-auto mb-8 relative">
                 <CheckCircle size={40} />
@@ -3828,7 +3828,7 @@ function HomeContent() {
               <div className="grid grid-cols-2 gap-6 mb-12">
                 <div className="p-6 bg-[var(--background)] rounded-3xl border border-[var(--border)]">
                   <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Overall Score</div>
-                  <div className="text-4xl font-black text-indigo-600">{reportData?.score || 0}%</div>
+                  <div className="text-4xl font-black text-blue-600">{reportData?.score || 0}%</div>
                 </div>
                 <div className="p-6 bg-[var(--background)] rounded-3xl border border-[var(--border)]">
                   <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1">Status</div>
@@ -3838,10 +3838,10 @@ function HomeContent() {
 
               <div className="flex flex-col gap-4">
                 <div className="space-y-2">
-                  <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-2 opacity-70">Recommended: Secure your performance certificate</p>
+                  <p className="text-xs font-bold text-blue-500 uppercase tracking-widest mb-2 opacity-70">Recommended: Secure your performance certificate</p>
                   <button
                     onClick={() => handleDownloadReport(true)}
-                    className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xl hover:bg-indigo-700 transition-all shadow-xl hover:shadow-indigo-500/30 flex items-center justify-center gap-3 active:scale-95"
+                    className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-xl hover:bg-blue-700 transition-all shadow-xl hover:shadow-blue-500/30 flex items-center justify-center gap-3 active:scale-95"
                   >
                     <Monitor size={24} /> Download Final Report
                   </button>
@@ -3878,7 +3878,7 @@ function HomeContent() {
                   <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-2">Detailed incident evidence available below</p>
                   <button
                     onClick={() => handleDownloadReport(true)}
-                    className="px-6 py-5 bg-indigo-600 text-white rounded-2xl font-black text-lg hover:bg-indigo-700 transition-all shadow-xl flex items-center gap-2 active:scale-95"
+                    className="px-6 py-5 bg-blue-600 text-white rounded-2xl font-black text-lg hover:bg-blue-700 transition-all shadow-xl flex items-center gap-2 active:scale-95"
                   >
                     <Monitor size={20} /> Download Incident Report
                   </button>
